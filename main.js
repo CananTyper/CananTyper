@@ -96,7 +96,9 @@ const UI = {
         this.renderGlobal(); this.show('home-screen');
     },
     showLobby() { this.initLobby(); },
-    showAdmin() { this.switchTab('phrases'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
+    
+    // ORDEN: Usuarios predeterminado al entrar en Admin
+    showAdmin() { this.switchTab('users'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
     refreshActiveViews: () => {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
@@ -137,17 +139,22 @@ const UI = {
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
-    
+
     updateCategorySelects() {
         const cats = CT.dbLocal('c');
         const options = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         const createSel = document.getElementById('new-phrase-category');
         const editSel = document.getElementById('phrase-category');
+        const deleteSel = document.getElementById('delete-cat-select');
+        
         if(createSel) createSel.innerHTML = options;
         if(editSel) {
             const currentVal = editSel.value;
             editSel.innerHTML = options;
             editSel.value = currentVal || (cats[0] ? cats[0].name : '');
+        }
+        if(deleteSel) {
+            deleteSel.innerHTML = cats.filter(c => c.name !== 'General').map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         }
     },
 
@@ -231,7 +238,7 @@ const UI = {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-${tab}`).classList.remove('hidden');
-        // FIX VISUAL: Ajuste perfecto para el ID del botón tab
+        
         let btnId = 't-' + tab.substring(0,2);
         if (tab === 'create') btnId = 't-cr';
         const activeTabBtn = document.getElementById(btnId);
@@ -240,18 +247,27 @@ const UI = {
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') { this.renderAdminU(); }
-        if(tab === 'create') { this.toggleCreateForm('text'); }
+        if(tab === 'create') { UI.toggleCreateForm('text'); }
     },
 
     /* ---- ÁREA ADMINISTRATIVA: CREAR ---- */
     toggleCreateForm(type) {
         document.getElementById('create-text-form').classList.add('hidden');
         document.getElementById('create-cat-form').classList.add('hidden');
+        
+        const btnText = document.getElementById('btn-create-text');
+        const btnCat = document.getElementById('btn-create-cat');
+        
         if(type === 'text') {
             UI.updateCategorySelects();
             document.getElementById('create-text-form').classList.remove('hidden');
+            btnText.className = 'btn-primary btn-large active';
+            btnCat.className = 'btn-primary btn-alt btn-large';
         } else {
+            UI.updateCategorySelects();
             document.getElementById('create-cat-form').classList.remove('hidden');
+            btnCat.className = 'btn-primary btn-large active';
+            btnText.className = 'btn-primary btn-alt btn-large';
         }
     },
 
@@ -277,7 +293,6 @@ const UI = {
         let tracks = CT.dbLocal('p');
         
         if (query) {
-            // Buscador Global activo
             document.getElementById('admin-phrase-categories').classList.add('hidden');
             document.getElementById('admin-phrase-list-view').classList.remove('hidden');
             document.getElementById('btn-back-cat-admin').classList.add('hidden');
@@ -299,7 +314,6 @@ const UI = {
             document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length;
             document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
-            // Sin buscador, en raíz de categorías
             document.getElementById('admin-phrase-categories').classList.remove('hidden');
             document.getElementById('admin-phrase-list-view').classList.add('hidden');
             
@@ -313,7 +327,6 @@ const UI = {
                 </div>
             `).join('');
         } else {
-            // Dentro de una categoría específica
             document.getElementById('admin-phrase-categories').classList.add('hidden');
             document.getElementById('admin-phrase-list-view').classList.remove('hidden');
             document.getElementById('btn-back-cat-admin').classList.remove('hidden');
@@ -377,7 +390,12 @@ const UI = {
 
         document.getElementById('admin-races-list').innerHTML = pageData.map((s) => `<tr>
             <td><b>${s.n}</b></td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
-            <td><button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-error">ELIMINAR</button></td>
+            <td>
+                <div class="action-buttons">
+                    <button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button>
+                    <button onclick="UI.delRace('${s.id}')" class="btn-error">ELIMINAR</button>
+                </div>
+            </td>
         </tr>`).join('');
 
         document.getElementById('admin-ra-prev').disabled = UI.adminRacePage === 0;
@@ -417,9 +435,11 @@ const UI = {
             <td><div style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="avatar-xs"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div></td>
             <td>${u.h}</td><td><span class="role-badge">${u.r}</span></td>
             <td>
-                <button onclick="UI.adminEditUserName('${u.h}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button>
-                <button onclick="UI.adminResetUserPic('${u.h}')" class="btn-outline" style="margin-right:5px;">IMAGEN</button>
-                <button onclick="UI.delU('${u.h}')" class="btn-error">ELIMINAR</button>
+                <div class="action-buttons">
+                    <button onclick="UI.adminEditUserName('${u.h}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button>
+                    <button onclick="UI.adminResetUserPic('${u.h}')" class="btn-outline">IMAGEN</button>
+                    <button onclick="UI.delU('${u.h}')" class="btn-error">ELIMINAR</button>
+                </div>
             </td>
         </tr>`).join('');
     },
@@ -534,6 +554,25 @@ const App = {
         if(!catName) return alert("Falta el nombre de la categoría.");
         db.collection('categories').doc(catName).set({ name: catName });
         nameInp.value = ''; alert("Categoría Creada."); UI.toggleCreateForm('text');
+    },
+    deleteCategory: () => {
+        const sel = document.getElementById('delete-cat-select');
+        const catName = sel.value;
+        if(!catName) return;
+        if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'.");
+        if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) {
+            db.collection('categories').doc(catName).delete();
+            let pList = CT.dbLocal('p');
+            let updated = false;
+            pList.forEach(p => {
+                if (p.c === catName) { 
+                    p.c = 'General'; updated = true; 
+                    db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); 
+                }
+            });
+            if (updated) CT.save('p', pList);
+            alert("Categoría eliminada con éxito.");
+        }
     },
     createNewPhrase: () => {
         const titleInp = document.getElementById('new-phrase-title');
