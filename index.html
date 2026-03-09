@@ -164,19 +164,44 @@
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
                     <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Administración</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Gestión integral de la plataforma</p>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Gestión de textos y usuarios</p>
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="admin-tabs">
-                <button id="t-ph" class="tab-btn active" onclick="UI.switchTab('phrases')">Textos</button>
-                <button id="t-cr" class="tab-btn" onclick="UI.switchTab('create')">Crear</button>
+                <button id="t-us" class="tab-btn active" onclick="UI.switchTab('users')">Usuarios</button>
                 <button id="t-ra" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
-                <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
+                <button id="t-ph" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button>
+                <button id="t-cr" class="tab-btn" onclick="UI.switchTab('create')">Crear</button>
             </div>
             <div class="admin-content-area">
                 
-                <div id="pane-phrases" class="pane">
+                <div id="pane-users" class="pane">
+                    <input type="text" id="user-search" placeholder="Buscar usuario por nombre o ID..." oninput="UI.renderAdminU()" style="margin-bottom: 15px;">
+                    <div class="custom-scroll admin-table-wrapper">
+                        <table class="data-table">
+                            <thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead>
+                            <tbody id="admin-users-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="pane-races" class="pane hidden">
+                    <input type="text" id="race-search" placeholder="Buscar usuario..." oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
+                    <div class="custom-scroll admin-table-wrapper">
+                        <table class="data-table">
+                            <thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead>
+                            <tbody id="admin-races-list"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-bar" style="margin-top: 10px;">
+                        <button id="admin-ra-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button>
+                        <span id="admin-ra-page-num" class="page-indicator">Página 1</span>
+                        <button id="admin-ra-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button>
+                    </div>
+                </div>
+
+                <div id="pane-phrases" class="pane hidden">
                     <input type="text" id="admin-phrase-search" placeholder="Buscar texto por título o palabras..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
                     
                     <div id="admin-phrase-form" class="admin-form hidden">
@@ -205,8 +230,8 @@
 
                 <div id="pane-create" class="pane hidden">
                     <div class="mode-selectors" style="margin-bottom: 20px;">
-                        <button onclick="UI.toggleCreateForm('text')" class="btn-primary btn-large">TEXTO</button>
-                        <button onclick="UI.toggleCreateForm('cat')" class="btn-primary btn-alt btn-large">CATEGORÍA</button>
+                        <button id="btn-create-text" onclick="UI.toggleCreateForm('text')" class="btn-primary btn-large active">TEXTO</button>
+                        <button id="btn-create-cat" onclick="UI.toggleCreateForm('cat')" class="btn-primary btn-alt btn-large">CATEGORÍA</button>
                     </div>
 
                     <div id="create-text-form" class="admin-form hidden">
@@ -219,37 +244,21 @@
                     </div>
 
                     <div id="create-cat-form" class="admin-form hidden">
-                        <div class="form-row" style="justify-content: center;">
+                        <div class="form-row" style="justify-content: center; margin-bottom: 10px;">
                             <input type="text" id="new-cat-name" placeholder="Nombre de la Categoría" style="max-width: 400px; text-align: center;">
                         </div>
-                        <button onclick="App.createNewCategory()" class="btn-primary" style="align-self: center;">CREAR CATEGORÍA</button>
+                        <button onclick="App.createNewCategory()" class="btn-primary" style="align-self: center; margin-bottom: 30px;">CREAR CATEGORÍA</button>
+                        
+                        <div style="border-top: 1px solid var(--border); padding-top: 25px; display: flex; flex-direction: column; gap: 15px;">
+                            <h3 style="color: var(--p); margin: 0; text-align: center; font-size: 1rem;">Eliminar Categoría</h3>
+                            <div class="form-row" style="justify-content: center;">
+                                <select id="delete-cat-select" class="admin-select" style="max-width: 400px; width: 100%;"></select>
+                            </div>
+                            <button onclick="App.deleteCategory()" class="btn-error" style="align-self: center;">ELIMINAR</button>
+                        </div>
                     </div>
                 </div>
 
-                <div id="pane-races" class="pane hidden">
-                    <input type="text" id="race-search" placeholder="Buscar usuario..." oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
-                    <div class="custom-scroll admin-table-wrapper">
-                        <table class="data-table">
-                            <thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead>
-                            <tbody id="admin-races-list"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-bar" style="margin-top: 10px;">
-                        <button id="admin-ra-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button>
-                        <span id="admin-ra-page-num" class="page-indicator">Página 1</span>
-                        <button id="admin-ra-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button>
-                    </div>
-                </div>
-
-                <div id="pane-users" class="pane hidden">
-                    <input type="text" id="user-search" placeholder="Buscar usuario por nombre o ID..." oninput="UI.renderAdminU()" style="margin-bottom: 15px;">
-                    <div class="custom-scroll admin-table-wrapper">
-                        <table class="data-table">
-                            <thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead>
-                            <tbody id="admin-users-list"></tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </section>
 
