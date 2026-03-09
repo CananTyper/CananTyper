@@ -40,8 +40,6 @@ body { background: var(--bg); color: var(--text-main); font-family: 'Segoe UI', 
 .btn-primary { background: var(--p); color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px color-mix(in srgb, var(--p) 40%, transparent); filter: brightness(1.1); }
 .btn-large { padding: 20px; font-size: 1.1rem; width: 100%; }
-
-/* CLASE NUEVA: Botón Admin (Menor altura, muy visible) */
 .btn-admin-mode { padding: 14px 20px; font-size: 1rem; width: 100%; }
 
 .btn-alt { background: var(--surface-light); color: var(--p); border: 1px solid var(--border); }
@@ -100,7 +98,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .player-link { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-main); cursor: pointer; transition: color 0.2s; }
 .player-link:hover { color: var(--p); text-shadow: 0 0 8px color-mix(in srgb, var(--p) 40%, transparent); }
 
-/* CONTENEDOR FLEX DE BOTONES DE ACCIÓN (EVITA DESBORDES) */
 .action-buttons { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 .action-buttons button { flex: 1 1 auto; min-width: max-content; padding: 6px 10px; font-size: 0.65rem; }
 .data-table td:last-child { white-space: normal; overflow: visible; }
