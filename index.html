@@ -272,8 +272,8 @@
         <section id="admin-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
-                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Administración</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Gestión de textos y usuarios</p>
+                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">CananTyper</h2>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Panel de administración</p>
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
@@ -286,7 +286,7 @@
             <div class="admin-content-area">
                 
                 <div id="pane-users" class="pane">
-                    <input type="text" id="user-search" placeholder="Buscar usuario por nombre o ID..." oninput="UI.renderAdminU()" style="margin-bottom: 15px;">
+                    <input type="text" id="user-search" placeholder="Buscar" oninput="UI.renderAdminU()" style="margin-bottom: 15px;">
                     <div class="custom-scroll admin-table-wrapper">
                         <table class="data-table">
                             <thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead>
@@ -296,7 +296,7 @@
                 </div>
 
                 <div id="pane-races" class="pane hidden">
-                    <input type="text" id="race-search" placeholder="Buscar usuario..." oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
+                    <input type="text" id="race-search" placeholder="Buscar" oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
                     <div class="custom-scroll admin-table-wrapper">
                         <table class="data-table">
                             <thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead>
@@ -311,7 +311,7 @@
                 </div>
 
                 <div id="pane-phrases" class="pane hidden">
-                    <input type="text" id="admin-phrase-search" placeholder="Buscar texto por título o palabras..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
+                    <input type="text" id="admin-phrase-search" placeholder="Buscar" oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
                     
                     <div id="admin-phrase-form" class="admin-form hidden">
                         <div class="form-row">
@@ -419,6 +419,7 @@
     <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
