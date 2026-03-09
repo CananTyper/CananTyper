@@ -7,7 +7,7 @@ const firebaseConfig = {
     appId: "1:55384940628:web:6211a5e6c8bc36694e8dc1"
 };
 
-// Inicializar Firebase sin bloquear la web
+// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -18,14 +18,13 @@ const CT = {
     editIdx: null, profPage: 0, activeProfHandle: null,
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    
     dbLocal: (k) => CT.data[k], 
     
     init: function() {
         const storedUnit = localStorage.getItem('ct_unit_pref');
         if(storedUnit) this.currentUnit = storedUnit;
 
-        // Carga Cero-Lag (Optimistic UI): Intenta leer del cache del navegador primero
+        // Carga Cero-Lag (Cache local)
         const localU = localStorage.getItem('ct_cache_u');
         const localS = localStorage.getItem('ct_cache_s');
         const localP = localStorage.getItem('ct_cache_p');
@@ -34,10 +33,9 @@ const CT = {
         if (localS) this.data.s = JSON.parse(localS);
         if (localP) this.data.p = JSON.parse(localP);
 
-        // Muestra la interfaz inmediatamente con lo que tenga guardado
         if(this.ses()) UI.initLobby(); else UI.show('auth-screen');
 
-        // Luego, en segundo plano, se sincroniza con Firebase
+        // Sincronización en segundo plano con Firebase
         db.collection('users').onSnapshot(snap => { 
             this.data.u = snap.docs.map(d => d.data()); 
             localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u));
@@ -51,8 +49,7 @@ const CT = {
         db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
             if(this.data.p.length === 0) {
-                const seed = { id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." };
-                db.collection('phrases').doc("1").set(seed);
+                db.collection('phrases').doc("1").set({ id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." });
             }
             localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
             UI.refreshActiveViews(); 
@@ -89,15 +86,14 @@ const UI = {
     showAdmin() { this.switchTab('phrases'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
     refreshActiveViews: () => {
-        // Solo refrescamos si NO estamos jugando para no cortar la partida
-        if(!document.getElementById('game-screen').classList.contains('hidden')) return;
-        
+        if(!document.getElementById('game-screen').classList.contains('hidden')) return; // No refrescar si está jugando
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
         if(!document.getElementById('track-screen').classList.contains('hidden')) UI.renderTrackList();
     },
 
+    // LÓGICA DE INTERRUPTOR CERO FALLOS
     toggleUnits: () => {
         CT.currentUnit = (CT.currentUnit === 'cpm') ? 'wpm' : 'cpm';
         localStorage.setItem('ct_unit_pref', CT.currentUnit);
@@ -106,8 +102,13 @@ const UI = {
     },
 
     updateUnitVisuals: (unit) => {
+        // Interfaz
         document.querySelectorAll('.unit-switcher span').forEach(s => s.classList.remove('active'));
         document.getElementById(`unit-${unit}`).classList.add('active');
+        
+        // Inyección de Raíz (Absoluta precisión de CSS)
+        document.documentElement.setAttribute('data-theme', unit);
+
         const unitLabel = unit.toUpperCase();
         if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = unitLabel;
         if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = (unit === 'cpm' ? 'PROMEDIO CPM' : 'PROMEDIO WPM');
@@ -120,7 +121,6 @@ const UI = {
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + unitLabel;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + unitLabel;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = unitLabel;
-        if (unit === 'wpm') { document.body.classList.add('wpm-mode'); } else { document.body.classList.remove('wpm-mode'); }
     },
 
     renderGlobal() {
@@ -215,13 +215,9 @@ const UI = {
         const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta):", oldCPM);
         if(!newCPM || isNaN(newCPM)) return;
         const targetCPM = parseInt(newCPM); 
-        // Enviar a la nube en background sin bloquear (No Await)
         db.collection('scores').doc(raceId).update({ c: targetCPM });
         const u = CT.dbLocal('u').find(u => u.h === scores[idx].h);
-        if(u) { 
-            let hi = u.hi; const hIdx = hi.indexOf(oldCPM); 
-            if(hIdx !== -1) { hi[hIdx] = targetCPM; db.collection('users').doc(u.h).update({ hi: hi }); } 
-        }
+        if(u) { let hi = u.hi; const hIdx = hi.indexOf(oldCPM); if(hIdx !== -1) { hi[hIdx] = targetCPM; db.collection('users').doc(u.h).update({ hi: hi }); } }
     },
     delRace: (raceId) => {
         if(!confirm("¿Eliminar?")) return;
@@ -229,10 +225,7 @@ const UI = {
         const raceData = scores[idx]; 
         db.collection('scores').doc(raceId).delete();
         const u = CT.dbLocal('u').find(u => u.h === raceData.h);
-        if(u) { 
-            let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); 
-            if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } 
-        }
+        if(u) { let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } }
     },
     renderAdminP() {
         document.getElementById('admin-phrases-list').innerHTML = CT.dbLocal('p').map((t, i) => `<li class="phrase-item"><span><b>#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-exit-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400;">BORRAR</button></div></li>`).join('');
@@ -274,8 +267,7 @@ const UI = {
         img.onload = () => {
             UI.cropScale = 1; UI.cropX = 0; UI.cropY = 0; document.getElementById('crop-zoom').value = 1;
             const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight;
-            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } 
-            else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
+            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
             UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); UI.setupCropEvents();
         };
     },
@@ -304,7 +296,6 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    // Login Optimizado: Sin esperas pesadas
     editDisplayName: () => { 
         const u = CT.ses(); if(!u) return; 
         const newName = prompt("Nuevo nombre:", u.n); 
@@ -362,14 +353,12 @@ const App = {
         
         const u = CT.ses();
         if(u) {
-            // Guardado en Background (Optimistic)
             db.collection('users').doc(u.h).update({ a: compressedBase64 });
             db.collection('scores').where('h', '==', u.h).get().then(q => {
                 const batch = db.batch();
                 q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); });
                 batch.commit();
             });
-            // Reflejo instantáneo local
             document.getElementById('prof-img').src = compressedBase64;
         }
         UI.closeCropModal();
@@ -432,29 +421,37 @@ class Engine {
             } else { el.value = v; el.classList.add('input-error'); }
         }
     }
+    
+    // CERO LAG: Interfaz inmediata, Base de datos en segundo plano
     end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
-        // INTERFAZ OPTIMISTA (El final es instantáneo)
-        const u = CT.ses(); 
-        if(u) {
-            // Se envía a la nube de fondo (Sin 'await')
-            db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
-            const scoreId = Date.now().toString();
-            db.collection('scores').doc(scoreId).set({ id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: CT.getARDate(), track: this.track.title }); 
-        }
-        
-        // Mostrar Modal Instantáneamente
+        // 1. Mostrar Pantalla (0ms de retraso)
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
-        
         const finalSpeedValue = UI.formatValue(finalCPM);
         const finalUnitLabel = CT.currentUnit.toUpperCase();
         document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
-        
         document.getElementById('game-result-modal').classList.remove('hidden');
+
+        // 2. Procesar en la nube (Fondo)
+        setTimeout(() => {
+            const u = CT.ses(); 
+            if(u) {
+                db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
+                const dateStr = CT.getARDate();
+                const scoreId = Date.now().toString();
+                
+                // Actualiza espejo local para la tabla
+                const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title };
+                let s = CT.dbLocal('s'); s.unshift(newScore); CT.data.s = s;
+                
+                // Envía a Firebase
+                db.collection('scores').doc(scoreId).set(newScore); 
+            }
+        }, 10);
     }
 }
 
@@ -464,8 +461,8 @@ document.getElementById('img-input').onchange = (e) => {
     const file = e.target.files[0];
     if(!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if(!validTypes.includes(file.type)) { alert("Formato no válido."); e.target.value = ''; return; }
-    if(file.size > 5 * 1024 * 1024) { alert("Máximo 5MB."); e.target.value = ''; return; }
+    if(!validTypes.includes(file.type)) { alert("Formato no válido. Solo se permiten imágenes (JPG, PNG, WEBP, GIF)."); e.target.value = ''; return; }
+    if(file.size > 5 * 1024 * 1024) { alert("La imagen es demasiado pesada. Máximo 5MB."); e.target.value = ''; return; }
     const r = new FileReader();
     r.onload = (ev) => { UI.openCropModal(ev.target.result); };
     r.readAsDataURL(file);
