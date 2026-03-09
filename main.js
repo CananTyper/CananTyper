@@ -1,3 +1,4 @@
+// 1. CONFIGURACIÓN FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyDlDLS1X6u3zodYVadV4T-hw5Uq7eHHuFk",
     authDomain: "canantyper.firebaseapp.com",
@@ -10,8 +11,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// 2. CORE DE DATOS (ESPEJO LOCAL - CERO LATENCIA)
 const CT = {
-    data: { u: [], s: [], p: [] },
+    data: { u: [], s: [], p: [], c: [] },
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
@@ -21,22 +23,20 @@ const CT = {
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
-        if (storedUnit !== 'cpm' && storedUnit !== 'wpm') {
-            storedUnit = 'cpm'; 
-            localStorage.setItem('ct_unit_pref', 'cpm');
-        }
+        if (storedUnit !== 'cpm' && storedUnit !== 'wpm') { storedUnit = 'cpm'; localStorage.setItem('ct_unit_pref', 'cpm'); }
         this.currentUnit = storedUnit;
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
         const cU = localStorage.getItem('ct_cache_u');
         const cS = localStorage.getItem('ct_cache_s');
         const cP = localStorage.getItem('ct_cache_p');
+        const cC = localStorage.getItem('ct_cache_c');
         if(cU) this.data.u = JSON.parse(cU);
         if(cS) this.data.s = JSON.parse(cS);
         if(cP) this.data.p = JSON.parse(cP);
+        if(cC) this.data.c = JSON.parse(cC);
 
         UI.updateUnitVisuals(this.currentUnit);
-
         if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
 
         db.collection('users').onSnapshot(snap => { 
@@ -56,6 +56,13 @@ const CT = {
                 db.collection('phrases').doc("1").set(seed);
             }
             localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
+            UI.refreshActiveViews(); 
+        });
+        db.collection('categories').onSnapshot(snap => { 
+            this.data.c = snap.docs.map(d => d.data()); 
+            if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General"}); }
+            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c));
+            UI.updateCategorySelects();
             UI.refreshActiveViews(); 
         });
     },
@@ -129,6 +136,19 @@ const UI = {
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
+    },
+    
+    updateCategorySelects() {
+        const cats = CT.dbLocal('c');
+        const options = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        const createSel = document.getElementById('new-phrase-category');
+        const editSel = document.getElementById('phrase-category');
+        if(createSel) createSel.innerHTML = options;
+        if(editSel) {
+            const currentVal = editSel.value;
+            editSel.innerHTML = options;
+            editSel.value = currentVal || (cats[0] ? cats[0].name : '');
+        }
     },
 
     renderGlobal() {
@@ -211,10 +231,28 @@ const UI = {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-${tab}`).classList.remove('hidden');
-        document.getElementById(`t-${tab.substring(0,2)}`).classList.add('active'); // Solución al bug visual (t-ra)
+        // FIX VISUAL: Ajuste perfecto para el ID del botón tab
+        let btnId = 't-' + tab.substring(0,2);
+        if (tab === 'create') btnId = 't-cr';
+        const activeTabBtn = document.getElementById(btnId);
+        if(activeTabBtn) activeTabBtn.classList.add('active');
+        
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
-        if(tab === 'users') this.renderAdminU();
+        if(tab === 'users') { this.renderAdminU(); }
+        if(tab === 'create') { this.toggleCreateForm('text'); }
+    },
+
+    /* ---- ÁREA ADMINISTRATIVA: CREAR ---- */
+    toggleCreateForm(type) {
+        document.getElementById('create-text-form').classList.add('hidden');
+        document.getElementById('create-cat-form').classList.add('hidden');
+        if(type === 'text') {
+            UI.updateCategorySelects();
+            document.getElementById('create-text-form').classList.remove('hidden');
+        } else {
+            document.getElementById('create-cat-form').classList.remove('hidden');
+        }
     },
 
     /* ---- ÁREA ADMINISTRATIVA: TEXTOS ---- */
@@ -223,6 +261,7 @@ const UI = {
         document.getElementById('admin-phrase-form').classList.add('hidden');
         document.getElementById('admin-phrase-list-view').classList.add('hidden');
         document.getElementById('admin-phrase-categories').classList.remove('hidden');
+        document.getElementById('admin-phrase-search').value = '';
         UI.renderAdminP();
     },
     selectAdminPhraseCategory(cat) {
@@ -230,26 +269,59 @@ const UI = {
         UI.adminPhrasePage = 0;
         document.getElementById('admin-phrase-categories').classList.add('hidden');
         document.getElementById('admin-phrase-list-view').classList.remove('hidden');
+        document.getElementById('btn-back-cat-admin').classList.remove('hidden');
         UI.renderAdminP();
     },
     renderAdminP() {
         const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase();
-        let tracks = CT.dbLocal('p').filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query));
+        let tracks = CT.dbLocal('p');
         
-        if (!UI.activeAdminCat) {
+        if (query) {
+            // Buscador Global activo
+            document.getElementById('admin-phrase-categories').classList.add('hidden');
+            document.getElementById('admin-phrase-list-view').classList.remove('hidden');
+            document.getElementById('btn-back-cat-admin').classList.add('hidden');
+            
+            let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query));
+            const start = UI.adminPhrasePage * 20;
+            const pageData = filtered.slice(start, start + 20);
+            
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `
+                <li class="admin-list-item">
+                    <span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span>
+                    <div>
+                        <button onclick="UI.prepEdit('${t.id}')" class="btn-outline" style="margin-right:10px;">EDITAR</button>
+                        <button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button>
+                    </div>
+                </li>
+            `).join('');
+            document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0;
+            document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length;
+            document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
+        } else if (!UI.activeAdminCat) {
+            // Sin buscador, en raíz de categorías
             document.getElementById('admin-phrase-categories').classList.remove('hidden');
             document.getElementById('admin-phrase-list-view').classList.add('hidden');
+            
+            let cats = CT.dbLocal('c');
             let catCounts = {};
             tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
-            document.getElementById('admin-phrase-categories').innerHTML = Object.keys(catCounts).map(cat => `
-                <div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat}')">
-                    <h3>${cat}</h3><span>${catCounts[cat]} TEXTOS</span>
+            
+            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `
+                <div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')">
+                    <h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span>
                 </div>
             `).join('');
         } else {
+            // Dentro de una categoría específica
+            document.getElementById('admin-phrase-categories').classList.add('hidden');
+            document.getElementById('admin-phrase-list-view').classList.remove('hidden');
+            document.getElementById('btn-back-cat-admin').classList.remove('hidden');
+            
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
             const start = UI.adminPhrasePage * 20;
             const pageData = filtered.slice(start, start + 20);
+            
             document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `
                 <li class="admin-list-item">
                     <span><b style="color:var(--p)">#${t.title}</b></span>
@@ -266,8 +338,12 @@ const UI = {
     },
     changeAdminPhrasePage(delta) {
         const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase();
-        let filtered = CT.dbLocal('p').filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
-                                      .filter(t => (t.c || 'General') === UI.activeAdminCat);
+        let filtered = CT.dbLocal('p');
+        if (query) {
+            filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query));
+        } else {
+            filtered = filtered.filter(t => (t.c || 'General') === UI.activeAdminCat);
+        }
         const nextStart = (UI.adminPhrasePage + delta) * 20;
         if(nextStart >= 0 && nextStart < filtered.length) { UI.adminPhrasePage += delta; this.renderAdminP(); }
     },
@@ -275,6 +351,7 @@ const UI = {
         const pList = CT.dbLocal('p');
         const idx = pList.findIndex(t => t.id.toString() === idStr.toString());
         if(idx === -1) return;
+        UI.updateCategorySelects();
         document.getElementById('phrase-title').value = pList[idx].title;
         document.getElementById('phrase-category').value = pList[idx].c || 'General';
         document.getElementById('phrase-input').value = pList[idx].text;
@@ -285,7 +362,6 @@ const UI = {
         CT.editIdx = null;
         document.getElementById('admin-phrase-form').classList.add('hidden');
         document.getElementById('phrase-title').value = '';
-        document.getElementById('phrase-category').value = '';
         document.getElementById('phrase-input').value = '';
     },
     delP: (idStr) => { if(confirm("¿Eliminar texto?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
@@ -334,35 +410,42 @@ const UI = {
 
     /* ---- ÁREA ADMINISTRATIVA: USUARIOS ---- */
     renderAdminU() {
-        document.getElementById('admin-users-list').innerHTML = CT.dbLocal('u').map((u, i) => `<tr>
+        const query = (document.getElementById('user-search').value || "").toLowerCase();
+        let filtered = CT.dbLocal('u').filter(u => u.n.toLowerCase().includes(query) || u.h.toLowerCase().includes(query));
+        
+        document.getElementById('admin-users-list').innerHTML = filtered.map((u, i) => `<tr>
             <td><div style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="avatar-xs"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div></td>
             <td>${u.h}</td><td><span class="role-badge">${u.r}</span></td>
-            <td><button onclick="UI.adminEditUser('${u.h}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delU('${u.h}')" class="btn-error">ELIMINAR</button></td>
+            <td>
+                <button onclick="UI.adminEditUserName('${u.h}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button>
+                <button onclick="UI.adminResetUserPic('${u.h}')" class="btn-outline" style="margin-right:5px;">IMAGEN</button>
+                <button onclick="UI.delU('${u.h}')" class="btn-error">ELIMINAR</button>
+            </td>
         </tr>`).join('');
     },
-    adminEditUser: async (handle) => {
-        const uList = CT.dbLocal('u');
-        const u = uList.find(x => x.h === handle);
-        if(!u) return;
+    adminEditUserName: async (handle) => {
+        const u = CT.dbLocal('u').find(x => x.h === handle); if(!u) return;
         const newName = prompt(`Nuevo nombre visible para ${handle}:`, u.n);
-        if(newName === null) return;
-        const deletePic = confirm(`¿Eliminar foto de perfil de ${handle}? (Se usará la por defecto)`);
-        
-        let updates = {};
-        if (newName.trim() !== '' && newName.trim() !== u.n) updates.n = newName.trim();
-        if (deletePic) updates.a = '';
-        
-        if (Object.keys(updates).length > 0) {
-            await db.collection('users').doc(handle).update(updates);
+        if(newName && newName.trim() !== '' && newName.trim() !== u.n) {
+            await db.collection('users').doc(handle).update({ n: newName.trim() });
             const q = await db.collection('scores').where('h', '==', handle).get();
             const batch = db.batch();
-            q.forEach(doc => { batch.update(doc.ref, updates); });
+            q.forEach(doc => { batch.update(doc.ref, { n: newName.trim() }); });
             await batch.commit();
         }
     },
-    delU: (handle) => { if(confirm("¿Eliminar usuario por completo?")) { db.collection('users').doc(handle).delete(); }},
-    
-    /* ---- SELECCIÓN DE PISTAS Y CATEGORÍAS ---- */
+    adminResetUserPic: async (handle) => {
+        if(confirm(`¿Eliminar la foto de perfil de ${handle}?`)) {
+            await db.collection('users').doc(handle).update({ a: '' });
+            const q = await db.collection('scores').where('h', '==', handle).get();
+            const batch = db.batch();
+            q.forEach(doc => { batch.update(doc.ref, { a: '' }); });
+            await batch.commit();
+        }
+    },
+    delU: (handle) => { if(confirm(`¿Eliminar al usuario ${handle} por completo?`)) { db.collection('users').doc(handle).delete(); }},
+
+    /* ---- SELECCIÓN DE PISTAS (CATEGORÍAS) ---- */
     showTrackSelect() {
         UI.activeTrackCat = null;
         UI.showTrackCategorySelect();
@@ -372,12 +455,13 @@ const UI = {
         document.getElementById('track-list-view').classList.add('hidden');
         document.getElementById('track-category-view').classList.remove('hidden');
         const tracks = CT.dbLocal('p');
+        const cats = CT.dbLocal('c');
         let catCounts = {};
         tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
         
-        document.getElementById('track-category-view').innerHTML = Object.keys(catCounts).map(cat => `
-            <div class="cat-card" onclick="UI.selectTrackCategory('${cat}')">
-                <h3>${cat}</h3><span>${catCounts[cat]} TEXTOS</span>
+        document.getElementById('track-category-view').innerHTML = cats.map(cat => `
+            <div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')">
+                <h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span>
             </div>
         `).join('');
     },
@@ -438,12 +522,31 @@ const UI = {
 
 const App = {
     currentTrack: null, activeEngine: null,
-    startRandomRace: () => { const tracks = CT.dbLocal('p'); if(!tracks || tracks.length === 0) return alert("Crea una pista."); App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack); },
+    startRandomRace: () => { const tracks = CT.dbLocal('p'); if(!tracks || tracks.length === 0) return alert("No hay textos disponibles."); App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack); },
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id === id); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track); } },
     retryRace: () => { if(App.activeEngine) App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack); },
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
+    createNewCategory: () => {
+        const nameInp = document.getElementById('new-cat-name');
+        const catName = nameInp.value.trim();
+        if(!catName) return alert("Falta el nombre de la categoría.");
+        db.collection('categories').doc(catName).set({ name: catName });
+        nameInp.value = ''; alert("Categoría Creada."); UI.toggleCreateForm('text');
+    },
+    createNewPhrase: () => {
+        const titleInp = document.getElementById('new-phrase-title');
+        const catInp = document.getElementById('new-phrase-category');
+        const textInp = document.getElementById('new-phrase-input');
+        if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto.");
+        
+        const idStr = titleInp.value.toString();
+        const catValue = catInp.value.trim() || 'General';
+        db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value });
+        titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito.");
+    },
+
     editDisplayName: () => { 
         const u = CT.ses(); if(!u) return; 
         const newName = prompt("Nuevo nombre:", u.n); 
