@@ -108,7 +108,7 @@ th.active-unit { color: var(--p); font-weight: 900; }
 .edit-dropdown-menu button:hover { background: var(--p); color: #000; }
 
 .profile-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; flex-shrink: 0; }
-.stat-card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 15px 5px; border-radius: 15px; text-align: center; transition: 0.3s; cursor: default; }
+.stat-card { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 15px 5px; border-radius: 15px; text-align: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: default; }
 .stat-card:hover { border-color: var(--p); transform: translateY(-3px); }
 .stat-card b { font-size: 1.6rem; color: #fff; display: block; margin-top: 5px; transition: 0.3s; }
 .stat-card:hover b { color: var(--p); }
@@ -120,7 +120,7 @@ th.active-unit { color: var(--p); font-weight: 900; }
 .pag-btn:hover:not(:disabled) { border-color: var(--p); color: var(--p); }
 .pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-/* JUEGO (MECÁNICA TYPERACER AÑADIDA) */
+/* JUEGO */
 #game-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
 .game-wrapper { width: 100%; max-width: 850px; display: flex; flex-direction: column; }
 .game-hud { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
@@ -132,7 +132,6 @@ body.wpm-mode .stat-box { box-shadow: 0 0 20px rgba(255, 60, 0, 0.05); }
 
 .text-surface { font-size: 1.5rem; line-height: 2; background: #0a0a0a; padding: 30px; border-radius: 15px; border: 1px solid #151515; margin-bottom: 20px; text-align: justify; }
 
-/* Estilos palabra activa y errores (TypeRacer) */
 .word { display: inline-block; margin-right: 6px; transition: 0.1s; border-radius: 4px; }
 .word.active { background: #1a1a1a; padding: 2px 4px; border-bottom: 2px solid var(--p); }
 .correct { color: var(--ok); opacity: 0.7; }
@@ -142,8 +141,9 @@ body.wpm-mode .stat-box { box-shadow: 0 0 20px rgba(255, 60, 0, 0.05); }
 #game-result-modal { text-align: center; margin-top: 20px; background: #0a0a0a; padding: 30px; border-radius: 15px; border: 1px solid #1a1a1a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .final-score { font-size: 3.5rem; color: var(--p); margin: 0 0 25px 0; }
 .game-actions { display: flex; justify-content: center; align-items: center; gap: 15px; }
+.btn-continue { padding: 18px 40px; font-size: 1.1rem; width: auto; }
 
-/* ADMIN (ESTÉTICA RESTAURADA) */
+/* ADMIN */
 .admin-dashboard-standard { height: 100%; display: flex; flex-direction: column; gap: 15px; }
 .admin-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; flex-shrink: 0; }
 .admin-title-box h2 { color: var(--p); margin: 0; font-size: 1.5rem; }
@@ -157,13 +157,12 @@ body.wpm-mode .stat-box { box-shadow: 0 0 20px rgba(255, 60, 0, 0.05); }
 .center-box { display: flex; justify-content: center; }
 .admin-scroll { flex-grow: 1; overflow-y: auto; }
 
-/* Tarjetas de Administración */
 .pro-item-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; min-height: 0; }
 .phrase-item { background: #0a0a0a; padding: 15px 20px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
 .phrase-item:hover { border-color: var(--p); box-shadow: 0 5px 15px rgba(166,255,0,0.05); }
 .phrase-item span b { font-size: 1.2rem; color: var(--p); }
 
-/* SELECCIÓN DE PISTAS (TARJETAS RESTAURADAS) */
+/* SELECCIÓN DE PISTAS */
 .custom-track-scroll { flex-grow: 1; min-height: 0; padding-right: 10px; list-style: none; margin: 0; }
 .custom-track-row { display: flex; gap: 20px; background: #0a0a0a; padding: 20px 25px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 12px; cursor: pointer; transition: 0.3s; align-items: center; }
 .custom-track-row:hover { border-color: var(--p); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(166,255,0,0.1); }
