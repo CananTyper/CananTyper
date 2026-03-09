@@ -195,6 +195,7 @@ const UI = {
         </tr>`).join('');
     },
 
+    // FIX ÉLITE: Separación de N° y Texto en el JS
     renderEliteStats() {
         const scores = CT.dbLocal('s'); const phrases = CT.dbLocal('p');
         if (scores.length === 0) return;
