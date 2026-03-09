@@ -21,7 +21,10 @@ const CT = {
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
-        if (storedUnit !== 'cpm' && storedUnit !== 'wpm') { storedUnit = 'cpm'; localStorage.setItem('ct_unit_pref', 'cpm'); }
+        if (storedUnit !== 'cpm' && storedUnit !== 'wpm') {
+            storedUnit = 'cpm'; 
+            localStorage.setItem('ct_unit_pref', 'cpm');
+        }
         this.currentUnit = storedUnit;
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
@@ -33,6 +36,7 @@ const CT = {
         if(cP) this.data.p = JSON.parse(cP);
 
         UI.updateUnitVisuals(this.currentUnit);
+
         if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
 
         db.collection('users').onSnapshot(snap => { 
@@ -62,7 +66,7 @@ const CT = {
 };
 
 const UI = {
-    trackPage: 0, adminRacePage: 0, activeCategory: null,
+    trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
     formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
 
@@ -93,9 +97,8 @@ const UI = {
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
         if(!document.getElementById('track-screen').classList.contains('hidden')) {
-            if(UI.activeCategory) UI.renderTrackList(); else UI.showCategorySelect();
+            if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
         }
-        if(!document.getElementById('stats-screen').classList.contains('hidden')) UI.showStats();
     },
 
     setUnit: (unit) => {
@@ -108,7 +111,6 @@ const UI = {
 
     updateUnitVisuals: (unit) => {
         document.documentElement.setAttribute('data-theme', unit);
-
         document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
         const activeBtn = document.getElementById(`btn-${unit}`);
         if(activeBtn) activeBtn.classList.add('active');
@@ -126,10 +128,6 @@ const UI = {
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
-        
-        if(document.getElementById('lbl-global-avg')) document.getElementById('lbl-global-avg').innerText = 'PROMEDIO GLOBAL ' + label;
-        if(document.getElementById('lbl-global-record')) document.getElementById('lbl-global-record').innerText = 'RÉCORD ABSOLUTO ' + label;
-        
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
 
@@ -164,38 +162,6 @@ const UI = {
         </tr>`).join('');
     },
 
-    // ESTADÍSTICAS GLOBALES
-    showStats() {
-        const scores = CT.dbLocal('s');
-        const users = CT.dbLocal('u');
-        
-        document.getElementById('global-users').innerText = users.length;
-        document.getElementById('global-races').innerText = scores.length;
-        
-        const totalCPM = scores.reduce((sum, s) => sum + s.c, 0);
-        const avgCPM = scores.length > 0 ? Math.round(totalCPM / scores.length) : 0;
-        document.getElementById('global-avg').innerText = UI.formatValue(avgCPM);
-        
-        let bestRace = { c: 0, n: "Nadie", track: "Ninguno" };
-        if(scores.length > 0) bestRace = scores.reduce((prev, current) => (current.c > prev.c) ? current : prev);
-        
-        document.getElementById('global-record-val').innerText = UI.formatValue(bestRace.c);
-        document.getElementById('global-record-meta').innerText = `Por ${bestRace.n} en "${bestRace.track}"`;
-
-        // Top 3 Textos
-        let trackCounts = {};
-        scores.forEach(s => { trackCounts[s.track] = (trackCounts[s.track] || 0) + 1; });
-        let sortedTracks = Object.keys(trackCounts).map(k => ({t: k, count: trackCounts[k]})).sort((a,b) => b.count - a.count).slice(0, 3);
-        
-        document.getElementById('global-top-texts').innerHTML = sortedTracks.map((tr, i) => `<tr>
-            <td><b style="color:var(--p)">#${i+1}</b></td>
-            <td>${tr.t}</td>
-            <td>${tr.count}</td>
-        </tr>`).join('');
-        
-        this.show('stats-screen');
-    },
-
     showProfile(who) {
         try {
             const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
@@ -225,10 +191,9 @@ const UI = {
     },
     toggleEditMenu() { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
 
-    // HISTORIAL DE PERFIL INVERTIDO
     renderProfileHistory() {
         const scores = CT.dbLocal('s'); 
-        const userScores = scores.filter(s => s.h === CT.activeProfHandle).sort((a, b) => b.id - a.id); // Invertido
+        const userScores = scores.filter(s => s.h === CT.activeProfHandle).sort((a,b) => b.id - a.id);
         const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
         document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr>
             <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
@@ -246,17 +211,90 @@ const UI = {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-${tab}`).classList.remove('hidden');
-        document.getElementById(`t-${tab.substring(0,2)}`).classList.add('active');
-        if(tab === 'phrases') this.renderAdminP();
+        document.getElementById(`t-${tab.substring(0,2)}`).classList.add('active'); // Solución al bug visual (t-ra)
+        if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') this.renderAdminU();
     },
-    
-    // PAGINACIÓN EN CARRERAS DE ADMINISTRACIÓN
+
+    /* ---- ÁREA ADMINISTRATIVA: TEXTOS ---- */
+    showAdminPhraseCategories() {
+        UI.activeAdminCat = null;
+        document.getElementById('admin-phrase-form').classList.add('hidden');
+        document.getElementById('admin-phrase-list-view').classList.add('hidden');
+        document.getElementById('admin-phrase-categories').classList.remove('hidden');
+        UI.renderAdminP();
+    },
+    selectAdminPhraseCategory(cat) {
+        UI.activeAdminCat = cat;
+        UI.adminPhrasePage = 0;
+        document.getElementById('admin-phrase-categories').classList.add('hidden');
+        document.getElementById('admin-phrase-list-view').classList.remove('hidden');
+        UI.renderAdminP();
+    },
+    renderAdminP() {
+        const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase();
+        let tracks = CT.dbLocal('p').filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query));
+        
+        if (!UI.activeAdminCat) {
+            document.getElementById('admin-phrase-categories').classList.remove('hidden');
+            document.getElementById('admin-phrase-list-view').classList.add('hidden');
+            let catCounts = {};
+            tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
+            document.getElementById('admin-phrase-categories').innerHTML = Object.keys(catCounts).map(cat => `
+                <div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat}')">
+                    <h3>${cat}</h3><span>${catCounts[cat]} TEXTOS</span>
+                </div>
+            `).join('');
+        } else {
+            let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
+            const start = UI.adminPhrasePage * 20;
+            const pageData = filtered.slice(start, start + 20);
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `
+                <li class="admin-list-item">
+                    <span><b style="color:var(--p)">#${t.title}</b></span>
+                    <div>
+                        <button onclick="UI.prepEdit('${t.id}')" class="btn-outline" style="margin-right:10px;">EDITAR</button>
+                        <button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button>
+                    </div>
+                </li>
+            `).join('');
+            document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0;
+            document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length;
+            document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
+        }
+    },
+    changeAdminPhrasePage(delta) {
+        const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase();
+        let filtered = CT.dbLocal('p').filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query))
+                                      .filter(t => (t.c || 'General') === UI.activeAdminCat);
+        const nextStart = (UI.adminPhrasePage + delta) * 20;
+        if(nextStart >= 0 && nextStart < filtered.length) { UI.adminPhrasePage += delta; this.renderAdminP(); }
+    },
+    prepEdit(idStr) {
+        const pList = CT.dbLocal('p');
+        const idx = pList.findIndex(t => t.id.toString() === idStr.toString());
+        if(idx === -1) return;
+        document.getElementById('phrase-title').value = pList[idx].title;
+        document.getElementById('phrase-category').value = pList[idx].c || 'General';
+        document.getElementById('phrase-input').value = pList[idx].text;
+        CT.editIdx = idx;
+        document.getElementById('admin-phrase-form').classList.remove('hidden');
+    },
+    cancelEditP() {
+        CT.editIdx = null;
+        document.getElementById('admin-phrase-form').classList.add('hidden');
+        document.getElementById('phrase-title').value = '';
+        document.getElementById('phrase-category').value = '';
+        document.getElementById('phrase-input').value = '';
+    },
+    delP: (idStr) => { if(confirm("¿Eliminar texto?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
+
+    /* ---- ÁREA ADMINISTRATIVA: CARRERAS ---- */
     renderAdminR() {
         const scores = CT.dbLocal('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
         let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
-        filtered.sort((a,b) => b.id - a.id); // Más recientes primero
+        filtered.sort((a,b) => b.id - a.id);
         
         const start = UI.adminRacePage * 20;
         const pageData = filtered.slice(start, start + 20);
@@ -266,17 +304,16 @@ const UI = {
             <td><button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-error">ELIMINAR</button></td>
         </tr>`).join('');
 
-        document.getElementById('admin-race-prev').disabled = UI.adminRacePage === 0;
-        document.getElementById('admin-race-next').disabled = (start + 20) >= filtered.length;
-        document.getElementById('admin-race-page-num').innerText = `Página ${UI.adminRacePage + 1}`;
+        document.getElementById('admin-ra-prev').disabled = UI.adminRacePage === 0;
+        document.getElementById('admin-ra-next').disabled = (start + 20) >= filtered.length;
+        document.getElementById('admin-ra-page-num').innerText = `Página ${UI.adminRacePage + 1}`;
     },
     changeAdminRacePage(delta) {
-        const scores = CT.dbLocal('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
-        let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
+        const query = (document.getElementById('race-search').value || "").toLowerCase();
+        let filtered = CT.dbLocal('s').filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
         const nextStart = (UI.adminRacePage + delta) * 20;
         if(nextStart >= 0 && nextStart < filtered.length) { UI.adminRacePage += delta; this.renderAdminR(); }
     },
-
     editRace: (raceId) => {
         let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
         const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta local):", oldCPM);
@@ -294,15 +331,8 @@ const UI = {
         const u = CT.dbLocal('u').find(u => u.h === raceData.h);
         if(u) { let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } }
     },
-    renderAdminP() {
-        document.getElementById('admin-phrases-list').innerHTML = CT.dbLocal('p').map((t, i) => `<li class="admin-list-item"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><div><button onclick="UI.prepEdit(${i})" class="btn-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
-    },
-    prepEdit(i) {
-        const p = CT.dbLocal('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-category').value = p[i].c || 'General'; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
-    },
-    delP: (idStr) => { if(confirm("¿Eliminar?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
-    
-    // EDICIÓN DE USUARIOS
+
+    /* ---- ÁREA ADMINISTRATIVA: USUARIOS ---- */
     renderAdminU() {
         document.getElementById('admin-users-list').innerHTML = CT.dbLocal('u').map((u, i) => `<tr>
             <td><div style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="avatar-xs"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div></td>
@@ -311,17 +341,19 @@ const UI = {
         </tr>`).join('');
     },
     adminEditUser: async (handle) => {
-        const u = CT.dbLocal('u').find(x => x.h === handle); if(!u) return;
-        const newName = prompt(`Nuevo nombre para ${handle} (deja vacío para no cambiar):`, u.n);
-        const resetAvatar = confirm(`¿Restablecer la foto de perfil de ${handle} a la predeterminada?`);
+        const uList = CT.dbLocal('u');
+        const u = uList.find(x => x.h === handle);
+        if(!u) return;
+        const newName = prompt(`Nuevo nombre visible para ${handle}:`, u.n);
+        if(newName === null) return;
+        const deletePic = confirm(`¿Eliminar foto de perfil de ${handle}? (Se usará la por defecto)`);
         
         let updates = {};
-        if (newName && newName.trim()) updates.n = newName;
-        if (resetAvatar) updates.a = '';
+        if (newName.trim() !== '' && newName.trim() !== u.n) updates.n = newName.trim();
+        if (deletePic) updates.a = '';
         
         if (Object.keys(updates).length > 0) {
             await db.collection('users').doc(handle).update(updates);
-            // Actualizar scores asociados si se cambió el nombre o foto
             const q = await db.collection('scores').where('h', '==', handle).get();
             const batch = db.batch();
             q.forEach(doc => { batch.update(doc.ref, updates); });
@@ -330,36 +362,34 @@ const UI = {
     },
     delU: (handle) => { if(confirm("¿Eliminar usuario por completo?")) { db.collection('users').doc(handle).delete(); }},
     
-    // SISTEMA DE CATEGORÍAS
+    /* ---- SELECCIÓN DE PISTAS Y CATEGORÍAS ---- */
     showTrackSelect() {
-        UI.activeCategory = null;
-        UI.showCategorySelect();
+        UI.activeTrackCat = null;
+        UI.showTrackCategorySelect();
         this.show('track-screen');
     },
-    showCategorySelect() {
-        document.getElementById('track-view').classList.add('hidden');
-        document.getElementById('category-view').classList.remove('hidden');
-        
+    showTrackCategorySelect() {
+        document.getElementById('track-list-view').classList.add('hidden');
+        document.getElementById('track-category-view').classList.remove('hidden');
         const tracks = CT.dbLocal('p');
         let catCounts = {};
         tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
         
-        document.getElementById('category-view').innerHTML = Object.keys(catCounts).map(cat => `
-            <div class="cat-card" onclick="UI.selectCategory('${cat}')">
-                <h3>${cat}</h3>
-                <span>${catCounts[cat]} TEXTOS</span>
+        document.getElementById('track-category-view').innerHTML = Object.keys(catCounts).map(cat => `
+            <div class="cat-card" onclick="UI.selectTrackCategory('${cat}')">
+                <h3>${cat}</h3><span>${catCounts[cat]} TEXTOS</span>
             </div>
         `).join('');
     },
-    selectCategory(cat) {
-        UI.activeCategory = cat;
+    selectTrackCategory(cat) {
+        UI.activeTrackCat = cat;
         UI.trackPage = 0;
-        document.getElementById('category-view').classList.add('hidden');
-        document.getElementById('track-view').classList.remove('hidden');
+        document.getElementById('track-category-view').classList.add('hidden');
+        document.getElementById('track-list-view').classList.remove('hidden');
         UI.renderTrackList();
     },
     renderTrackList() {
-        const tracks = CT.dbLocal('p').filter(t => (t.c || 'General') === UI.activeCategory); 
+        const tracks = CT.dbLocal('p').filter(t => (t.c || 'General') === UI.activeTrackCat);
         const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
         document.getElementById('track-list-full').innerHTML = pageData.map(t => `
             <div class="track-card" onclick="App.startRaceWithTrack(${t.id})">
@@ -375,7 +405,7 @@ const UI = {
         document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
     },
     changeTrackPage(delta) {
-        const tracks = CT.dbLocal('p').filter(t => (t.c || 'General') === UI.activeCategory); 
+        const tracks = CT.dbLocal('p').filter(t => (t.c || 'General') === UI.activeTrackCat);
         const nextStart = (UI.trackPage + delta) * 20;
         if(nextStart >= 0 && nextStart < tracks.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
@@ -450,13 +480,17 @@ const App = {
         } catch(e) { alert("Error al conectar con la Nube"); }
     },
     savePhrase: () => { 
-        const titleInp = document.getElementById('phrase-title'); const categoryInp = document.getElementById('phrase-category'); const textInp = document.getElementById('phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos");
-        const p = CT.dbLocal('p'); 
-        const idStr = (CT.editIdx !== null) ? p[CT.editIdx].id.toString() : Date.now().toString();
-        const catValue = categoryInp.value.trim() || 'General';
-        db.collection('phrases').doc(idStr).set({ id: Number(idStr), title: titleInp.value, c: catValue, text: textInp.value });
-        CT.editIdx = null; document.getElementById('btn-save-phrase').innerText = "GUARDAR";
-        titleInp.value = ''; categoryInp.value = ''; textInp.value = ''; 
+        const catInp = document.getElementById('phrase-category'); 
+        const textInp = document.getElementById('phrase-input'); 
+        if(!textInp.value) return alert("Faltan datos");
+        
+        if(CT.editIdx !== null) { 
+            const pList = CT.dbLocal('p'); 
+            const idxStr = pList[CT.editIdx].id.toString();
+            const catValue = catInp.value.trim() || 'General';
+            db.collection('phrases').doc(idxStr).update({ c: catValue, text: textInp.value });
+            UI.cancelEditP();
+        } 
     },
     logout: () => { sessionStorage.clear(); location.reload(); },
 
