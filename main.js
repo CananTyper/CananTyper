@@ -124,6 +124,9 @@ const UI = {
         const u = CT.ses(); if(!u) return;
         const userScores = CT.dbLocal('s').filter(s => s.h === u.h);
         
+        // INYECTA EL NOMBRE DEL JUGADOR DEBAJO DEL NÚMERO PARA SIMETRÍA CON ÉLITE
+        document.querySelectorAll('.st-p-owner').forEach(el => el.innerText = u.n);
+        
         document.getElementById('st-p-total-races').innerText = userScores.length;
         
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
@@ -248,7 +251,7 @@ const UI = {
         let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-texts').innerHTML = top10T.map((tr, i) => {
             let trMax = scores.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p);
-            return `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(trMax.c)}</b></td></tr>`;
+            return `<tr><td><b>#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(trMax.c)}</b></td></tr>`;
         }).join('');
 
         let scoresWithCat = scores.map(s => {
@@ -260,7 +263,7 @@ const UI = {
         let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-cats').innerHTML = top10C.map((cat, i) => {
             let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p);
-            return `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(catMax.c)}</b></td></tr>`;
+            return `<tr><td><b>#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(catMax.c)}</b></td></tr>`;
         }).join('');
     },
 
