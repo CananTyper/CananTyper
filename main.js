@@ -1,25 +1,75 @@
+// 1. CONFIGURACIÓN FIREBASE
+const firebaseConfig = {
+    apiKey: "AIzaSyDlDLS1X6u3zodYVadV4T-hw5Uq7eHHuFk",
+    authDomain: "canantyper.firebaseapp.com",
+    projectId: "canantyper",
+    storageBucket: "canantyper.firebasestorage.app",
+    messagingSenderId: "55384940628",
+    appId: "1:55384940628:web:6211a5e6c8bc36694e8dc1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 2. CORE DE DATOS (ESPEJO LOCAL)
 const CT = {
-    keys: { u: 'ct_v12_users', s: 'ct_v12_scores', p: 'ct_v12_phrases' },
-    db: (k) => JSON.parse(localStorage.getItem(CT.keys[k])) || [],
-    save: (k, d) => localStorage.setItem(CT.keys[k], JSON.stringify(d)),
+    data: { u: [], s: [], p: [] },
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    init() {
-        if(!localStorage.getItem(this.keys.u)) this.save('u', []);
-        if(!localStorage.getItem(this.keys.s)) this.save('s', []);
-        if(!localStorage.getItem(this.keys.p)) this.save('p', [{ id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." }]);
-        const storedUnit = localStorage.getItem('ct_unit_pref');
-        if(storedUnit) this.currentUnit = storedUnit;
+    dbLocal: (k) => CT.data[k], 
+    
+    init: function() {
+        // APLICAR TEMA INMEDIATAMENTE AL ENTRAR (INCLUYENDO LOGIN)
+        const storedUnit = localStorage.getItem('ct_unit_pref') || 'cpm';
+        this.currentUnit = storedUnit;
+        document.documentElement.setAttribute('data-theme', this.currentUnit);
+
+        // Carga desde caché local (Cero Latencia de inicio)
+        const cU = localStorage.getItem('ct_cache_u');
+        const cS = localStorage.getItem('ct_cache_s');
+        const cP = localStorage.getItem('ct_cache_p');
+        if(cU) this.data.u = JSON.parse(cU);
+        if(cS) this.data.s = JSON.parse(cS);
+        if(cP) this.data.p = JSON.parse(cP);
+
+        if(this.ses()) {
+            UI.initLobby();
+        } else {
+            UI.show('auth-screen');
+        }
+
+        // Sincronización en segundo plano con la nube
+        db.collection('users').onSnapshot(snap => { 
+            this.data.u = snap.docs.map(d => d.data()); 
+            localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u));
+            UI.refreshActiveViews(); 
+        });
+        db.collection('scores').onSnapshot(snap => { 
+            this.data.s = snap.docs.map(d => d.data()); 
+            localStorage.setItem('ct_cache_s', JSON.stringify(this.data.s));
+            UI.refreshActiveViews(); 
+        });
+        db.collection('phrases').onSnapshot(snap => { 
+            this.data.p = snap.docs.map(d => d.data()); 
+            if(this.data.p.length === 0) {
+                const seed = { id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." };
+                db.collection('phrases').doc("1").set(seed);
+            }
+            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
+            UI.refreshActiveViews(); 
+        });
     },
-    ses: () => { const s = JSON.parse(sessionStorage.getItem('ct_ses')); return s ? (CT.db('u')).find(x => x.h === s.h) : null; }
+    ses: () => { 
+        const s = JSON.parse(sessionStorage.getItem('ct_ses')); 
+        return s ? CT.data.u.find(x => x.h === s.h) : null; 
+    }
 };
 
 const UI = {
     trackPage: 0, cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
-    
     formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     show: (id) => { 
@@ -42,34 +92,46 @@ const UI = {
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('phrases'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
-    toggleUnits: () => {
-        CT.currentUnit = (CT.currentUnit === 'cpm') ? 'wpm' : 'cpm';
-        localStorage.setItem('ct_unit_pref', CT.currentUnit);
-        UI.updateUnitVisuals(CT.currentUnit);
+    refreshActiveViews: () => {
+        if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
+        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
+        if(!document.getElementById('track-screen').classList.contains('hidden')) UI.renderTrackList();
+    },
+
+    setUnit: (unit) => {
+        if(CT.currentUnit === unit) return;
+        CT.currentUnit = unit;
+        localStorage.setItem('ct_unit_pref', unit);
+        UI.updateUnitVisuals(unit);
+        UI.refreshActiveViews();
     },
 
     updateUnitVisuals: (unit) => {
-        document.querySelectorAll('.unit-switcher span').forEach(s => s.classList.remove('active'));
-        document.getElementById(`unit-${unit}`).classList.add('active');
-        const unitLabel = unit.toUpperCase();
-        if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = unitLabel;
-        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = (unit === 'cpm' ? 'PROMEDIO CPM' : 'PROMEDIO WPM');
-        if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').innerText = 'Velocidad (' + unitLabel + ')';
-        if(document.getElementById('th-unit-admin')) document.getElementById('th-unit-admin').innerText = unitLabel;
+        document.documentElement.setAttribute('data-theme', unit);
+
+        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
+        document.getElementById(`btn-${unit}`).classList.add('active');
+
+        const label = unit.toUpperCase();
+        if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = label;
+        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
+        if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').innerText = 'VELOCIDAD (' + label + ')';
+        if(document.getElementById('th-unit-admin')) document.getElementById('th-unit-admin').innerText = label;
+        
         document.querySelectorAll('th.active-unit').forEach(th => th.classList.remove('active-unit'));
         if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').classList.add('active-unit');
         if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').classList.add('active-unit');
-        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + unitLabel;
-        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + unitLabel;
-        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + unitLabel;
-        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = unitLabel;
-        if (unit === 'wpm') { document.body.classList.add('wpm-mode'); } else { document.body.classList.remove('wpm-mode'); }
+
+        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
+        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
+        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
+        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
 
     renderGlobal() {
-        const scores = CT.db('s'); const users = CT.db('u'); const todayAR = CT.getARDate();
+        const scores = CT.dbLocal('s'); const users = CT.dbLocal('u'); const todayAR = CT.getARDate();
         const typeEl = document.getElementById('leaderboard-type'); const rankTypeEl = document.getElementById('ranking-type');
         if(!typeEl || !rankTypeEl) return; 
 
@@ -79,7 +141,7 @@ const UI = {
         
         document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => `<tr>
             <td>${idx + 1}</td>
-            <td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-frame-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td>
+            <td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td>
             <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td>
         </tr>`).join('');
 
@@ -94,7 +156,7 @@ const UI = {
 
         document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => `<tr>
             <td>${idx + 1}</td>
-            <td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-frame-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td>
+            <td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td>
             <td><b style="color:var(--p)">${UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
         </tr>`).join('');
     },
@@ -102,9 +164,9 @@ const UI = {
     showProfile(who) {
         try {
             const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
-            const u = CT.db('u').find(x => x.h === targetHandle); if(!u) return;
+            const u = CT.dbLocal('u').find(x => x.h === targetHandle); if(!u) return;
             CT.activeProfHandle = u.h;
-            document.getElementById('prof-name').innerText = u.n || "Piloto";
+            document.getElementById('prof-name').innerText = u.n;
             document.getElementById('prof-img').src = u.a || CT.defAvatar;
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
@@ -129,21 +191,23 @@ const UI = {
     toggleEditMenu() { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
 
     renderProfileHistory() {
-        const scores = CT.db('s'); const userScores = scores.filter(s => s.h === CT.activeProfHandle);
+        const scores = CT.dbLocal('s'); const userScores = scores.filter(s => s.h === CT.activeProfHandle);
         const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
-        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td></tr>`).join('');
+        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr>
+            <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+        </tr>`).join('');
         document.getElementById('prof-prev').disabled = CT.profPage === 0;
         document.getElementById('prof-next').disabled = (start + 10) >= userScores.length;
         document.getElementById('prof-page-num').innerText = `Página ${CT.profPage + 1}`;
     },
     changeProfPage(delta) { 
-        const userScores = CT.db('s').filter(s => s.h === CT.activeProfHandle); const nextStart = (CT.profPage + delta) * 10;
+        const userScores = CT.dbLocal('s').filter(s => s.h === CT.activeProfHandle); const nextStart = (CT.profPage + delta) * 10;
         if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); }
     },
 
     switchTab(tab) {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden'));
-        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-${tab}`).classList.remove('hidden');
         document.getElementById(`t-${tab.substring(0,2)}`).classList.add('active');
         if(tab === 'phrases') this.renderAdminP();
@@ -151,49 +215,60 @@ const UI = {
         if(tab === 'users') this.renderAdminU();
     },
     renderAdminR() {
-        const scores = CT.db('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
+        const scores = CT.dbLocal('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
         let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
-        document.getElementById('admin-races-list').innerHTML = filtered.map((s) => `<tr><td><b>${s.n}</b></td><td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td><td><button onclick="UI.editRace('${s.id}')" class="btn-exit-outline" style="border-color:var(--p);color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400">ELIMINAR</button></td></tr>`).join('');
+        document.getElementById('admin-races-list').innerHTML = filtered.map((s) => `<tr>
+            <td><b>${s.n}</b></td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+            <td><button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-outline" style="color:var(--error); border-color:var(--error);">ELIMINAR</button></td>
+        </tr>`).join('');
     },
-    editRace(raceId) {
-        let scores = CT.db('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
-        const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta):", oldCPM);
+    editRace: (raceId) => {
+        let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
+        const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta local):", oldCPM);
         if(!newCPM || isNaN(newCPM)) return;
-        const targetCPM = parseInt(newCPM); let users = CT.db('u'); const uIdx = users.findIndex(u => u.h === scores[idx].h);
-        if(uIdx !== -1) { const hIdx = users[uIdx].hi.indexOf(oldCPM); if(hIdx !== -1) users[uIdx].hi[hIdx] = targetCPM; CT.save('u', users); }
-        scores[idx].c = targetCPM; CT.save('s', scores); this.renderAdminR(); this.renderGlobal();
+        const targetCPM = parseInt(newCPM);
+        
+        db.collection('scores').doc(raceId).update({ c: targetCPM });
+        const u = CT.dbLocal('u').find(u => u.h === scores[idx].h);
+        if(u) { 
+            let hi = u.hi; const hIdx = hi.indexOf(oldCPM); 
+            if(hIdx !== -1) { hi[hIdx] = targetCPM; db.collection('users').doc(u.h).update({ hi: hi }); } 
+        }
     },
-    delRace(raceId) {
+    delRace: (raceId) => {
         if(!confirm("¿Eliminar?")) return;
-        let scores = CT.db('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
-        const raceData = scores[idx]; let users = CT.db('u'); const uIdx = users.findIndex(u => u.h === raceData.h);
-        if(uIdx !== -1) { const hIdx = users[uIdx].hi.indexOf(Number(raceData.c)); if(hIdx !== -1) users[uIdx].hi.splice(hIdx, 1); CT.save('u', users); }
-        scores.splice(idx, 1); CT.save('s', scores); this.renderAdminR(); this.renderGlobal();
+        let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
+        const raceData = scores[idx]; 
+        db.collection('scores').doc(raceId).delete();
+        const u = CT.dbLocal('u').find(u => u.h === raceData.h);
+        if(u) { 
+            let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); 
+            if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } 
+        }
     },
     renderAdminP() {
-        document.getElementById('admin-phrases-list').innerHTML = CT.db('p').map((t, i) => `<li class="phrase-item"><span><b>#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-exit-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP(${i})" class="btn-exit-outline" style="color:#f44;border-color:#400;">BORRAR</button></div></li>`).join('');
+        document.getElementById('admin-phrases-list').innerHTML = CT.dbLocal('p').map((t, i) => `<li class="admin-list-item"><span><b style="color:var(--p)">#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-outline" style="color:var(--error);border-color:var(--error);">BORRAR</button></div></li>`).join('');
     },
     prepEdit(i) {
-        const p = CT.db('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
+        const p = CT.dbLocal('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
     },
-    delP(i) { if(confirm("¿Eliminar?")) { let p = CT.db('p'); p.splice(i, 1); CT.save('p', p); this.renderAdminP(); }},
+    delP: (idStr) => { if(confirm("¿Eliminar?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
     renderAdminU() {
-        document.getElementById('admin-users-list').innerHTML = CT.db('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU(${i})" class="btn-exit-outline" style="color:#f44;border-color:#400;">ELIMINAR</button></td></tr>`).join('');
+        document.getElementById('admin-users-list').innerHTML = CT.dbLocal('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU('${u.h}')" class="btn-outline" style="color:var(--error);border-color:var(--error);">ELIMINAR</button></td></tr>`).join('');
     },
-    delU(i) { if(confirm("¿Eliminar?")) { let u = CT.db('u'); u.splice(i, 1); CT.save('u', u); this.renderAdminU(); }},
+    delU: (handle) => { if(confirm("¿Eliminar usuario?")) { db.collection('users').doc(handle).delete(); }},
     
-    // LISTA DE TEXTOS REPARADA Y CON CLASES CSS CORRECTAS
     showTrackSelect() {
         UI.trackPage = 0; this.renderTrackList(); this.show('track-screen');
     },
     renderTrackList() {
-        const tracks = CT.db('p'); const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
+        const tracks = CT.dbLocal('p'); const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
         document.getElementById('track-list-full').innerHTML = pageData.map(t => `
-            <div class="custom-track-row" onclick="App.startRaceWithTrack(${t.id})">
-                <div class="track-id">#${t.title}</div>
-                <div class="track-content">
-                    <p class="track-full-text">${t.text}</p>
-                    <span class="track-meta">${t.text.split(' ').length} PALABRAS</span>
+            <div class="track-card" onclick="App.startRaceWithTrack(${t.id})">
+                <div class="track-card-id">#${t.title}</div>
+                <div class="track-card-content">
+                    <p class="track-card-text">${t.text}</p>
+                    <span class="track-card-meta">${t.text.split(' ').length} PALABRAS</span>
                 </div>
             </div>
         `).join('');
@@ -202,7 +277,7 @@ const UI = {
         document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
     },
     changeTrackPage(delta) {
-        const tracks = CT.db('p'); const nextStart = (UI.trackPage + delta) * 20;
+        const tracks = CT.dbLocal('p'); const nextStart = (UI.trackPage + delta) * 20;
         if(nextStart >= 0 && nextStart < tracks.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
 
@@ -211,8 +286,7 @@ const UI = {
         img.onload = () => {
             UI.cropScale = 1; UI.cropX = 0; UI.cropY = 0; document.getElementById('crop-zoom').value = 1;
             const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight;
-            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } 
-            else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
+            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
             UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); UI.setupCropEvents();
         };
     },
@@ -235,15 +309,57 @@ const UI = {
 
 const App = {
     currentTrack: null, activeEngine: null,
-    startRandomRace: () => { const tracks = CT.db('p'); if(!tracks || tracks.length === 0) return alert("Crea una pista."); App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack); },
-    startRaceWithTrack: (id) => { const track = CT.db('p').find(t => t.id === id); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track); } },
+    startRandomRace: () => { const tracks = CT.dbLocal('p'); if(!tracks || tracks.length === 0) return alert("Crea una pista."); App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack); },
+    startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id === id); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track); } },
     retryRace: () => { if(App.activeEngine) App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack); },
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
-    editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim()) { let users = CT.db('u'); const idx = users.findIndex(x => x.h === u.h); users[idx].n = newName; CT.save('u', users); let scores = CT.db('s'); scores.forEach(s => { if(s.h === u.h) s.n = newName; }); CT.save('s', scores); UI.showProfile('me'); } },
-    login: () => { const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; const u = CT.db('u').find(x => x.h === handle && x.p === p); if(u) { sessionStorage.setItem('ct_ses', JSON.stringify(u)); UI.initLobby(); } else alert("Error"); },
-    register: () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; let uList = CT.db('u'); if(uList.some(x => x.h === handle)) return alert("En uso"); const role = (uList.length === 0 || handle === '@angel') ? 'admin' : 'usuario'; uList.push({ h: handle, n, p, r: role, a: '', hi: [] }); CT.save('u', uList); UI.toggleAuth(true); },
-    savePhrase: () => { const titleInp = document.getElementById('phrase-title'); const textInp = document.getElementById('phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos"); let p = CT.db('p'); if(CT.editIdx !== null) { p[CT.editIdx].title = titleInp.value; p[CT.editIdx].text = textInp.value; CT.editIdx = null; document.getElementById('btn-save-phrase').innerText = "GUARDAR"; } else { p.push({ id: Date.now(), title: titleInp.value, text: textInp.value }); } CT.save('p', p); titleInp.value = ''; textInp.value = ''; UI.renderAdminP(); },
+    
+    // FUNCIONES CLOUD CON CERO LATENCIA LOCAL
+    editDisplayName: () => { 
+        const u = CT.ses(); if(!u) return; 
+        const newName = prompt("Nuevo nombre:", u.n); 
+        if(newName && newName.trim()) { 
+            db.collection('users').doc(u.h).update({ n: newName });
+            db.collection('scores').where('h', '==', u.h).get().then(q => {
+                const batch = db.batch();
+                q.forEach(doc => { batch.update(doc.ref, { n: newName }); });
+                batch.commit();
+            });
+        } 
+    },
+    login: async () => { 
+        const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
+        try {
+            const docRef = await db.collection('users').doc(handle).get();
+            if(docRef.exists && docRef.data().p === p) { 
+                sessionStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+                // Inyectar local temporal por si el snapshot tarda
+                if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data());
+                UI.initLobby(); 
+            } else { alert("Usuario o contraseña incorrectos"); }
+        } catch(e) { alert("Fallo de conexión a la base de datos"); }
+    },
+    register: async () => { 
+        const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
+        if(!n || !hRaw || !p) return alert("Completa todos los campos");
+        try {
+            const docRef = await db.collection('users').doc(handle).get();
+            if(docRef.exists) return alert("Ese usuario ya está en uso");
+            const role = (handle === '@angel') ? 'admin' : 'usuario'; 
+            const newUser = { h: handle, n, p, r: role, a: '', hi: [] };
+            await db.collection('users').doc(handle).set(newUser);
+            UI.toggleAuth(true); alert("Cuenta creada con éxito.");
+        } catch(e) { alert("Error al conectar con la Nube"); }
+    },
+    savePhrase: () => { 
+        const titleInp = document.getElementById('phrase-title'); const textInp = document.getElementById('phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos");
+        const p = CT.dbLocal('p'); 
+        const idStr = (CT.editIdx !== null) ? p[CT.editIdx].id.toString() : Date.now().toString();
+        db.collection('phrases').doc(idStr).set({ id: Number(idStr), title: titleInp.value, text: textInp.value });
+        CT.editIdx = null; document.getElementById('btn-save-phrase').innerText = "GUARDAR";
+        titleInp.value = ''; textInp.value = ''; 
+    },
     logout: () => { sessionStorage.clear(); location.reload(); },
 
     saveCrop: () => {
@@ -260,17 +376,23 @@ const App = {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256);
         ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); 
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88); 
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); 
         
-        let users = CT.db('u'); const idx = users.findIndex(x => x.h === CT.ses().h);
-        users[idx].a = compressedBase64; CT.save('u', users); 
-        let scores = CT.db('s'); scores.forEach(s => { if(s.h === CT.ses().h) s.a = compressedBase64; });
-        CT.save('s', scores);
-        UI.closeCropModal(); UI.showProfile('me');
+        const u = CT.ses();
+        if(u) {
+            db.collection('users').doc(u.h).update({ a: compressedBase64 });
+            db.collection('scores').where('h', '==', u.h).get().then(q => {
+                const batch = db.batch();
+                q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); });
+                batch.commit();
+            });
+            document.getElementById('prof-img').src = compressedBase64;
+        }
+        UI.closeCropModal();
     }
 };
 
-// MOTOR DE JUEGO (PENALIZACIÓN ESTRICTA TYPERACER APLICADA)
+// MOTOR TYPERACER (LOCAL, 0 LATENCIA)
 class Engine {
     constructor(trackObj) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
@@ -301,91 +423,75 @@ class Engine {
             }, 500); 
         } 
         
-        const cur = this.w[this.i]; 
-        const spans = document.querySelectorAll('.word'); 
-        const activeSpan = spans[this.i];
-        const last = this.i === this.w.length - 1; 
+        const cur = this.w[this.i]; const spans = document.querySelectorAll('.word'); const activeSpan = spans[this.i]; const last = this.i === this.w.length - 1; 
+        let typed = v; let isSubmitting = false;
+        if (!last && typed.endsWith(' ')) { isSubmitting = true; typed = typed.slice(0, -1); }
 
-        let typed = v;
-        let isSubmitting = false;
-        
-        if (!last && typed.endsWith(' ')) {
-            isSubmitting = true;
-            typed = typed.slice(0, -1);
-        }
-
-        // Lógica Estricta de validación
         let isPrefixValid = cur.startsWith(typed);
-
         if (isPrefixValid) {
             el.classList.remove('input-error');
-            // Letras correctas en verde
-            activeSpan.innerHTML = `<span style="color:var(--ok)">${typed}</span>${cur.slice(typed.length)}`;
+            activeSpan.innerHTML = `<span class="char-ok">${typed}</span>${cur.slice(typed.length)}`;
         } else {
-            // "Castigo" TypeRacer: Bloqueo en rojo, obliga a borrar
             el.classList.add('input-error');
             let matchLen = 0;
             while(matchLen < typed.length && matchLen < cur.length && typed[matchLen] === cur[matchLen]) matchLen++;
-            
-            let correctPart = cur.slice(0, matchLen);
-            let errLen = typed.length - matchLen;
-            let wordWrongPart = cur.slice(matchLen, matchLen + errLen);
-            let remPart = cur.slice(matchLen + wordWrongPart.length);
-            
-            // Fondo rojo para el error visible
-            activeSpan.innerHTML = `<span style="color:var(--ok)">${correctPart}</span><span style="background:rgba(244,67,54,0.4);color:var(--err)">${wordWrongPart}</span>${remPart}`;
+            let correctPart = cur.slice(0, matchLen); let errLen = typed.length - matchLen;
+            let wordWrongPart = cur.slice(matchLen, matchLen + errLen); let remPart = cur.slice(matchLen + wordWrongPart.length);
+            activeSpan.innerHTML = `<span class="char-ok">${correctPart}</span><span class="char-err">${wordWrongPart}</span>${remPart}`;
         }
 
-        // Sumisión de la palabra
         if (isSubmitting || (last && v === cur)) {
             if (typed === cur && isPrefixValid) {
-                // Avance correcto
                 this.c += cur.length + (last ? 0 : 1);
-                activeSpan.className = 'word correct';
-                activeSpan.innerHTML = cur; 
-                this.i++; 
-                el.value = ''; 
-                el.classList.remove('input-error');
+                activeSpan.className = 'word correct'; activeSpan.innerHTML = cur; 
+                this.i++; el.value = ''; el.classList.remove('input-error');
                 if(this.i < this.w.length) spans[this.i].classList.add('active'); else this.end(); 
-            } else {
-                // Impide avanzar si la palabra es incorrecta, obligando a corregir
-                el.value = v; 
-                el.classList.add('input-error');
-            }
+            } else { el.value = v; el.classList.add('input-error'); }
         }
     }
+    
+    // RESPUESTA INMEDIATA: Muestra pantalla (0ms) -> Firebase sube de fondo.
     end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
-        const s_ses = JSON.parse(sessionStorage.getItem('ct_ses')); const u = s_ses ? (CT.db('u')).find(x => x.h === s_ses.h) : null; 
-        if(u) {
-            let users = CT.db('u'); const uIdx = users.findIndex(x => x.h === u.h); users[uIdx].hi.push(finalCPM); CT.save('u', users); 
-            const dateStr = CT.getARDate();
-            let s = CT.db('s'); s.unshift({ id: Date.now().toString(), n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title }); CT.save('s', s); 
-        }
-        
+        // INTERFAZ INSTANTÁNEA (Desaparece HUD, muestra modal)
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
-        
         const finalSpeedValue = UI.formatValue(finalCPM);
         const finalUnitLabel = CT.currentUnit.toUpperCase();
         document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
-        
         document.getElementById('game-result-modal').classList.remove('hidden');
+
+        // ENVÍO SILENCIOSO
+        const u = CT.ses(); 
+        if(u) {
+            const dateStr = CT.getARDate();
+            const scoreId = Date.now().toString();
+            
+            // Actualiza caché local
+            u.hi.push(finalCPM);
+            let sList = CT.dbLocal('s');
+            const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title };
+            sList.unshift(newScore);
+            CT.data.s = sList;
+
+            // Manda a la nube
+            db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
+            db.collection('scores').doc(scoreId).set(newScore); 
+        }
     }
 }
 
-CT.init();
-document.addEventListener('DOMContentLoaded', () => { if(CT.ses()) UI.initLobby(); else UI.show('auth-screen'); });
+document.addEventListener('DOMContentLoaded', () => { CT.init(); });
 
 document.getElementById('img-input').onchange = (e) => {
     const file = e.target.files[0];
     if(!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if(!validTypes.includes(file.type)) { alert("Formato no válido. Solo se permiten imágenes (JPG, PNG, WEBP, GIF)."); e.target.value = ''; return; }
-    if(file.size > 5 * 1024 * 1024) { alert("La imagen es demasiado pesada. Máximo 5MB."); e.target.value = ''; return; }
+    if(file.size > 5 * 1024 * 1024) { alert("Máximo 5MB."); e.target.value = ''; return; }
     const r = new FileReader();
     r.onload = (ev) => { UI.openCropModal(ev.target.result); };
     r.readAsDataURL(file);
