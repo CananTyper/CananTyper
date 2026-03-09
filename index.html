@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CananTyper | Definitive Edition v14.1</title>
+    <title>CananTyper | Master Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,13 +14,13 @@
             <div class="auth-card">
                 <h1>CananTyper</h1>
                 <p class="subtitle">Mecanografía</p>
-                <div id="login-form">
+                <div id="login-form" class="auth-form">
                     <input type="text" id="login-user" placeholder="Usuario">
                     <input type="password" id="login-pass" placeholder="Contraseña">
                     <button class="btn-primary" onclick="App.login()">Iniciar sesión</button>
                     <p class="switch-text">¿Nuevo? <span onclick="UI.toggleAuth(false)">Regístrate</span></p>
                 </div>
-                <div id="register-form" class="hidden">
+                <div id="register-form" class="auth-form hidden">
                     <input type="text" id="reg-display" placeholder="Nombre">
                     <input type="text" id="reg-user" placeholder="Usuario">
                     <input type="password" id="reg-pass" placeholder="Contraseña">
@@ -32,40 +32,40 @@
 
         <section id="home-screen" class="screen hidden">
             <header class="top-nav">
-                <div class="top-nav-left">
-                    <div class="user-profile-widget player-link" onclick="UI.showProfile('me')">
-                        <div class="avatar-frame-sm"><img id="lobby-avatar" src="" alt=""></div>
-                        <div class="meta">
-                            <div class="name-box"><b id="val-display-name"></b></div>
+                <div class="nav-left">
+                    <div class="user-pill player-link" onclick="UI.showProfile('me')">
+                        <div class="avatar-sm"><img id="lobby-avatar" src="" alt=""></div>
+                        <div class="user-meta">
+                            <b id="val-display-name"></b>
                             <small id="val-username"></small>
                         </div>
                     </div>
-                    <div class="unit-switcher" onclick="UI.toggleUnits()">
-                        <span id="unit-cpm" class="active">CPM</span>
-                        <span id="unit-wpm">WPM</span>
+                    <div class="unit-switcher">
+                        <div id="btn-cpm" class="sw-btn active" onclick="UI.setUnit('cpm')">CPM</div>
+                        <div id="btn-wpm" class="sw-btn" onclick="UI.setUnit('wpm')">WPM</div>
                     </div>
                 </div>
-                <div class="nav-actions">
-                    <button id="btn-go-admin" class="btn-exit-outline hidden" onclick="UI.showAdmin()" style="margin-right: 10px; color: var(--p); border-color: var(--p);">Administración</button>
-                    <button onclick="App.logout()" class="btn-exit-outline">Cerrar sesión</button>
+                <div class="nav-right">
+                    <button id="btn-go-admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
+                    <button onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
                 </div>
             </header>
 
-            <div class="main-actions dual-grid">
-                <button onclick="App.startRandomRace()" class="btn-primary btn-nitro">MODO ALEATORIO</button>
-                <button onclick="UI.showTrackSelect()" class="btn-primary btn-nitro btn-alt">MODO PERSONALIZADO</button>
+            <div class="mode-selectors">
+                <button onclick="App.startRandomRace()" class="btn-primary btn-large">MODO ALEATORIO</button>
+                <button onclick="UI.showTrackSelect()" class="btn-primary btn-alt btn-large">MODO PERSONALIZADO</button>
             </div>
 
-            <div class="leaderboard-section">
-                <div class="rank-col">
-                    <div class="col-header">
+            <div class="tables-container">
+                <div class="table-box">
+                    <div class="table-header">
                         <h3>Últimas mejores</h3>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="today">Hoy</option>
                             <option value="history">Histórico</option>
                         </select>
                     </div>
-                    <div class="table-scroll-area radioactive-scroll">
+                    <div class="custom-scroll table-body-wrapper">
                         <table class="data-table">
                             <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="20%" id="th-unit-times">VEL.</th><th width="30%">Texto</th></tr></thead>
                             <tbody id="global-rank-times"></tbody>
@@ -73,15 +73,15 @@
                     </div>
                 </div>
 
-                <div class="rank-col">
-                    <div class="col-header">
+                <div class="table-box">
+                    <div class="table-header">
                         <h3>Ranking</h3>
                         <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
                             <option value="general">General</option>
                         </select>
                     </div>
-                    <div class="table-scroll-area radioactive-scroll">
+                    <div class="custom-scroll table-body-wrapper">
                         <table class="data-table">
                             <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="25%" id="th-unit-rank">PROMEDIO</th><th width="25%">Carreras</th></tr></thead>
                             <tbody id="global-rank-players"></tbody>
@@ -92,18 +92,20 @@
         </section>
 
         <section id="profile-screen" class="screen hidden">
-            <div class="profile-compact-wrap">
-                <header class="profile-nav-top"><button onclick="UI.showLobby()" class="btn-exit-outline">Volver</button></header>
-                
-                <div class="profile-header-standard">
-                    <div class="avatar-frame-med"><img id="prof-img" src="" alt=""></div>
-                    <input type="file" id="img-input" accept="image/png, image/jpeg, image/webp, image/gif" hidden>
-                    <div class="identity-centered">
-                        <div class="name-row-pro">
+            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;">
+                <button onclick="UI.showLobby()" class="btn-outline">Volver</button>
+            </header>
+            
+            <div class="profile-top-area">
+                <div class="profile-identity">
+                    <div class="avatar-md"><img id="prof-img" src="" alt=""></div>
+                    <input type="file" id="img-input" accept="image/*" hidden>
+                    <div class="identity-info">
+                        <div class="name-edit-group">
                             <h2 id="prof-name"></h2>
-                            <div class="edit-anchor">
-                                <button id="btn-open-edit" class="subtle-edit-btn hidden" onclick="UI.toggleEditMenu()">Editar</button>
-                                <div id="edit-dropdown" class="edit-dropdown-menu hidden">
+                            <div class="edit-menu-wrapper">
+                                <span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span>
+                                <div id="edit-dropdown" class="edit-dropdown hidden">
                                     <button onclick="App.editDisplayName()">Nombre</button>
                                     <button onclick="document.getElementById('img-input').click()">Imagen</button>
                                 </div>
@@ -113,106 +115,136 @@
                     </div>
                 </div>
 
-                <div class="profile-stats-grid">
+                <div class="profile-stats">
                     <div class="stat-card"><small>CARRERAS</small><b id="st-total">0</b></div>
                     <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg">0</b></div>
                     <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10">0</b></div>
-                    <div class="stat-card highlight-box"><small id="lbl-st-best">RÉCORD</small><b id="st-best">0</b></div>
-                </div>
-
-                <div class="profile-history-section">
-                    <div class="large-history-scroll radioactive-scroll">
-                        <table class="data-table">
-                            <thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead>
-                            <tbody id="prof-history-list"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-ctrls">
-                        <button id="prof-prev" class="pag-btn" onclick="UI.changeProfPage(-1)">←</button>
-                        <span id="prof-page-num">Página 1</span>
-                        <button id="prof-next" class="pag-btn" onclick="UI.changeProfPage(1)">→</button>
-                    </div>
+                    <div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best">0</b></div>
                 </div>
             </div>
-        </section>
 
-        <section id="admin-screen" class="screen hidden">
-            <div class="admin-dashboard-standard">
-                <header class="admin-header"><div class="admin-title-box"><h2>Administración</h2><p>Gestión de textos y usuarios</p></div><button onclick="UI.showLobby()" class="btn-exit-outline">Volver</button></header>
-                <nav class="admin-menu"><button id="t-ph" class="menu-btn active" onclick="UI.switchTab('phrases')">Textos</button><button id="t-cr" class="menu-btn" onclick="UI.switchTab('races')">Carreras</button><button id="t-us" class="menu-btn" onclick="UI.switchTab('users')">Usuarios</button></nav>
-                <div class="admin-content">
-                    <div id="pane-phrases" class="pane">
-                        <div class="admin-form-compact">
-                            <div class="form-inputs"><input type="text" id="phrase-title" placeholder="Número"><textarea id="phrase-input" placeholder="Texto"></textarea></div>
-                            <div class="center-box"><button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary btn-admin-save">GUARDAR</button></div>
-                        </div>
-                        <ul id="admin-phrases-list" class="pro-item-list radioactive-scroll"></ul>
-                    </div>
-                    <div id="pane-races" class="pane hidden"><div class="search-wrap"><input type="text" id="race-search" placeholder="Buscar usuario..." oninput="UI.renderAdminR()"></div><div class="table-scroll-area admin-scroll radioactive-scroll"><table class="data-table"><thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody id="admin-races-list"></tbody></table></div></div>
-                    <div id="pane-users" class="pane hidden"><div class="table-scroll-area admin-scroll radioactive-scroll"><table class="data-table"><thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead><tbody id="admin-users-list"></tbody></table></div></div>
+            <div class="profile-history-area">
+                <div class="custom-scroll history-list-wrapper">
+                    <table class="data-table">
+                        <thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead>
+                        <tbody id="prof-history-list"></tbody>
+                    </table>
+                </div>
+                <div class="pagination-bar">
+                    <button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button>
+                    <span id="prof-page-num" class="page-indicator">Página 1</span>
+                    <button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button>
                 </div>
             </div>
         </section>
 
         <section id="track-screen" class="screen hidden">
-            <div class="admin-dashboard-standard">
-                <header class="admin-header">
-                    <div class="admin-title-box"><h2>Modo Personalizado</h2><p>Selecciona un texto</p></div>
-                    <button onclick="UI.showLobby()" class="btn-exit-outline">VOLVER</button>
-                </header>
-                <div class="profile-history-section" style="padding: 10px;">
-                    <div id="track-list-full" class="custom-track-scroll radioactive-scroll"></div>
-                    <div class="pagination-ctrls">
-                        <button id="track-prev" class="pag-btn" onclick="UI.changeTrackPage(-1)">←</button>
-                        <span id="track-page-num">Página 1</span>
-                        <button id="track-next" class="pag-btn" onclick="UI.changeTrackPage(1)">→</button>
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona un texto</p>
+                </div>
+                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+            </header>
+            <div class="track-selection-area">
+                <div id="track-list-full" class="custom-scroll track-list"></div>
+                <div class="pagination-bar" style="margin-top: 15px;">
+                    <button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button>
+                    <span id="track-page-num" class="page-indicator">Página 1</span>
+                    <button id="track-next" class="btn-outline" onclick="UI.changeTrackPage(1)">→</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="admin-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Administración</h2>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Gestión de textos y usuarios</p>
+                </div>
+                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+            </header>
+            <div class="admin-tabs">
+                <button id="t-ph" class="tab-btn active" onclick="UI.switchTab('phrases')">Textos</button>
+                <button id="t-cr" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
+                <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
+            </div>
+            <div class="admin-content-area">
+                <div id="pane-phrases" class="pane">
+                    <div class="admin-form">
+                        <div class="form-row">
+                            <input type="text" id="phrase-title" placeholder="Número" style="width: 150px;">
+                            <textarea id="phrase-input" placeholder="Texto"></textarea>
+                        </div>
+                        <button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary" style="align-self: center;">GUARDAR</button>
+                    </div>
+                    <ul id="admin-phrases-list" class="custom-scroll admin-list"></ul>
+                </div>
+                <div id="pane-races" class="pane hidden">
+                    <input type="text" id="race-search" placeholder="Buscar usuario..." oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
+                    <div class="custom-scroll admin-table-wrapper">
+                        <table class="data-table">
+                            <thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead>
+                            <tbody id="admin-races-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="pane-users" class="pane hidden">
+                    <div class="custom-scroll admin-table-wrapper">
+                        <table class="data-table">
+                            <thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead>
+                            <tbody id="admin-users-list"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="game-screen" class="screen hidden">
-            <div class="game-wrapper">
+            <div class="game-container">
                 <div class="game-hud">
-                    <div class="stat-box"><small>TIEMPO</small><span id="game-timer">0s</span></div>
-                    <div class="stat-box"><small id="game-unit-label">CPM</small><span id="game-speed-display">0</span></div>
+                    <div class="hud-box"><small>TIEMPO</small><span id="game-timer">0s</span></div>
+                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display">0</span></div>
                 </div>
 
-                <div id="target-text" class="text-surface"></div>
-                <input type="text" id="game-input" placeholder="" autocomplete="off">
+                <div id="target-text" class="game-text-display"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
                 
                 <div id="in-game-controls" class="game-controls">
-                    <button onclick="App.quitRace()" class="btn-exit-outline">Volver</button>
-                    <button onclick="App.nextRace()" class="btn-exit-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                    <button onclick="App.quitRace()" class="btn-outline">Volver</button>
+                    <button onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
 
-                <div id="game-result-modal" class="hidden">
-                    <h2 id="final-speed-display" class="final-score">0 CPM</h2>
-                    <div class="game-actions">
-                        <button onclick="App.retryRace()" class="btn-exit-outline">Repetir</button>
-                        <button onclick="App.nextRace()" class="btn-primary btn-nitro btn-continue">Continuar</button>
-                        <button onclick="App.quitRace()" class="btn-exit-outline">Volver</button>
+                <div id="game-result-modal" class="game-result hidden">
+                    <h2 id="final-speed-display" class="result-score">0 CPM</h2>
+                    <div class="result-actions">
+                        <button onclick="App.retryRace()" class="btn-outline">Repetir</button>
+                        <button onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button onclick="App.quitRace()" class="btn-outline">Volver</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <div id="crop-modal" class="hidden">
-            <div class="crop-container">
-                <h3 style="color:var(--p); margin-top:0; font-size:1.1rem;">Ajusta tu foto</h3>
-                <p style="color:#666; font-size:0.75rem; margin-bottom:15px; margin-top:0;">Arrastra para centrar. Usa el control para zoom.</p>
-                <div class="crop-area" id="crop-area">
+        <div id="crop-modal" class="crop-overlay hidden">
+            <div class="crop-box">
+                <h3 style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3>
+                <p style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p>
+                <div class="crop-viewport" id="crop-area">
                     <img id="crop-image" src="" alt="preview">
                 </div>
-                <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1">
-                <div style="display:flex; justify-content:center; gap:10px; margin-top:15px;">
-                    <button onclick="App.saveCrop()" class="btn-primary" style="padding:10px 25px; font-size:0.8rem;">Guardar</button>
-                    <button onclick="UI.closeCropModal()" class="btn-exit-outline" style="padding:10px 20px; font-size:0.7rem;">Cancelar</button>
+                <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider">
+                <div class="crop-actions">
+                    <button onclick="App.saveCrop()" class="btn-primary">Guardar</button>
+                    <button onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button>
                 </div>
             </div>
         </div>
 
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
