@@ -1,4 +1,3 @@
-// 1. CONFIGURACIÓN DE FIREBASE (Las llaves que me diste)
 const firebaseConfig = {
     apiKey: "AIzaSyDlDLS1X6u3zodYVadV4T-hw5Uq7eHHuFk",
     authDomain: "canantyper.firebaseapp.com",
@@ -8,56 +7,56 @@ const firebaseConfig = {
     appId: "1:55384940628:web:6211a5e6c8bc36694e8dc1"
 };
 
-// 2. INICIALIZACIÓN
+// Inicializar Firebase sin bloquear la web
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 3. CORE (Modificado para funcionar como Espejo Cloud)
 const CT = {
-    data: { u: [], s: [], p: [] }, // Espejo local de la nube
+    data: { u: [], s: [], p: [] }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
     
-    // Función para obtener colecciones sincronizadas
     dbLocal: (k) => CT.data[k], 
     
-    init: async function() {
+    init: function() {
         const storedUnit = localStorage.getItem('ct_unit_pref');
         if(storedUnit) this.currentUnit = storedUnit;
 
-        try {
-            // Primera descarga masiva de datos
-            const [uSnap, sSnap, pSnap] = await Promise.all([
-                db.collection('users').get(),
-                db.collection('scores').get(),
-                db.collection('phrases').get()
-            ]);
+        // Carga Cero-Lag (Optimistic UI): Intenta leer del cache del navegador primero
+        const localU = localStorage.getItem('ct_cache_u');
+        const localS = localStorage.getItem('ct_cache_s');
+        const localP = localStorage.getItem('ct_cache_p');
+        
+        if (localU) this.data.u = JSON.parse(localU);
+        if (localS) this.data.s = JSON.parse(localS);
+        if (localP) this.data.p = JSON.parse(localP);
 
-            this.data.u = uSnap.docs.map(d => d.data());
-            this.data.s = sSnap.docs.map(d => d.data());
-            this.data.p = pSnap.docs.map(d => d.data());
+        // Muestra la interfaz inmediatamente con lo que tenga guardado
+        if(this.ses()) UI.initLobby(); else UI.show('auth-screen');
 
-            // Crear pista por defecto si la BD está vacía
+        // Luego, en segundo plano, se sincroniza con Firebase
+        db.collection('users').onSnapshot(snap => { 
+            this.data.u = snap.docs.map(d => d.data()); 
+            localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u));
+            UI.refreshActiveViews(); 
+        });
+        db.collection('scores').onSnapshot(snap => { 
+            this.data.s = snap.docs.map(d => d.data()); 
+            localStorage.setItem('ct_cache_s', JSON.stringify(this.data.s));
+            UI.refreshActiveViews(); 
+        });
+        db.collection('phrases').onSnapshot(snap => { 
+            this.data.p = snap.docs.map(d => d.data()); 
             if(this.data.p.length === 0) {
                 const seed = { id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." };
-                await db.collection('phrases').doc("1").set(seed);
-                this.data.p = [seed];
+                db.collection('phrases').doc("1").set(seed);
             }
-
-            // ACTIVAR MULTIJUGADOR: Escuchar cambios en tiempo real
-            db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); UI.refreshActiveViews(); });
-            db.collection('scores').onSnapshot(snap => { this.data.s = snap.docs.map(d => d.data()); UI.refreshActiveViews(); });
-            db.collection('phrases').onSnapshot(snap => { this.data.p = snap.docs.map(d => d.data()); UI.refreshActiveViews(); });
-
-            if(this.ses()) UI.initLobby(); else UI.show('auth-screen');
-
-        } catch (error) {
-            console.error("Error al conectar con la Nube:", error);
-            alert("No se pudo conectar al servidor. Revisa tu internet.");
-        }
+            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
+            UI.refreshActiveViews(); 
+        });
     },
     ses: () => { 
         const s = JSON.parse(sessionStorage.getItem('ct_ses')); 
@@ -89,8 +88,10 @@ const UI = {
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('phrases'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
-    // Función que redibuja la pantalla donde esté el usuario cuando detecta un cambio en la nube
     refreshActiveViews: () => {
+        // Solo refrescamos si NO estamos jugando para no cortar la partida
+        if(!document.getElementById('game-screen').classList.contains('hidden')) return;
+        
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
@@ -209,33 +210,28 @@ const UI = {
         let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
         document.getElementById('admin-races-list').innerHTML = filtered.map((s) => `<tr><td><b>${s.n}</b></td><td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td><td><button onclick="UI.editRace('${s.id}')" class="btn-exit-outline" style="border-color:var(--p);color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400">ELIMINAR</button></td></tr>`).join('');
     },
-    editRace: async (raceId) => {
+    editRace: (raceId) => {
         let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
         const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta):", oldCPM);
         if(!newCPM || isNaN(newCPM)) return;
-        
         const targetCPM = parseInt(newCPM); 
-        // Actualizar en Firebase
-        await db.collection('scores').doc(raceId).update({ c: targetCPM });
-        
+        // Enviar a la nube en background sin bloquear (No Await)
+        db.collection('scores').doc(raceId).update({ c: targetCPM });
         const u = CT.dbLocal('u').find(u => u.h === scores[idx].h);
         if(u) { 
             let hi = u.hi; const hIdx = hi.indexOf(oldCPM); 
-            if(hIdx !== -1) { hi[hIdx] = targetCPM; await db.collection('users').doc(u.h).update({ hi: hi }); } 
+            if(hIdx !== -1) { hi[hIdx] = targetCPM; db.collection('users').doc(u.h).update({ hi: hi }); } 
         }
     },
-    delRace: async (raceId) => {
+    delRace: (raceId) => {
         if(!confirm("¿Eliminar?")) return;
         let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
         const raceData = scores[idx]; 
-        
-        // Eliminar en Firebase
-        await db.collection('scores').doc(raceId).delete();
-        
+        db.collection('scores').doc(raceId).delete();
         const u = CT.dbLocal('u').find(u => u.h === raceData.h);
         if(u) { 
             let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); 
-            if(hIdx !== -1) { hi.splice(hIdx, 1); await db.collection('users').doc(u.h).update({ hi: hi }); } 
+            if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } 
         }
     },
     renderAdminP() {
@@ -244,15 +240,11 @@ const UI = {
     prepEdit(i) {
         const p = CT.dbLocal('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
     },
-    delP: async (idStr) => { 
-        if(confirm("¿Eliminar?")) { await db.collection('phrases').doc(idStr.toString()).delete(); }
-    },
+    delP: (idStr) => { if(confirm("¿Eliminar?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
     renderAdminU() {
         document.getElementById('admin-users-list').innerHTML = CT.dbLocal('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU('${u.h}')" class="btn-exit-outline" style="color:#f44;border-color:#400;">ELIMINAR</button></td></tr>`).join('');
     },
-    delU: async (handle) => { 
-        if(confirm("¿Eliminar usuario?")) { await db.collection('users').doc(handle).delete(); }
-    },
+    delU: (handle) => { if(confirm("¿Eliminar usuario?")) { db.collection('users').doc(handle).delete(); }},
     
     showTrackSelect() {
         UI.trackPage = 0; this.renderTrackList(); this.show('track-screen');
@@ -312,58 +304,47 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    // Funciones Async a Firebase
-    editDisplayName: async () => { 
+    // Login Optimizado: Sin esperas pesadas
+    editDisplayName: () => { 
         const u = CT.ses(); if(!u) return; 
         const newName = prompt("Nuevo nombre:", u.n); 
         if(newName && newName.trim()) { 
-            await db.collection('users').doc(u.h).update({ n: newName });
-            
-            // Actualizar todos los scores de este usuario (Batch)
-            const scoresQuery = await db.collection('scores').where('h', '==', u.h).get();
-            const batch = db.batch();
-            scoresQuery.forEach(doc => { batch.update(doc.ref, { n: newName }); });
-            await batch.commit();
+            db.collection('users').doc(u.h).update({ n: newName });
+            db.collection('scores').where('h', '==', u.h).get().then(q => {
+                const batch = db.batch();
+                q.forEach(doc => { batch.update(doc.ref, { n: newName }); });
+                batch.commit();
+            });
         } 
     },
     login: async () => { 
         const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
-        
-        // Autenticación real contra Firebase
         const docRef = await db.collection('users').doc(handle).get();
         if(docRef.exists && docRef.data().p === p) { 
             sessionStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
             UI.initLobby(); 
-        } else {
-            alert("Usuario o contraseña incorrectos");
-        }
+        } else { alert("Usuario o contraseña incorrectos"); }
     },
     register: async () => { 
         const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
-        
         const docRef = await db.collection('users').doc(handle).get();
         if(docRef.exists) return alert("Ese usuario ya está en uso");
-        
         const role = (CT.dbLocal('u').length === 0 || handle === '@angel') ? 'admin' : 'usuario'; 
         const newUser = { h: handle, n, p, r: role, a: '', hi: [] };
-        
         await db.collection('users').doc(handle).set(newUser);
         UI.toggleAuth(true); alert("Cuenta creada con éxito.");
     },
-    savePhrase: async () => { 
+    savePhrase: () => { 
         const titleInp = document.getElementById('phrase-title'); const textInp = document.getElementById('phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos");
-        
         const p = CT.dbLocal('p'); 
         const idStr = (CT.editIdx !== null) ? p[CT.editIdx].id.toString() : Date.now().toString();
-        
-        await db.collection('phrases').doc(idStr).set({ id: Number(idStr), title: titleInp.value, text: textInp.value });
-        
+        db.collection('phrases').doc(idStr).set({ id: Number(idStr), title: titleInp.value, text: textInp.value });
         CT.editIdx = null; document.getElementById('btn-save-phrase').innerText = "GUARDAR";
         titleInp.value = ''; textInp.value = ''; 
     },
     logout: () => { sessionStorage.clear(); location.reload(); },
 
-    saveCrop: async () => {
+    saveCrop: () => {
         const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d');
         const img = document.getElementById('crop-image');
         const imgW = img.naturalWidth; const imgH = img.naturalHeight;
@@ -381,14 +362,16 @@ const App = {
         
         const u = CT.ses();
         if(u) {
-            // Guardado en Firebase Batch
-            await db.collection('users').doc(u.h).update({ a: compressedBase64 });
-            const scoresQuery = await db.collection('scores').where('h', '==', u.h).get();
-            const batch = db.batch();
-            scoresQuery.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); });
-            await batch.commit();
+            // Guardado en Background (Optimistic)
+            db.collection('users').doc(u.h).update({ a: compressedBase64 });
+            db.collection('scores').where('h', '==', u.h).get().then(q => {
+                const batch = db.batch();
+                q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); });
+                batch.commit();
+            });
+            // Reflejo instantáneo local
+            document.getElementById('prof-img').src = compressedBase64;
         }
-        
         UI.closeCropModal();
     }
 };
@@ -423,18 +406,11 @@ class Engine {
             }, 500); 
         } 
         
-        const cur = this.w[this.i]; 
-        const spans = document.querySelectorAll('.word'); 
-        const activeSpan = spans[this.i];
-        const last = this.i === this.w.length - 1; 
-
-        let typed = v;
-        let isSubmitting = false;
-        
+        const cur = this.w[this.i]; const spans = document.querySelectorAll('.word'); const activeSpan = spans[this.i]; const last = this.i === this.w.length - 1; 
+        let typed = v; let isSubmitting = false;
         if (!last && typed.endsWith(' ')) { isSubmitting = true; typed = typed.slice(0, -1); }
 
         let isPrefixValid = cur.startsWith(typed);
-
         if (isPrefixValid) {
             el.classList.remove('input-error');
             activeSpan.innerHTML = `<span style="color:var(--ok)">${typed}</span>${cur.slice(typed.length)}`;
@@ -442,12 +418,8 @@ class Engine {
             el.classList.add('input-error');
             let matchLen = 0;
             while(matchLen < typed.length && matchLen < cur.length && typed[matchLen] === cur[matchLen]) matchLen++;
-            
-            let correctPart = cur.slice(0, matchLen);
-            let errLen = typed.length - matchLen;
-            let wordWrongPart = cur.slice(matchLen, matchLen + errLen);
-            let remPart = cur.slice(matchLen + wordWrongPart.length);
-            
+            let correctPart = cur.slice(0, matchLen); let errLen = typed.length - matchLen;
+            let wordWrongPart = cur.slice(matchLen, matchLen + errLen); let remPart = cur.slice(matchLen + wordWrongPart.length);
             activeSpan.innerHTML = `<span style="color:var(--ok)">${correctPart}</span><span style="background:rgba(244,67,54,0.4);color:var(--err)">${wordWrongPart}</span>${remPart}`;
         }
 
@@ -457,29 +429,24 @@ class Engine {
                 activeSpan.className = 'word correct'; activeSpan.innerHTML = cur; 
                 this.i++; el.value = ''; el.classList.remove('input-error');
                 if(this.i < this.w.length) spans[this.i].classList.add('active'); else this.end(); 
-            } else {
-                el.value = v; el.classList.add('input-error');
-            }
+            } else { el.value = v; el.classList.add('input-error'); }
         }
     }
-    async end() { 
+    end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
+        // INTERFAZ OPTIMISTA (El final es instantáneo)
         const u = CT.ses(); 
         if(u) {
-            // Escribir carrera y actualizar historial en Firebase
-            await db.collection('users').doc(u.h).update({ 
-                hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) 
-            }); 
-            
+            // Se envía a la nube de fondo (Sin 'await')
+            db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
             const scoreId = Date.now().toString();
-            await db.collection('scores').doc(scoreId).set({ 
-                id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: CT.getARDate(), track: this.track.title 
-            }); 
+            db.collection('scores').doc(scoreId).set({ id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: CT.getARDate(), track: this.track.title }); 
         }
         
+        // Mostrar Modal Instantáneamente
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
         
@@ -491,17 +458,14 @@ class Engine {
     }
 }
 
-// INICIALIZADOR ASÍNCRONO
-document.addEventListener('DOMContentLoaded', async () => { 
-    await CT.init(); 
-});
+document.addEventListener('DOMContentLoaded', () => { CT.init(); });
 
 document.getElementById('img-input').onchange = (e) => {
     const file = e.target.files[0];
     if(!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if(!validTypes.includes(file.type)) { alert("Formato no válido. Solo se permiten imágenes (JPG, PNG, WEBP, GIF)."); e.target.value = ''; return; }
-    if(file.size > 5 * 1024 * 1024) { alert("La imagen es demasiado pesada. Máximo 5MB."); e.target.value = ''; return; }
+    if(!validTypes.includes(file.type)) { alert("Formato no válido."); e.target.value = ''; return; }
+    if(file.size > 5 * 1024 * 1024) { alert("Máximo 5MB."); e.target.value = ''; return; }
     const r = new FileReader();
     r.onload = (ev) => { UI.openCropModal(ev.target.result); };
     r.readAsDataURL(file);
