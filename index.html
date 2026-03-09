@@ -46,9 +46,9 @@
                     </div>
                 </div>
                 <div class="nav-right">
-                    <button id="btn-go-admin" class="btn-outline hidden" onclick="UI.showAdmin()">Administración</button>
-                    <button onclick="UI.showStats()" class="btn-outline" style="margin-left: 15px;">Estadísticas</button>
-                    <button onclick="App.logout()" class="btn-outline" style="margin-left: 15px;">Cerrar sesión</button>
+                    <button id="btn-go-admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
+                    <button onclick="UI.showStats()" class="btn-outline" style="margin-right: 15px;">Estadísticas</button>
+                    <button onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
                 </div>
             </header>
 
@@ -168,16 +168,16 @@
                 <div id="pane-stats-elite" class="pane hidden">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card"><small>MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold;">-</span></div>
                         <div class="stat-card"><small>MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">-</span></div>
                         <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">-</span></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold;">-</span></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3>Máxima Velocidad en Top Textos</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead>
+                                    <thead><tr><th width="15%">N°</th><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead>
                                     <tbody id="st-e-table-texts"></tbody>
                                 </table>
                             </div>
@@ -186,7 +186,7 @@
                             <div class="table-header"><h3>Máxima Velocidad en Top Categorías</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead>
+                                    <thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead>
                                     <tbody id="st-e-table-cats"></tbody>
                                 </table>
                             </div>
