@@ -18,14 +18,14 @@
                     <input type="text" id="login-user" placeholder="Usuario">
                     <input type="password" id="login-pass" placeholder="Contraseña">
                     <button class="btn-primary" onclick="App.login()">Iniciar sesión</button>
-                    <p class="switch-text">¿Nuevo? <span onclick="UI.toggleAuth(false)">Regístrate</span></p>
+                    <p class="switch-text">¿Nuevo? <span onclick="UI.toggleAuth(false)">Registrarse</span></p>
                 </div>
                 <div id="register-form" class="auth-form hidden">
                     <input type="text" id="reg-display" placeholder="Nombre">
                     <input type="text" id="reg-user" placeholder="Usuario">
                     <input type="password" id="reg-pass" placeholder="Contraseña">
                     <button class="btn-primary" onclick="App.register()">CREAR CUENTA</button>
-                    <p class="switch-text">¿Tienes cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
+                    <p class="switch-text">¿Tenés cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
                 </div>
             </div>
         </section>
@@ -59,7 +59,7 @@
             <div class="tables-container">
                 <div class="table-box">
                     <div class="table-header">
-                        <h3>Últimas mejores</h3>
+                        <h3>Ránking | Carreras</h3>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="today">Hoy</option>
                             <option value="history">Histórico</option>
@@ -75,7 +75,7 @@
 
                 <div class="table-box">
                     <div class="table-header">
-                        <h3>Ranking</h3>
+                        <h3>Ranking | Promedios</h3>
                         <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
                             <option value="general">General</option>
@@ -248,4 +248,5 @@
     <script src="main.js"></script>
 </body>
 </html>
+
 
