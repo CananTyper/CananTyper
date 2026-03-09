@@ -98,7 +98,6 @@ const UI = {
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('users'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
-    // NUEVO: SISTEMA DE ESTADÍSTICAS
     showStats() {
         this.switchStatsTab('personal');
         UI.updateUnitVisuals(CT.currentUnit);
@@ -120,6 +119,7 @@ const UI = {
         else if (tab === 'general') this.renderGlobalStats();
         else this.renderEliteStats();
     },
+
     renderPersonalStats() {
         const u = CT.ses(); if(!u) return;
         const userScores = CT.dbLocal('s').filter(s => s.h === u.h);
@@ -163,6 +163,7 @@ const UI = {
         }
         document.getElementById('st-p-best-cat').innerText = bestCat;
     },
+
     renderGlobalStats() {
         const scores = CT.dbLocal('s'); const users = CT.dbLocal('u'); const phrases = CT.dbLocal('p');
         document.getElementById('st-g-users').innerText = users.length;
@@ -193,6 +194,7 @@ const UI = {
             <td><b style="color:var(--p)">#${i+1}</b></td><td>${tc.c}</td><td>${tc.count}</td>
         </tr>`).join('');
     },
+
     renderEliteStats() {
         const scores = CT.dbLocal('s'); const phrases = CT.dbLocal('p');
         if (scores.length === 0) return;
@@ -246,7 +248,7 @@ const UI = {
         let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-texts').innerHTML = top10T.map((tr, i) => {
             let trMax = scores.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p);
-            return `<tr><td><b>#${i+1}</b> ${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(trMax.c)}</b></td></tr>`;
+            return `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(trMax.c)}</b></td></tr>`;
         }).join('');
 
         let scoresWithCat = scores.map(s => {
@@ -258,7 +260,7 @@ const UI = {
         let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-cats').innerHTML = top10C.map((cat, i) => {
             let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p);
-            return `<tr><td><b>#${i+1}</b> ${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(catMax.c)}</b></td></tr>`;
+            return `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(catMax.c)}</b></td></tr>`;
         }).join('');
     },
 
