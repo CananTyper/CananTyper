@@ -98,23 +98,28 @@ const UI = {
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('users'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
+    // NUEVO: SISTEMA DE ESTADÍSTICAS
     showStats() {
         this.switchStatsTab('personal');
+        UI.updateUnitVisuals(CT.currentUnit);
         this.show('stats-screen');
     },
     switchStatsTab(tab) {
         document.getElementById('pane-stats-personal').classList.add('hidden');
         document.getElementById('pane-stats-general').classList.add('hidden');
+        document.getElementById('pane-stats-elite').classList.add('hidden');
+        
         document.getElementById('t-st-pe').classList.remove('active');
         document.getElementById('t-st-ge').classList.remove('active');
+        document.getElementById('t-st-el').classList.remove('active');
         
         document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
         document.getElementById(`t-st-${tab.substring(0,2)}`).classList.add('active');
         
         if (tab === 'personal') this.renderPersonalStats();
-        else this.renderGlobalStats();
+        else if (tab === 'general') this.renderGlobalStats();
+        else this.renderEliteStats();
     },
-
     renderPersonalStats() {
         const u = CT.ses(); if(!u) return;
         const userScores = CT.dbLocal('s').filter(s => s.h === u.h);
@@ -133,21 +138,19 @@ const UI = {
         const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
         document.getElementById('st-p-last10-avg').innerText = UI.formatValue(avgLast10);
         
-        let textAvgs = {};
+        let textMaxes = {};
         userScores.forEach(s => {
-            if(!textAvgs[s.track]) textAvgs[s.track] = { sum: 0, count: 0 };
-            textAvgs[s.track].sum += s.c;
-            textAvgs[s.track].count++;
+            if(!textMaxes[s.track] || s.c > textMaxes[s.track]) textMaxes[s.track] = s.c;
         });
-        const topTexts = Object.keys(textAvgs).map(k => ({ t: k, avg: Math.round(textAvgs[k].sum / textAvgs[k].count) })).sort((a,b) => b.avg - a.avg).slice(0, 5);
-        document.getElementById('st-p-top5-texts').innerHTML = topTexts.map((tr, i) => `<tr>
-            <td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td><b style="color:var(--p)">${UI.formatValue(tr.avg)}</b></td>
+        const topTexts = Object.keys(textMaxes).map(k => ({ t: k, max: textMaxes[k] })).sort((a,b) => b.max - a.max).slice(0, 10);
+        document.getElementById('st-p-top10-texts').innerHTML = topTexts.map((tr, i) => `<tr>
+            <td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td><b style="color:var(--p)">${UI.formatValue(tr.max)}</b></td>
         </tr>`).join('');
         
         const phrases = CT.dbLocal('p');
         let catAvgs = {};
         userScores.forEach(s => {
-            const trackObj = phrases.find(p => p.title === s.track);
+            const trackObj = phrases.find(p => p.title.toString() === s.track.toString());
             const cat = trackObj ? (trackObj.c || 'General') : 'General';
             if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 };
             catAvgs[cat].sum += s.c;
@@ -160,11 +163,8 @@ const UI = {
         }
         document.getElementById('st-p-best-cat').innerText = bestCat;
     },
-
     renderGlobalStats() {
-        const scores = CT.dbLocal('s');
-        const users = CT.dbLocal('u');
-        
+        const scores = CT.dbLocal('s'); const users = CT.dbLocal('u'); const phrases = CT.dbLocal('p');
         document.getElementById('st-g-users').innerText = users.length;
         document.getElementById('st-g-races').innerText = scores.length;
         
@@ -173,16 +173,93 @@ const UI = {
         
         let bestRace = { c: 0, n: "Nadie", track: "Ninguno" };
         if(scores.length > 0) bestRace = scores.reduce((prev, current) => (current.c > prev.c) ? current : prev);
-        
         document.getElementById('st-g-record').innerText = UI.formatValue(bestRace.c);
         
         let textCounts = {};
         scores.forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
-        const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 3);
-        
+        const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
         document.getElementById('st-g-top-texts').innerHTML = topTexts.map((tr, i) => `<tr>
             <td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td>${tr.count}</td>
         </tr>`).join('');
+
+        let catCounts = {};
+        scores.forEach(s => {
+            const trackObj = phrases.find(p => p.title.toString() === s.track.toString());
+            const cat = trackObj ? (trackObj.c || 'General') : 'General';
+            catCounts[cat] = (catCounts[cat] || 0) + 1;
+        });
+        let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
+        document.getElementById('st-g-top-cats').innerHTML = topCats.map((tc, i) => `<tr>
+            <td><b style="color:var(--p)">#${i+1}</b></td><td>${tc.c}</td><td>${tc.count}</td>
+        </tr>`).join('');
+    },
+    renderEliteStats() {
+        const scores = CT.dbLocal('s'); const phrases = CT.dbLocal('p');
+        if (scores.length === 0) return;
+
+        let userRaces = {};
+        scores.forEach(s => { userRaces[s.h] = (userRaces[s.h] || 0) + 1; });
+        let topRacerH = Object.keys(userRaces).reduce((a, b) => userRaces[a] > userRaces[b] ? a : b);
+        let topRacerName = scores.find(s => s.h === topRacerH).n;
+        document.getElementById('st-e-most-races-val').innerText = userRaces[topRacerH];
+        document.getElementById('st-e-most-races-user').innerText = topRacerName;
+
+        let bestRace = scores.reduce((p, c) => (c.c > p.c) ? c : p);
+        document.getElementById('st-e-record-val').innerText = UI.formatValue(bestRace.c);
+        document.getElementById('st-e-record-user').innerText = bestRace.n;
+
+        let trackMaxes = {}; 
+        scores.forEach(s => {
+            if (!trackMaxes[s.track] || s.c > trackMaxes[s.track].c) { trackMaxes[s.track] = { c: s.c, h: s.h, n: s.n }; }
+        });
+        let top1Counts = {};
+        Object.values(trackMaxes).forEach(tm => { top1Counts[tm.h] = (top1Counts[tm.h] || 0) + 1; });
+        let mostTop1H = Object.keys(top1Counts).length ? Object.keys(top1Counts).reduce((a, b) => top1Counts[a] > top1Counts[b] ? a : b) : "";
+        let mostTop1Name = mostTop1H ? scores.find(s => s.h === mostTop1H).n : "-";
+        document.getElementById('st-e-top1-val').innerText = mostTop1H ? top1Counts[mostTop1H] : 0;
+        document.getElementById('st-e-top1-user').innerText = mostTop1Name;
+
+        let userSums = {};
+        scores.forEach(s => {
+            if(!userSums[s.h]) userSums[s.h] = { sum: 0, count: 0, n: s.n };
+            userSums[s.h].sum += s.c;
+            userSums[s.h].count++;
+        });
+        let bestAvgH = ""; let bestAvgVal = -1;
+        Object.keys(userSums).forEach(h => {
+            if (userSums[h].count >= 5) {
+                let avg = userSums[h].sum / userSums[h].count;
+                if (avg > bestAvgVal) { bestAvgVal = avg; bestAvgH = h; }
+            }
+        });
+        if (bestAvgVal === -1) {
+            Object.keys(userSums).forEach(h => {
+                let avg = userSums[h].sum / userSums[h].count;
+                if (avg > bestAvgVal) { bestAvgVal = avg; bestAvgH = h; }
+            });
+        }
+        document.getElementById('st-e-bestavg-val').innerText = UI.formatValue(Math.round(bestAvgVal));
+        document.getElementById('st-e-bestavg-user').innerText = bestAvgH ? userSums[bestAvgH].n : "-";
+
+        let tCounts = {};
+        scores.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; });
+        let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
+        document.getElementById('st-e-table-texts').innerHTML = top10T.map((tr, i) => {
+            let trMax = scores.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p);
+            return `<tr><td><b>#${i+1}</b> ${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(trMax.c)}</b></td></tr>`;
+        }).join('');
+
+        let scoresWithCat = scores.map(s => {
+            let tObj = phrases.find(p => p.title.toString() === s.track.toString());
+            return { ...s, cat: tObj ? (tObj.c || 'General') : 'General' };
+        });
+        let cCounts = {};
+        scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; });
+        let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
+        document.getElementById('st-e-table-cats').innerHTML = top10C.map((cat, i) => {
+            let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p);
+            return `<tr><td><b>#${i+1}</b> ${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(catMax.c)}</b></td></tr>`;
+        }).join('');
     },
 
     refreshActiveViews: () => {
@@ -194,8 +271,9 @@ const UI = {
             if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
         }
         if(!document.getElementById('stats-screen').classList.contains('hidden')) {
-            if(document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderGlobalStats();
-            else UI.renderPersonalStats();
+            if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderPersonalStats();
+            else if(!document.getElementById('pane-stats-general').classList.contains('hidden')) UI.renderGlobalStats();
+            else UI.renderEliteStats();
         }
     },
 
@@ -214,14 +292,16 @@ const UI = {
         if(activeBtn) activeBtn.classList.add('active');
 
         const label = unit.toUpperCase();
-        if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = label;
-        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
-        if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').innerText = 'VELOCIDAD (' + label + ')';
-        if(document.getElementById('th-unit-admin')) document.getElementById('th-unit-admin').innerText = label;
         
-        document.querySelectorAll('th.active-unit').forEach(th => th.classList.remove('active-unit'));
-        if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').classList.add('active-unit');
-        if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').classList.add('active-unit');
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel'];
+        thIds.forEach(id => {
+            if(document.getElementById(id)) {
+                document.getElementById(id).innerText = 'VEL. (' + label + ')';
+                document.getElementById(id).classList.add('active-unit');
+            }
+        });
+        
+        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
 
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
@@ -229,8 +309,6 @@ const UI = {
         
         if(document.getElementById('lbl-st-p-best-avg')) document.getElementById('lbl-st-p-best-avg').innerText = 'PROM. GENERAL ' + label;
         if(document.getElementById('lbl-st-p-last10-avg')) document.getElementById('lbl-st-p-last10-avg').innerText = 'PROM. ÚLT. 10 ' + label;
-        if(document.getElementById('th-st-p-vel')) document.getElementById('th-st-p-vel').innerText = 'VEL. ' + label;
-        if(document.getElementById('th-st-p-t-avg')) document.getElementById('th-st-p-t-avg').innerText = 'PROM. ' + label;
         
         if(document.getElementById('lbl-st-g-avg')) document.getElementById('lbl-st-g-avg').innerText = 'PROMEDIO SERVIDOR ' + label;
         if(document.getElementById('lbl-st-g-record')) document.getElementById('lbl-st-g-record').innerText = 'RÉCORD ABSOLUTO ' + label;
