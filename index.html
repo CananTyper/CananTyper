@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CananTyper | Master Edition V15</title>
+    <title>CananTyper</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -46,7 +46,6 @@
                     </div>
                 </div>
                 <div class="nav-right">
-                    <button class="btn-outline" onclick="UI.showStats()" style="margin-right: 15px;">Estadísticas</button>
                     <button id="btn-go-admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
                     <button onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
                 </div>
@@ -60,7 +59,7 @@
             <div class="tables-container">
                 <div class="table-box">
                     <div class="table-header">
-                        <h3>Últimas mejores</h3>
+                        <h3>Ranking | Carreras</h3>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="today">Hoy</option>
                             <option value="history">Histórico</option>
@@ -76,7 +75,7 @@
 
                 <div class="table-box">
                     <div class="table-header">
-                        <h3>Ranking</h3>
+                        <h3>Ranking | Promedios</h3>
                         <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
                             <option value="general">General</option>
@@ -88,37 +87,6 @@
                             <tbody id="global-rank-players"></tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="stats-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
-                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas del Servidor</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Datos globales de CananTyper</p>
-                </div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
-            
-            <div class="stats-master-grid" style="margin-top: 20px;">
-                <div class="stat-card"><small>USUARIOS TOTALES</small><b id="global-users">0</b></div>
-                <div class="stat-card"><small>CARRERAS TOTALES</small><b id="global-races">0</b></div>
-                <div class="stat-card"><small id="lbl-global-avg">PROMEDIO GLOBAL</small><b id="global-avg">0</b></div>
-                <div class="stat-card stat-highlight" style="grid-column: span 3;">
-                    <small id="lbl-global-record">RÉCORD ABSOLUTO</small>
-                    <b id="global-record-val" style="font-size: 2.5rem; margin-top: 10px;">0</b>
-                    <span id="global-record-meta" style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-top: 5px;">Por @usuario en "Texto"</span>
-                </div>
-            </div>
-
-            <div class="table-box" style="margin-top: 20px; flex-grow: 1;">
-                <div class="table-header"><h3>Textos Más Jugados (Top 3)</h3></div>
-                <div class="custom-scroll table-body-wrapper">
-                    <table class="data-table">
-                        <thead><tr><th>Posición</th><th>Texto</th><th>Veces Jugado</th></tr></thead>
-                        <tbody id="global-top-texts"></tbody>
-                    </table>
                 </div>
             </div>
         </section>
@@ -178,12 +146,10 @@
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
-            
             <div class="track-selection-area">
-                <div id="category-view" class="category-grid custom-scroll"></div>
-                
-                <div id="track-view" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
-                    <button onclick="UI.showCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
+                <div id="track-category-view" class="category-grid custom-scroll"></div>
+                <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+                    <button onclick="UI.showTrackCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
                     <div id="track-list-full" class="custom-scroll track-list"></div>
                     <div class="pagination-bar" style="margin-top: 15px;">
                         <button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button>
@@ -208,18 +174,34 @@
                 <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
             </div>
             <div class="admin-content-area">
+                
                 <div id="pane-phrases" class="pane">
-                    <div class="admin-form">
+                    <input type="text" id="admin-phrase-search" placeholder="Buscar texto por ID o palabras..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
+                    
+                    <div id="admin-phrase-form" class="admin-form hidden">
                         <div class="form-row">
-                            <input type="text" id="phrase-title" placeholder="Número/Título" style="width: 150px;">
+                            <input type="text" id="phrase-title" placeholder="Número/ID" style="width: 100px;" disabled>
                             <input type="text" id="phrase-category" placeholder="Categoría" style="width: 150px;">
                             <textarea id="phrase-input" placeholder="Texto completo"></textarea>
                         </div>
-                        <button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary" style="align-self: center;">GUARDAR</button>
+                        <div style="display:flex; justify-content:center; gap:10px;">
+                            <button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary">ACTUALIZAR</button>
+                            <button onclick="UI.cancelEditP()" class="btn-outline">CANCELAR</button>
+                        </div>
                     </div>
-                    <ul id="admin-phrases-list" class="custom-scroll admin-list"></ul>
+                    
+                    <div id="admin-phrase-categories" class="category-grid custom-scroll"></div>
+                    <div id="admin-phrase-list-view" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 0;">
+                        <button onclick="UI.showAdminPhraseCategories()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
+                        <ul id="admin-phrases-list" class="custom-scroll admin-list"></ul>
+                        <div class="pagination-bar" style="margin-top: 10px;">
+                            <button id="admin-ph-prev" class="btn-outline" onclick="UI.changeAdminPhrasePage(-1)">←</button>
+                            <span id="admin-ph-page-num" class="page-indicator">Página 1</span>
+                            <button id="admin-ph-next" class="btn-outline" onclick="UI.changeAdminPhrasePage(1)">→</button>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div id="pane-races" class="pane hidden">
                     <input type="text" id="race-search" placeholder="Buscar usuario..." oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
                     <div class="custom-scroll admin-table-wrapper">
@@ -229,9 +211,9 @@
                         </table>
                     </div>
                     <div class="pagination-bar" style="margin-top: 10px;">
-                        <button id="admin-race-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button>
-                        <span id="admin-race-page-num" class="page-indicator">Página 1</span>
-                        <button id="admin-race-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button>
+                        <button id="admin-ra-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button>
+                        <span id="admin-ra-page-num" class="page-indicator">Página 1</span>
+                        <button id="admin-ra-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button>
                     </div>
                 </div>
 
@@ -253,12 +235,11 @@
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display">0</span></div>
                 </div>
 
-                <div id="target-text" class="game-text-display custom-scroll"></div>
+                <div id="target-text" class="game-text-display"></div>
                 <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
                 
                 <div id="in-game-controls" class="game-controls">
                     <button onclick="App.quitRace()" class="btn-outline">Volver</button>
-                    <button onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
                     <button onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
 
