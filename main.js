@@ -11,7 +11,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 2. CORE DE DATOS (ESPEJO LOCAL)
+// 2. CORE DE DATOS (ESPEJO LOCAL - CERO LATENCIA)
 const CT = {
     data: { u: [], s: [], p: [] },
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
@@ -19,15 +19,21 @@ const CT = {
     editIdx: null, profPage: 0, activeProfHandle: null,
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    dbLocal: (k) => CT.data[k], 
+    dbLocal: (k) => CT.data[k] || [], 
     
     init: function() {
-        // APLICAR TEMA INMEDIATAMENTE AL ENTRAR (INCLUYENDO LOGIN)
-        const storedUnit = localStorage.getItem('ct_unit_pref') || 'cpm';
+        // FUERZA EL VERDE COMO PREDETERMINADO ABSOLUTO (Corrección del Bug Visual)
+        let storedUnit = localStorage.getItem('ct_unit_pref');
+        if (storedUnit !== 'cpm' && storedUnit !== 'wpm') {
+            storedUnit = 'cpm'; 
+            localStorage.setItem('ct_unit_pref', 'cpm');
+        }
         this.currentUnit = storedUnit;
+        
+        // Inyectar el tema inmediatamente en el núcleo del documento
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
-        // Carga desde caché local (Cero Latencia de inicio)
+        // Carga desde caché local (Cero Latencia)
         const cU = localStorage.getItem('ct_cache_u');
         const cS = localStorage.getItem('ct_cache_s');
         const cP = localStorage.getItem('ct_cache_p');
@@ -35,13 +41,16 @@ const CT = {
         if(cS) this.data.s = JSON.parse(cS);
         if(cP) this.data.p = JSON.parse(cP);
 
+        // Fuerza la sincronización visual ANTES de mostrar la pantalla
+        UI.updateUnitVisuals(this.currentUnit);
+
         if(this.ses()) {
             UI.initLobby();
         } else {
             UI.show('auth-screen');
         }
 
-        // Sincronización en segundo plano con la nube
+        // Sincronización silenciosa con la nube
         db.collection('users').onSnapshot(snap => { 
             this.data.u = snap.docs.map(d => d.data()); 
             localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u));
@@ -64,7 +73,7 @@ const CT = {
     },
     ses: () => { 
         const s = JSON.parse(sessionStorage.getItem('ct_ses')); 
-        return s ? CT.data.u.find(x => x.h === s.h) : null; 
+        return s ? (CT.data.u || []).find(x => x.h === s.h) : null; 
     }
 };
 
@@ -86,6 +95,8 @@ const UI = {
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         document.getElementById('btn-go-admin').classList.toggle('hidden', u.r === 'usuario');
+        
+        // Refuerza visuales al entrar
         UI.updateUnitVisuals(CT.currentUnit);
         this.renderGlobal(); this.show('home-screen');
     },
@@ -112,7 +123,8 @@ const UI = {
         document.documentElement.setAttribute('data-theme', unit);
 
         document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
-        document.getElementById(`btn-${unit}`).classList.add('active');
+        const activeBtn = document.getElementById(`btn-${unit}`);
+        if(activeBtn) activeBtn.classList.add('active');
 
         const label = unit.toUpperCase();
         if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = label;
@@ -315,7 +327,6 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    // FUNCIONES CLOUD CON CERO LATENCIA LOCAL
     editDisplayName: () => { 
         const u = CT.ses(); if(!u) return; 
         const newName = prompt("Nuevo nombre:", u.n); 
@@ -334,7 +345,6 @@ const App = {
             const docRef = await db.collection('users').doc(handle).get();
             if(docRef.exists && docRef.data().p === p) { 
                 sessionStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
-                // Inyectar local temporal por si el snapshot tarda
                 if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data());
                 UI.initLobby(); 
             } else { alert("Usuario o contraseña incorrectos"); }
@@ -392,7 +402,6 @@ const App = {
     }
 };
 
-// MOTOR TYPERACER (LOCAL, 0 LATENCIA)
 class Engine {
     constructor(trackObj) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
@@ -449,14 +458,12 @@ class Engine {
             } else { el.value = v; el.classList.add('input-error'); }
         }
     }
-    
-    // RESPUESTA INMEDIATA: Muestra pantalla (0ms) -> Firebase sube de fondo.
     end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
-        // INTERFAZ INSTANTÁNEA (Desaparece HUD, muestra modal)
+        // INTERFAZ INSTANTÁNEA
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
         const finalSpeedValue = UI.formatValue(finalCPM);
@@ -470,14 +477,12 @@ class Engine {
             const dateStr = CT.getARDate();
             const scoreId = Date.now().toString();
             
-            // Actualiza caché local
             u.hi.push(finalCPM);
             let sList = CT.dbLocal('s');
             const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title };
             sList.unshift(newScore);
             CT.data.s = sList;
 
-            // Manda a la nube
             db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
             db.collection('scores').doc(scoreId).set(newScore); 
         }
