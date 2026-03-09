@@ -247,7 +247,7 @@ const UI = {
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') { this.renderAdminU(); }
-        if(tab === 'create') { UI.toggleCreateForm('text'); }
+        if(tab === 'create') { this.toggleCreateForm('text'); }
     },
 
     /* ---- ÁREA ADMINISTRATIVA: CREAR ---- */
@@ -261,13 +261,13 @@ const UI = {
         if(type === 'text') {
             UI.updateCategorySelects();
             document.getElementById('create-text-form').classList.remove('hidden');
-            btnText.className = 'btn-primary btn-large active';
-            btnCat.className = 'btn-primary btn-alt btn-large';
+            btnText.className = 'btn-primary btn-admin-mode active';
+            btnCat.className = 'btn-primary btn-alt btn-admin-mode';
         } else {
             UI.updateCategorySelects();
             document.getElementById('create-cat-form').classList.remove('hidden');
-            btnCat.className = 'btn-primary btn-large active';
-            btnText.className = 'btn-primary btn-alt btn-large';
+            btnCat.className = 'btn-primary btn-admin-mode active';
+            btnText.className = 'btn-primary btn-alt btn-admin-mode';
         }
     },
 
