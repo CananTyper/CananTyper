@@ -96,9 +96,94 @@ const UI = {
         this.renderGlobal(); this.show('home-screen');
     },
     showLobby() { this.initLobby(); },
-    
-    // ORDEN: Usuarios predeterminado al entrar en Admin
     showAdmin() { this.switchTab('users'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
+
+    showStats() {
+        this.switchStatsTab('personal');
+        this.show('stats-screen');
+    },
+    switchStatsTab(tab) {
+        document.getElementById('pane-stats-personal').classList.add('hidden');
+        document.getElementById('pane-stats-general').classList.add('hidden');
+        document.getElementById('t-st-pe').classList.remove('active');
+        document.getElementById('t-st-ge').classList.remove('active');
+        
+        document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
+        document.getElementById(`t-st-${tab.substring(0,2)}`).classList.add('active');
+        
+        if (tab === 'personal') this.renderPersonalStats();
+        else this.renderGlobalStats();
+    },
+
+    renderPersonalStats() {
+        const u = CT.ses(); if(!u) return;
+        const userScores = CT.dbLocal('s').filter(s => s.h === u.h);
+        
+        document.getElementById('st-p-total-races').innerText = userScores.length;
+        
+        const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr>
+            <td>${i+1}</td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+        </tr>`).join('');
+        
+        const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
+        document.getElementById('st-p-best-avg').innerText = UI.formatValue(avgGen);
+        
+        const last10Arr = [...userScores].sort((a,b)=>b.id - a.id).slice(0, 10);
+        const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
+        document.getElementById('st-p-last10-avg').innerText = UI.formatValue(avgLast10);
+        
+        let textAvgs = {};
+        userScores.forEach(s => {
+            if(!textAvgs[s.track]) textAvgs[s.track] = { sum: 0, count: 0 };
+            textAvgs[s.track].sum += s.c;
+            textAvgs[s.track].count++;
+        });
+        const topTexts = Object.keys(textAvgs).map(k => ({ t: k, avg: Math.round(textAvgs[k].sum / textAvgs[k].count) })).sort((a,b) => b.avg - a.avg).slice(0, 5);
+        document.getElementById('st-p-top5-texts').innerHTML = topTexts.map((tr, i) => `<tr>
+            <td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td><b style="color:var(--p)">${UI.formatValue(tr.avg)}</b></td>
+        </tr>`).join('');
+        
+        const phrases = CT.dbLocal('p');
+        let catAvgs = {};
+        userScores.forEach(s => {
+            const trackObj = phrases.find(p => p.title === s.track);
+            const cat = trackObj ? (trackObj.c || 'General') : 'General';
+            if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 };
+            catAvgs[cat].sum += s.c;
+            catAvgs[cat].count++;
+        });
+        let bestCat = "-"; let maxCatAvg = -1;
+        for (let c in catAvgs) {
+            let avg = catAvgs[c].sum / catAvgs[c].count;
+            if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; }
+        }
+        document.getElementById('st-p-best-cat').innerText = bestCat;
+    },
+
+    renderGlobalStats() {
+        const scores = CT.dbLocal('s');
+        const users = CT.dbLocal('u');
+        
+        document.getElementById('st-g-users').innerText = users.length;
+        document.getElementById('st-g-races').innerText = scores.length;
+        
+        const avgGlobal = scores.length ? Math.round(scores.reduce((a,b)=>a+b.c, 0) / scores.length) : 0;
+        document.getElementById('st-g-avg').innerText = UI.formatValue(avgGlobal);
+        
+        let bestRace = { c: 0, n: "Nadie", track: "Ninguno" };
+        if(scores.length > 0) bestRace = scores.reduce((prev, current) => (current.c > prev.c) ? current : prev);
+        
+        document.getElementById('st-g-record').innerText = UI.formatValue(bestRace.c);
+        
+        let textCounts = {};
+        scores.forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
+        const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 3);
+        
+        document.getElementById('st-g-top-texts').innerHTML = topTexts.map((tr, i) => `<tr>
+            <td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td>${tr.count}</td>
+        </tr>`).join('');
+    },
 
     refreshActiveViews: () => {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
@@ -107,6 +192,10 @@ const UI = {
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
         if(!document.getElementById('track-screen').classList.contains('hidden')) {
             if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
+        }
+        if(!document.getElementById('stats-screen').classList.contains('hidden')) {
+            if(document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderGlobalStats();
+            else UI.renderPersonalStats();
         }
     },
 
@@ -137,6 +226,15 @@ const UI = {
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
+        
+        if(document.getElementById('lbl-st-p-best-avg')) document.getElementById('lbl-st-p-best-avg').innerText = 'PROM. GENERAL ' + label;
+        if(document.getElementById('lbl-st-p-last10-avg')) document.getElementById('lbl-st-p-last10-avg').innerText = 'PROM. ÚLT. 10 ' + label;
+        if(document.getElementById('th-st-p-vel')) document.getElementById('th-st-p-vel').innerText = 'VEL. ' + label;
+        if(document.getElementById('th-st-p-t-avg')) document.getElementById('th-st-p-t-avg').innerText = 'PROM. ' + label;
+        
+        if(document.getElementById('lbl-st-g-avg')) document.getElementById('lbl-st-g-avg').innerText = 'PROMEDIO SERVIDOR ' + label;
+        if(document.getElementById('lbl-st-g-record')) document.getElementById('lbl-st-g-record').innerText = 'RÉCORD ABSOLUTO ' + label;
+
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
 
@@ -250,7 +348,6 @@ const UI = {
         if(tab === 'create') { this.toggleCreateForm('text'); }
     },
 
-    /* ---- ÁREA ADMINISTRATIVA: CREAR ---- */
     toggleCreateForm(type) {
         document.getElementById('create-text-form').classList.add('hidden');
         document.getElementById('create-cat-form').classList.add('hidden');
@@ -271,7 +368,6 @@ const UI = {
         }
     },
 
-    /* ---- ÁREA ADMINISTRATIVA: TEXTOS ---- */
     showAdminPhraseCategories() {
         UI.activeAdminCat = null;
         document.getElementById('admin-phrase-form').classList.add('hidden');
@@ -379,7 +475,6 @@ const UI = {
     },
     delP: (idStr) => { if(confirm("¿Eliminar texto?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
 
-    /* ---- ÁREA ADMINISTRATIVA: CARRERAS ---- */
     renderAdminR() {
         const scores = CT.dbLocal('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
         let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
@@ -426,7 +521,6 @@ const UI = {
         if(u) { let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } }
     },
 
-    /* ---- ÁREA ADMINISTRATIVA: USUARIOS ---- */
     renderAdminU() {
         const query = (document.getElementById('user-search').value || "").toLowerCase();
         let filtered = CT.dbLocal('u').filter(u => u.n.toLowerCase().includes(query) || u.h.toLowerCase().includes(query));
@@ -465,8 +559,8 @@ const UI = {
     },
     delU: (handle) => { if(confirm(`¿Eliminar al usuario ${handle} por completo?`)) { db.collection('users').doc(handle).delete(); }},
 
-    /* ---- SELECCIÓN DE PISTAS (CATEGORÍAS) ---- */
     showTrackSelect() {
+        document.getElementById('track-search').value = '';
         UI.activeTrackCat = null;
         UI.showTrackCategorySelect();
         this.show('track-screen');
@@ -490,28 +584,78 @@ const UI = {
         UI.trackPage = 0;
         document.getElementById('track-category-view').classList.add('hidden');
         document.getElementById('track-list-view').classList.remove('hidden');
+        document.getElementById('btn-back-cat-track').classList.remove('hidden');
         UI.renderTrackList();
     },
     renderTrackList() {
-        const tracks = CT.dbLocal('p').filter(t => (t.c || 'General') === UI.activeTrackCat);
-        const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
-        document.getElementById('track-list-full').innerHTML = pageData.map(t => `
-            <div class="track-card" onclick="App.startRaceWithTrack(${t.id})">
-                <div class="track-card-id">#${t.title}</div>
-                <div class="track-card-content">
-                    <p class="track-card-text">${t.text}</p>
-                    <span class="track-card-meta">${t.text.split(' ').length} PALABRAS</span>
+        const query = (document.getElementById('track-search').value || "").toLowerCase();
+        let tracks = CT.dbLocal('p');
+        
+        if (query) {
+            document.getElementById('track-category-view').classList.add('hidden');
+            document.getElementById('track-list-view').classList.remove('hidden');
+            document.getElementById('btn-back-cat-track').classList.add('hidden');
+            
+            let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query));
+            const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
+            
+            document.getElementById('track-list-full').innerHTML = pageData.map(t => `
+                <div class="track-card" onclick="App.startRaceWithTrack(${t.id})">
+                    <div class="track-card-id">#${t.title}</div>
+                    <div class="track-card-content">
+                        <p class="track-card-text">${t.text}</p>
+                        <span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${t.c || 'General'}]</span>
+                    </div>
                 </div>
-            </div>
-        `).join('');
-        document.getElementById('track-prev').disabled = UI.trackPage === 0;
-        document.getElementById('track-next').disabled = (start + 20) >= tracks.length;
-        document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
+            `).join('');
+            document.getElementById('track-prev').disabled = UI.trackPage === 0;
+            document.getElementById('track-next').disabled = (start + 20) >= filtered.length;
+            document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
+        } else if (!UI.activeTrackCat) {
+            document.getElementById('track-category-view').classList.remove('hidden');
+            document.getElementById('track-list-view').classList.add('hidden');
+            
+            const cats = CT.dbLocal('c');
+            let catCounts = {};
+            tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
+            
+            document.getElementById('track-category-view').innerHTML = cats.map(cat => `
+                <div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')">
+                    <h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('track-category-view').classList.add('hidden');
+            document.getElementById('track-list-view').classList.remove('hidden');
+            document.getElementById('btn-back-cat-track').classList.remove('hidden');
+            
+            let filtered = tracks.filter(t => (t.c || 'General') === UI.activeTrackCat);
+            const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
+            
+            document.getElementById('track-list-full').innerHTML = pageData.map(t => `
+                <div class="track-card" onclick="App.startRaceWithTrack(${t.id})">
+                    <div class="track-card-id">#${t.title}</div>
+                    <div class="track-card-content">
+                        <p class="track-card-text">${t.text}</p>
+                        <span class="track-card-meta">${t.text.split(' ').length} PALABRAS</span>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('track-prev').disabled = UI.trackPage === 0;
+            document.getElementById('track-next').disabled = (start + 20) >= filtered.length;
+            document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
+        }
     },
     changeTrackPage(delta) {
-        const tracks = CT.dbLocal('p').filter(t => (t.c || 'General') === UI.activeTrackCat);
+        const query = (document.getElementById('track-search').value || "").toLowerCase();
+        let filtered = CT.dbLocal('p');
+        if (query) {
+            filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query));
+        } else {
+            filtered = filtered.filter(t => (t.c || 'General') === UI.activeTrackCat);
+        }
         const nextStart = (UI.trackPage + delta) * 20;
-        if(nextStart >= 0 && nextStart < tracks.length) { UI.trackPage += delta; this.renderTrackList(); }
+        if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
 
     openCropModal(src) {
