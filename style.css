@@ -1,7 +1,7 @@
 /* VARIABLES GLOBALES Y MOTOR DE TEMAS ESTRICTO */
 :root {
-    --theme-cpm: #a6ff00; /* Verde Radioactivo Predeterminado */
-    --theme-wpm: #ff3c00; /* Rojo Volcánico */
+    --theme-cpm: #a6ff00; 
+    --theme-wpm: #ff3c00; 
     --p: var(--theme-cpm); 
     
     --bg: #000000;
@@ -14,35 +14,29 @@
     --success: #4caf50;
 }
 
-/* Inyector de Raíz: Fuerza el color en toda la web instantáneamente */
 :root[data-theme="cpm"] { --p: var(--theme-cpm); }
 :root[data-theme="wpm"] { --p: var(--theme-wpm); }
 
-/* RESET Y CUERPO */
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
 
-/* SHELL PRINCIPAL (Efecto Glow Pro) */
 .main-shell { width: 1050px; height: 92vh; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; padding: 25px 40px; box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 30px color-mix(in srgb, var(--p) 8%, transparent); transition: box-shadow 0.3s ease, border-color 0.3s; }
 .screen { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
 .hidden { display: none !important; }
 
-/* BARRAS DE SCROLL RADIOACTIVAS */
 .custom-scroll { overflow-y: auto; padding-right: 8px; }
 .custom-scroll::-webkit-scrollbar { width: 6px; }
 .custom-scroll::-webkit-scrollbar-track { background: var(--surface-light); border-radius: 10px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: var(--p); border-radius: 10px; box-shadow: inset 0 0 4px rgba(0,0,0,0.6), 0 0 8px color-mix(in srgb, var(--p) 30%, transparent); transition: background-color 0.3s; }
 .custom-scroll::-webkit-scrollbar-thumb:hover { filter: brightness(1.3); }
 
-/* AVATARES (FIX: Redimensión estricta añadida para que no rompa la web) */
 .avatar-xs, .avatar-sm, .avatar-md, .avatar-lrg { border-radius: 50%; border: 2px solid var(--p); background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; flex-shrink: 0; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
-.avatar-xs { width: 26px; height: 26px; border-width: 1px; } /* EL FIX DE LA IMAGEN GIGANTE */
+.avatar-xs { width: 26px; height: 26px; border-width: 1px; }
 .avatar-sm { width: 45px; height: 45px; }
 .avatar-md { width: 90px; height: 90px; border-width: 3px; box-shadow: 0 0 15px color-mix(in srgb, var(--p) 20%, transparent); }
 .avatar-lrg { width: 140px; height: 140px; border-width: 4px; box-shadow: 0 0 20px color-mix(in srgb, var(--p) 20%, transparent); }
 .avatar-xs img, .avatar-sm img, .avatar-md img, .avatar-lrg img { width: 100%; height: 100%; object-fit: cover; }
 
-/* BOTONES PRO */
 .btn-primary { background: var(--p); color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px color-mix(in srgb, var(--p) 40%, transparent); filter: brightness(1.1); }
 .btn-large { padding: 20px; font-size: 1.1rem; width: 100%; }
@@ -51,12 +45,10 @@ body { background: var(--bg); color: var(--text-main); font-family: 'Segoe UI', 
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; transition: all 0.2s ease; }
 .btn-outline:hover { color: var(--p); border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 15%, transparent); }
 
-/* INPUTS (Con Glow Pro al hacer foco) */
 input, textarea { width: 100%; padding: 14px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 10px; outline: none; transition: all 0.3s; font-family: inherit; }
 input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 15%, transparent); }
 .input-error { border-color: var(--error) !important; background: color-mix(in srgb, var(--error) 10%, transparent) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--error) 20%, transparent) !important; }
 
-/* 1. AUTH SCREEN */
 #auth-screen { justify-content: center; align-items: center; }
 .auth-card { background: var(--surface-light); padding: 50px; border-radius: 20px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 400px; box-shadow: 0 15px 50px rgba(0,0,0,0.8); transition: border-color 0.3s; }
 .auth-card:hover { border-color: color-mix(in srgb, var(--p) 30%, transparent); }
@@ -67,7 +59,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .switch-text span { color: var(--text-main); font-weight: bold; cursor: pointer; transition: color 0.2s; }
 .switch-text span:hover { color: var(--p); text-decoration: underline; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 40%, transparent); }
 
-/* 2. LOBBY */
 .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .nav-left, .nav-right { display: flex; align-items: center; gap: 20px; }
 .user-pill { display: flex; align-items: center; gap: 12px; background: var(--surface-light); padding: 6px 20px 6px 6px; border-radius: 50px; border: 1px solid var(--border); cursor: pointer; transition: all 0.3s; }
@@ -77,7 +68,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .user-pill:hover .user-meta b { color: var(--p); }
 .user-meta small { color: var(--text-muted); font-size: 0.75rem; }
 
-/* INTERRUPTOR UNIDADES (ESTRICTO) */
 .unit-switcher { display: flex; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px; gap: 4px; }
 .sw-btn { padding: 6px 14px; font-size: 0.75rem; font-weight: 900; color: #555; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
 #btn-cpm.active { background: var(--theme-cpm); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--theme-cpm) 40%, transparent); }
@@ -93,7 +83,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .nitro-select:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
 .table-body-wrapper { flex-grow: 1; min-height: 0; }
 
-/* TABLAS BASE */
 .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .data-table th { color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); text-align: center; position: sticky; top: 0; background: var(--surface-light); z-index: 2; transition: color 0.3s; }
 .data-table th.active-unit { color: var(--p); font-weight: 900; }
@@ -103,7 +92,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .player-link { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-main); cursor: pointer; transition: color 0.2s; }
 .player-link:hover { color: var(--p); text-shadow: 0 0 8px color-mix(in srgb, var(--p) 40%, transparent); }
 
-/* 3. PERFIL */
 .profile-compact-wrap { display: flex; flex-direction: column; gap: 20px; height: 100%; }
 .profile-top-area { display: flex; align-items: center; gap: 40px; background: var(--surface-light); padding: 20px 30px; border-radius: 15px; border: 1px solid var(--border); flex-shrink: 0; transition: border-color 0.3s; }
 .profile-top-area:hover { border-color: color-mix(in srgb, var(--p) 30%, transparent); }
@@ -121,20 +109,20 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .role-badge { background: color-mix(in srgb, var(--p) 10%, transparent); color: var(--p); border: 1px solid var(--p); padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; transition: all 0.3s; }
 
 .profile-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; flex-grow: 1; }
-.stat-card { background: var(--bg); border: 1px solid var(--border); padding: 20px 10px; border-radius: 12px; text-align: center; transition: all 0.3s ease; }
-.stat-card:hover { border-color: var(--p); transform: translateY(-5px); box-shadow: 0 10px 25px color-mix(in srgb, var(--p) 15%, transparent); }
+.stat-card { background: var(--bg); border: 1px solid var(--border); padding: 20px 10px; border-radius: 12px; text-align: center; transition: transform 0.2s, border-color 0.2s; }
+.stat-card:hover { border-color: var(--p); transform: translateY(-3px); box-shadow: 0 10px 25px color-mix(in srgb, var(--p) 15%, transparent); }
 .stat-card small { color: var(--text-muted); font-size: 0.7rem; font-weight: bold; transition: color 0.3s; }
 .stat-card b { display: block; font-size: 1.8rem; color: var(--text-main); margin-top: 5px; transition: color 0.3s, text-shadow 0.3s; }
 .stat-card:hover b { color: var(--p); text-shadow: 0 0 10px color-mix(in srgb, var(--p) 30%, transparent); }
 .stat-highlight { border-color: color-mix(in srgb, var(--p) 40%, transparent); box-shadow: inset 0 0 15px color-mix(in srgb, var(--p) 5%, transparent); }
 
-.profile-history-area { background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; flex-grow: 1; min-height: 0; padding: 20px; transition: border-color 0.3s; }
+/* FIX APLICADO: margin-top de 20px para separar áreas */
+.profile-history-area { margin-top: 20px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; min-height: 0; padding: 20px; transition: border-color 0.3s; }
 .profile-history-area:hover { border-color: color-mix(in srgb, var(--p) 20%, transparent); }
 .history-list-wrapper { flex-grow: 1; min-height: 0; margin-bottom: 15px; }
 .pagination-bar { display: flex; justify-content: center; align-items: center; gap: 20px; flex-shrink: 0; border-top: 1px solid var(--border); padding-top: 15px; }
 .page-indicator { font-size: 0.85rem; color: var(--text-muted); font-weight: bold; }
 
-/* 4. SELECCIÓN DE PISTAS (TARJETAS PRO) */
 .track-selection-area { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-top: 15px; }
 .track-list { flex-grow: 1; min-height: 0; list-style: none; margin: 0; padding-right: 10px; }
 .track-card { display: flex; gap: 20px; background: var(--bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; cursor: pointer; transition: all 0.3s ease; align-items: center; }
@@ -145,7 +133,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .track-card-text { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; text-align: justify; }
 .track-card-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; }
 
-/* 5. ADMINISTRACIÓN */
 .admin-tabs { display: flex; gap: 10px; background: var(--surface-light); padding: 8px; border-radius: 12px; flex-shrink: 0; margin-top: 15px; border: 1px solid var(--border); }
 .tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; }
 .tab-btn:hover { color: var(--text-main); }
@@ -162,7 +149,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .admin-list-item:hover span b { text-shadow: 0 0 10px color-mix(in srgb, var(--p) 40%, transparent); }
 .admin-table-wrapper { flex-grow: 1; min-height: 0; }
 
-/* 6. JUEGO (MECÁNICA TYPERACER) */
 .game-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; max-width: 850px; margin: 0 auto; width: 100%; }
 .game-hud { display: flex; gap: 30px; margin-bottom: 30px; }
 .hud-box { background: var(--surface-light); border: 1px solid var(--p); padding: 15px 40px; border-radius: 15px; text-align: center; box-shadow: 0 0 25px color-mix(in srgb, var(--p) 15%, transparent); transition: border-color 0.3s, box-shadow 0.3s; }
@@ -173,7 +159,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .game-text-display:hover { border-color: color-mix(in srgb, var(--p) 30%, transparent); }
 .game-input-box { font-size: 1.5rem; padding: 20px; text-align: center; }
 
-/* Palabras y Errores (Exactitud TypeRacer) */
 .word { display: inline-block; margin-right: 8px; transition: background-color 0.1s; border-radius: 4px; padding: 2px; }
 .word.active { background: var(--bg); border-bottom: 3px solid var(--p); box-shadow: 0 5px 10px -5px color-mix(in srgb, var(--p) 50%, transparent); }
 .correct { color: var(--success); opacity: 0.7; }
@@ -185,8 +170,7 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .result-score { font-size: 4.5rem; color: var(--p); margin: 0 0 30px 0; transition: color 0.3s, text-shadow 0.3s; text-shadow: 0 0 20px color-mix(in srgb, var(--p) 40%, transparent); }
 .result-actions { display: flex; justify-content: center; gap: 20px; align-items: center; }
 
-/* 7. MODAL CROP */
-.crop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
+.crop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
 .crop-box { background: var(--surface-light); padding: 30px; border-radius: 20px; border: 1px solid var(--p); text-align: center; box-shadow: 0 20px 60px color-mix(in srgb, var(--p) 15%, transparent); transition: border-color 0.3s, box-shadow 0.3s; }
 .crop-viewport { width: 220px; height: 220px; overflow: hidden; position: relative; margin: 0 auto 20px; border-radius: 50%; border: 2px dashed var(--p); background: var(--bg); cursor: grab; transition: border-color 0.3s; }
 .crop-viewport:active { cursor: grabbing; }
