@@ -48,6 +48,7 @@
                 <div class="nav-right">
                     <button id="btn-go-admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
                     <button onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
+                    <button onclick="UI.showStats()" class="btn-outline" style="margin-left: 15px;">Estadísticas</button>
                 </div>
             </header>
 
@@ -88,6 +89,70 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section id="stats-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
+                </div>
+                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+            </header>
+            <div class="admin-tabs">
+                <button id="t-st-pe" class="tab-btn active" onclick="UI.switchStatsTab('personal')">Personales</button>
+                <button id="t-st-ge" class="tab-btn" onclick="UI.switchStatsTab('general')">General</button>
+            </div>
+            <div class="admin-content-area" style="padding: 15px;">
+                
+                <div id="pane-stats-personal" class="pane">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card"><small id="lbl-st-p-best-avg">PROM. GENERAL</small><b id="st-p-best-avg">0</b></div>
+                        <div class="stat-card"><small id="lbl-st-p-last10-avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg">0</b></div>
+                        <div class="stat-card"><small>MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="font-size: 1.2rem;">-</b></div>
+                        <div class="stat-card stat-highlight"><small>CARRERAS TOTALES</small><b id="st-p-total-races">0</b></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
+                        <div class="table-box" style="margin: 0; padding: 15px;">
+                            <div class="table-header"><h3>Top 10 Mejores Carreras</h3></div>
+                            <div class="custom-scroll table-body-wrapper">
+                                <table class="data-table">
+                                    <thead><tr><th>N°</th><th id="th-st-p-vel">VEL.</th><th>Texto</th><th>Fecha</th></tr></thead>
+                                    <tbody id="st-p-top10-races"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="table-box" style="margin: 0; padding: 15px;">
+                            <div class="table-header"><h3>Mejores Textos (Top 5)</h3></div>
+                            <div class="custom-scroll table-body-wrapper">
+                                <table class="data-table">
+                                    <thead><tr><th>Pos.</th><th>Texto</th><th id="th-st-p-t-avg">PROM.</th></tr></thead>
+                                    <tbody id="st-p-top5-texts"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pane-stats-general" class="pane hidden">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card"><small>USUARIOS REGISTRADOS</small><b id="st-g-users">0</b></div>
+                        <div class="stat-card"><small>CARRERAS GLOBALES</small><b id="st-g-races">0</b></div>
+                        <div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg">0</b></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD ABSOLUTO</small><b id="st-g-record">0</b></div>
+                    </div>
+                    <div class="table-box" style="margin: 0; flex-grow: 1; min-height: 0; padding: 15px;">
+                        <div class="table-header"><h3>Textos Más Jugados (Top 3)</h3></div>
+                        <div class="custom-scroll table-body-wrapper">
+                            <table class="data-table">
+                                <thead><tr><th>Top</th><th>Texto</th><th>Veces Jugado</th></tr></thead>
+                                <tbody id="st-g-top-texts"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -147,9 +212,12 @@
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="track-selection-area">
+                <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="UI.renderTrackList()" style="margin-bottom: 15px;">
+                
                 <div id="track-category-view" class="category-grid custom-scroll"></div>
-                <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
-                    <button onclick="UI.showTrackCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
+                
+                <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; flex-grow: 1; min-height: 0;">
+                    <button id="btn-back-cat-track" onclick="UI.showTrackCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
                     <div id="track-list-full" class="custom-scroll track-list"></div>
                     <div class="pagination-bar" style="margin-top: 15px;">
                         <button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button>
