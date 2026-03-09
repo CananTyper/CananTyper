@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CananTyper | Cloud Edition v14.2</title>
+    <title>CananTyper | Definitive Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -95,29 +95,31 @@
             <div class="profile-compact-wrap">
                 <header class="profile-nav-top"><button onclick="UI.showLobby()" class="btn-exit-outline">Volver</button></header>
                 
-                <div class="profile-header-standard">
-                    <div class="avatar-frame-med"><img id="prof-img" src="" alt=""></div>
-                    <input type="file" id="img-input" accept="image/png, image/jpeg, image/webp, image/gif" hidden>
-                    <div class="identity-centered">
-                        <div class="name-row-pro">
-                            <h2 id="prof-name"></h2>
-                            <div class="edit-anchor">
-                                <button id="btn-open-edit" class="subtle-edit-btn hidden" onclick="UI.toggleEditMenu()">Editar</button>
-                                <div id="edit-dropdown" class="edit-dropdown-menu hidden">
-                                    <button onclick="App.editDisplayName()">Nombre</button>
-                                    <button onclick="document.getElementById('img-input').click()">Imagen</button>
+                <div class="profile-top-section">
+                    <div class="profile-user-info">
+                        <div class="avatar-frame-med"><img id="prof-img" src="" alt=""></div>
+                        <input type="file" id="img-input" accept="image/png, image/jpeg, image/webp, image/gif" hidden>
+                        <div class="identity-left">
+                            <div class="name-row-left">
+                                <h2 id="prof-name"></h2>
+                                <div class="edit-anchor">
+                                    <button id="btn-open-edit" class="subtle-edit-btn hidden" onclick="UI.toggleEditMenu()">Editar</button>
+                                    <div id="edit-dropdown" class="edit-dropdown-menu hidden">
+                                        <button onclick="App.editDisplayName()">Nombre</button>
+                                        <button onclick="document.getElementById('img-input').click()">Imagen</button>
+                                    </div>
                                 </div>
                             </div>
+                            <span id="prof-role" class="role-badge"></span>
                         </div>
-                        <span id="prof-role" class="role-badge"></span>
                     </div>
-                </div>
 
-                <div class="profile-stats-grid">
-                    <div class="stat-card"><small>CARRERAS</small><b id="st-total">0</b></div>
-                    <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg">0</b></div>
-                    <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10">0</b></div>
-                    <div class="stat-card highlight-box"><small id="lbl-st-best">RÉCORD</small><b id="st-best">0</b></div>
+                    <div class="profile-stats-grid">
+                        <div class="stat-card"><small>CARRERAS</small><b id="st-total">0</b></div>
+                        <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg">0</b></div>
+                        <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10">0</b></div>
+                        <div class="stat-card highlight-box"><small id="lbl-st-best">RÉCORD</small><b id="st-best">0</b></div>
+                    </div>
                 </div>
 
                 <div class="profile-history-section">
@@ -213,9 +215,6 @@
         </div>
 
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
