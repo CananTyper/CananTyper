@@ -164,41 +164,65 @@
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
                     <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Administración</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Gestión de textos y usuarios</p>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Gestión integral de la plataforma</p>
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="admin-tabs">
                 <button id="t-ph" class="tab-btn active" onclick="UI.switchTab('phrases')">Textos</button>
+                <button id="t-cr" class="tab-btn" onclick="UI.switchTab('create')">Crear</button>
                 <button id="t-ra" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
                 <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
             </div>
             <div class="admin-content-area">
                 
                 <div id="pane-phrases" class="pane">
-                    <input type="text" id="admin-phrase-search" placeholder="Buscar texto por ID o palabras..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
+                    <input type="text" id="admin-phrase-search" placeholder="Buscar texto por título o palabras..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
                     
                     <div id="admin-phrase-form" class="admin-form hidden">
                         <div class="form-row">
-                            <input type="text" id="phrase-title" placeholder="Número/ID" style="width: 100px;" disabled>
-                            <input type="text" id="phrase-category" placeholder="Categoría" style="width: 150px;">
-                            <textarea id="phrase-input" placeholder="Texto completo"></textarea>
+                            <input type="text" id="phrase-title" placeholder="Número" style="width: 100px;" disabled>
+                            <select id="phrase-category" class="admin-select"></select>
+                            <textarea id="phrase-input" placeholder="Texto"></textarea>
                         </div>
                         <div style="display:flex; justify-content:center; gap:10px;">
                             <button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary">ACTUALIZAR</button>
                             <button onclick="UI.cancelEditP()" class="btn-outline">CANCELAR</button>
                         </div>
                     </div>
-                    
+
                     <div id="admin-phrase-categories" class="category-grid custom-scroll"></div>
                     <div id="admin-phrase-list-view" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 0;">
-                        <button onclick="UI.showAdminPhraseCategories()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
+                        <button id="btn-back-cat-admin" onclick="UI.showAdminPhraseCategories()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
                         <ul id="admin-phrases-list" class="custom-scroll admin-list"></ul>
                         <div class="pagination-bar" style="margin-top: 10px;">
                             <button id="admin-ph-prev" class="btn-outline" onclick="UI.changeAdminPhrasePage(-1)">←</button>
                             <span id="admin-ph-page-num" class="page-indicator">Página 1</span>
                             <button id="admin-ph-next" class="btn-outline" onclick="UI.changeAdminPhrasePage(1)">→</button>
                         </div>
+                    </div>
+                </div>
+
+                <div id="pane-create" class="pane hidden">
+                    <div class="mode-selectors" style="margin-bottom: 20px;">
+                        <button onclick="UI.toggleCreateForm('text')" class="btn-primary btn-large">TEXTO</button>
+                        <button onclick="UI.toggleCreateForm('cat')" class="btn-primary btn-alt btn-large">CATEGORÍA</button>
+                    </div>
+
+                    <div id="create-text-form" class="admin-form hidden">
+                        <div class="form-row">
+                            <input type="text" id="new-phrase-title" placeholder="Número (ID)" style="width: 150px;">
+                            <select id="new-phrase-category" class="admin-select"></select>
+                            <textarea id="new-phrase-input" placeholder="Texto completo a tipear"></textarea>
+                        </div>
+                        <button onclick="App.createNewPhrase()" class="btn-primary" style="align-self: center;">GUARDAR TEXTO</button>
+                    </div>
+
+                    <div id="create-cat-form" class="admin-form hidden">
+                        <div class="form-row" style="justify-content: center;">
+                            <input type="text" id="new-cat-name" placeholder="Nombre de la Categoría" style="max-width: 400px; text-align: center;">
+                        </div>
+                        <button onclick="App.createNewCategory()" class="btn-primary" style="align-self: center;">CREAR CATEGORÍA</button>
                     </div>
                 </div>
 
@@ -218,6 +242,7 @@
                 </div>
 
                 <div id="pane-users" class="pane hidden">
+                    <input type="text" id="user-search" placeholder="Buscar usuario por nombre o ID..." oninput="UI.renderAdminU()" style="margin-bottom: 15px;">
                     <div class="custom-scroll admin-table-wrapper">
                         <table class="data-table">
                             <thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead>
@@ -235,11 +260,12 @@
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display">0</span></div>
                 </div>
 
-                <div id="target-text" class="game-text-display"></div>
+                <div id="target-text" class="game-text-display custom-scroll"></div>
                 <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
                 
                 <div id="in-game-controls" class="game-controls">
                     <button onclick="App.quitRace()" class="btn-outline">Volver</button>
+                    <button onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
                     <button onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
 
