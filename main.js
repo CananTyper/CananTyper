@@ -1,69 +1,41 @@
-const firebaseConfig = {
-    apiKey: "AIzaSyDlDLS1X6u3zodYVadV4T-hw5Uq7eHHuFk",
-    authDomain: "canantyper.firebaseapp.com",
-    projectId: "canantyper",
-    storageBucket: "canantyper.firebasestorage.app",
-    messagingSenderId: "55384940628",
-    appId: "1:55384940628:web:6211a5e6c8bc36694e8dc1"
-};
-
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
+// ARQUITECTURA LOCALSTORAGE PURA (0 LATENCIA, ADAPTADO A GITHUB PAGES)
 const CT = {
-    data: { u: [], s: [], p: [] }, 
+    keys: { u: 'ct_v12_users', s: 'ct_v12_scores', p: 'ct_v12_phrases' },
+    db: (k) => JSON.parse(localStorage.getItem(CT.keys[k])) || [],
+    save: (k, d) => localStorage.setItem(CT.keys[k], JSON.stringify(d)),
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
     
-    getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    dbLocal: (k) => CT.data[k], 
-    
-    init: function() {
+    getARDate: () => {
+        return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+    },
+
+    init() {
+        if(this.db('u').length === 0) this.save('u', []);
+        if(this.db('s').length === 0) this.save('s', []);
+        if(this.db('p').length === 0) this.save('p', [{ id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." }]);
+        
         const storedUnit = localStorage.getItem('ct_unit_pref');
         if(storedUnit) this.currentUnit = storedUnit;
-
-        // Carga Cero-Lag (Cache local)
-        const localU = localStorage.getItem('ct_cache_u');
-        const localS = localStorage.getItem('ct_cache_s');
-        const localP = localStorage.getItem('ct_cache_p');
         
-        if (localU) this.data.u = JSON.parse(localU);
-        if (localS) this.data.s = JSON.parse(localS);
-        if (localP) this.data.p = JSON.parse(localP);
-
-        if(this.ses()) UI.initLobby(); else UI.show('auth-screen');
-
-        // Sincronización en segundo plano con Firebase
-        db.collection('users').onSnapshot(snap => { 
-            this.data.u = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u));
-            UI.refreshActiveViews(); 
-        });
-        db.collection('scores').onSnapshot(snap => { 
-            this.data.s = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_s', JSON.stringify(this.data.s));
-            UI.refreshActiveViews(); 
-        });
-        db.collection('phrases').onSnapshot(snap => { 
-            this.data.p = snap.docs.map(d => d.data()); 
-            if(this.data.p.length === 0) {
-                db.collection('phrases').doc("1").set({ id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." });
-            }
-            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
-            UI.refreshActiveViews(); 
-        });
+        // Inyecta el color global en la raíz al arrancar
+        document.documentElement.setAttribute('data-theme', this.currentUnit);
     },
-    ses: () => { 
-        const s = JSON.parse(sessionStorage.getItem('ct_ses')); 
-        return s ? CT.data.u.find(x => x.h === s.h) : null; 
+    ses: () => {
+        const s = JSON.parse(sessionStorage.getItem('ct_ses'));
+        return s ? (CT.db('u')).find(x => x.h === s.h) : null;
     }
 };
 
 const UI = {
-    trackPage: 0, cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
-    formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
+    trackPage: 0,
+    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
+    
+    formatValue: (cpm) => {
+        return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm;
+    },
 
     show: (id) => { 
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); 
@@ -79,34 +51,31 @@ const UI = {
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         document.getElementById('btn-go-admin').classList.toggle('hidden', u.r === 'usuario');
+        
         UI.updateUnitVisuals(CT.currentUnit);
-        this.renderGlobal(); this.show('home-screen');
+        this.renderGlobal(); 
+        this.show('home-screen');
     },
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('phrases'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
-    refreshActiveViews: () => {
-        if(!document.getElementById('game-screen').classList.contains('hidden')) return; // No refrescar si está jugando
-        if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
-        if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
-        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
-        if(!document.getElementById('track-screen').classList.contains('hidden')) UI.renderTrackList();
-    },
-
-    // LÓGICA DE INTERRUPTOR CERO FALLOS
+    // INTERRUPTOR DE UNIDADES PERFECTO (Color y DOM)
     toggleUnits: () => {
         CT.currentUnit = (CT.currentUnit === 'cpm') ? 'wpm' : 'cpm';
         localStorage.setItem('ct_unit_pref', CT.currentUnit);
         UI.updateUnitVisuals(CT.currentUnit);
-        UI.refreshActiveViews();
+        
+        // Refrescar vistas activas
+        if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
+        if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
+        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
     },
 
     updateUnitVisuals: (unit) => {
-        // Interfaz
         document.querySelectorAll('.unit-switcher span').forEach(s => s.classList.remove('active'));
         document.getElementById(`unit-${unit}`).classList.add('active');
         
-        // Inyección de Raíz (Absoluta precisión de CSS)
+        // Inyección directa de variable CSS Global
         document.documentElement.setAttribute('data-theme', unit);
 
         const unitLabel = unit.toUpperCase();
@@ -114,9 +83,11 @@ const UI = {
         if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = (unit === 'cpm' ? 'PROMEDIO CPM' : 'PROMEDIO WPM');
         if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').innerText = 'Velocidad (' + unitLabel + ')';
         if(document.getElementById('th-unit-admin')) document.getElementById('th-unit-admin').innerText = unitLabel;
+        
         document.querySelectorAll('th.active-unit').forEach(th => th.classList.remove('active-unit'));
         if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').classList.add('active-unit');
         if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').classList.add('active-unit');
+
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + unitLabel;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + unitLabel;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + unitLabel;
@@ -124,8 +95,10 @@ const UI = {
     },
 
     renderGlobal() {
-        const scores = CT.dbLocal('s'); const users = CT.dbLocal('u'); const todayAR = CT.getARDate();
-        const typeEl = document.getElementById('leaderboard-type'); const rankTypeEl = document.getElementById('ranking-type');
+        const scores = CT.db('s'); const users = CT.db('u');
+        const todayAR = CT.getARDate();
+        const typeEl = document.getElementById('leaderboard-type');
+        const rankTypeEl = document.getElementById('ranking-type');
         if(!typeEl || !rankTypeEl) return; 
 
         let filteredScores = typeEl.value === 'today' ? scores.filter(s => s.d === todayAR) : scores;
@@ -140,7 +113,7 @@ const UI = {
 
         const rankingMode = rankTypeEl.value;
         let playerStats = users.map(u => {
-            const history = u.hi || []; 
+            const history = u.hi || [];
             let averageCPM = (rankingMode === 'last10') 
                 ? (history.slice(-10).length ? Math.round(history.slice(-10).reduce((a,b)=>a+b)/history.slice(-10).length) : 0)
                 : (history.length ? Math.round(history.reduce((a,b)=>a+b)/history.length) : 0);
@@ -156,15 +129,21 @@ const UI = {
 
     showProfile(who) {
         try {
-            const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
-            const u = CT.dbLocal('u').find(x => x.h === targetHandle); if(!u) return;
+            const currentSes = CT.ses();
+            const targetHandle = (who === 'me') ? currentSes.h : who;
+            const u = CT.db('u').find(x => x.h === targetHandle);
+            if(!u) return;
+            
             CT.activeProfHandle = u.h;
+            
             document.getElementById('prof-name').innerText = u.n || "Piloto";
             document.getElementById('prof-img').src = u.a || CT.defAvatar;
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
-            const hi = u.hi || []; const total = hi.length;
+            const hi = u.hi || [];
+            const total = hi.length;
             document.getElementById('st-total').innerText = total;
+            
             const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
             const last10hi = hi.slice(-10);
             const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
@@ -174,25 +153,38 @@ const UI = {
             document.getElementById('st-last-10').innerText = UI.formatValue(avg10CPM);
             document.getElementById('st-best').innerText = UI.formatValue(bestCPM);
             
-            CT.profPage = 0; this.renderProfileHistory();
+            CT.profPage = 0; 
+            this.renderProfileHistory();
+            
             const isMe = (currentSes && u.h === currentSes.h);
             document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe);
             document.getElementById('edit-dropdown').classList.add('hidden');
             this.show('profile-screen');
         } catch (error) { console.error(error); }
     },
+
     toggleEditMenu() { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
 
     renderProfileHistory() {
-        const scores = CT.dbLocal('s'); const userScores = scores.filter(s => s.h === CT.activeProfHandle);
-        const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
-        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td></tr>`).join('');
+        const scores = CT.db('s');
+        const userScores = scores.filter(s => s.h === CT.activeProfHandle);
+        const start = CT.profPage * 10;
+        const pageData = userScores.slice(start, start + 10);
+        
+        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr>
+            <td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td>
+            <td>${s.track}</td>
+            <td>${s.d}</td>
+        </tr>`).join('');
+        
         document.getElementById('prof-prev').disabled = CT.profPage === 0;
         document.getElementById('prof-next').disabled = (start + 10) >= userScores.length;
         document.getElementById('prof-page-num').innerText = `Página ${CT.profPage + 1}`;
     },
+
     changeProfPage(delta) { 
-        const userScores = CT.dbLocal('s').filter(s => s.h === CT.activeProfHandle); const nextStart = (CT.profPage + delta) * 10;
+        const userScores = CT.db('s').filter(s => s.h === CT.activeProfHandle);
+        const nextStart = (CT.profPage + delta) * 10;
         if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); }
     },
 
@@ -206,44 +198,57 @@ const UI = {
         if(tab === 'users') this.renderAdminU();
     },
     renderAdminR() {
-        const scores = CT.dbLocal('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
+        const scores = CT.db('s');
+        const query = (document.getElementById('race-search').value || "").toLowerCase();
         let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
-        document.getElementById('admin-races-list').innerHTML = filtered.map((s) => `<tr><td><b>${s.n}</b></td><td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td><td><button onclick="UI.editRace('${s.id}')" class="btn-exit-outline" style="border-color:var(--p);color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400">ELIMINAR</button></td></tr>`).join('');
+        document.getElementById('admin-races-list').innerHTML = filtered.map((s) => `<tr>
+            <td><b>${s.n}</b></td>
+            <td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td>
+            <td>${s.track}</td>
+            <td>${s.d}</td>
+            <td><button onclick="UI.editRace('${s.id}')" class="btn-exit-outline" style="border-color:var(--p);color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400">ELIMINAR</button></td>
+        </tr>`).join('');
     },
-    editRace: (raceId) => {
-        let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
-        const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta):", oldCPM);
+    editRace(raceId) {
+        let scores = CT.db('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
+        const oldCPM = Number(scores[idx].c);
+        const newCPM = prompt("Nuevo CPM (Base exacta):", oldCPM);
         if(!newCPM || isNaN(newCPM)) return;
-        const targetCPM = parseInt(newCPM); 
-        db.collection('scores').doc(raceId).update({ c: targetCPM });
-        const u = CT.dbLocal('u').find(u => u.h === scores[idx].h);
-        if(u) { let hi = u.hi; const hIdx = hi.indexOf(oldCPM); if(hIdx !== -1) { hi[hIdx] = targetCPM; db.collection('users').doc(u.h).update({ hi: hi }); } }
+        
+        const targetCPM = parseInt(newCPM);
+        let users = CT.db('u'); const uIdx = users.findIndex(u => u.h === scores[idx].h);
+        if(uIdx !== -1) { 
+            const hIdx = users[uIdx].hi.indexOf(oldCPM); 
+            if(hIdx !== -1) users[uIdx].hi[hIdx] = targetCPM; 
+            CT.save('u', users); 
+        }
+        scores[idx].c = targetCPM; CT.save('s', scores); this.renderAdminR(); this.renderGlobal();
     },
-    delRace: (raceId) => {
+    delRace(raceId) {
         if(!confirm("¿Eliminar?")) return;
-        let scores = CT.dbLocal('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
-        const raceData = scores[idx]; 
-        db.collection('scores').doc(raceId).delete();
-        const u = CT.dbLocal('u').find(u => u.h === raceData.h);
-        if(u) { let hi = u.hi; const hIdx = hi.indexOf(Number(raceData.c)); if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } }
+        let scores = CT.db('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
+        const raceData = scores[idx]; let users = CT.db('u'); const uIdx = users.findIndex(u => u.h === raceData.h);
+        if(uIdx !== -1) { const hIdx = users[uIdx].hi.indexOf(Number(raceData.c)); if(hIdx !== -1) users[uIdx].hi.splice(hIdx, 1); CT.save('u', users); }
+        scores.splice(idx, 1); CT.save('s', scores); this.renderAdminR(); this.renderGlobal();
     },
     renderAdminP() {
-        document.getElementById('admin-phrases-list').innerHTML = CT.dbLocal('p').map((t, i) => `<li class="phrase-item"><span><b>#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-exit-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400;">BORRAR</button></div></li>`).join('');
+        const tracks = CT.db('p');
+        document.getElementById('admin-phrases-list').innerHTML = tracks.map((t, i) => `<li class="phrase-item"><span><b>#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-exit-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP(${i})" class="btn-exit-outline" style="color:#f44;border-color:#400;">BORRAR</button></div></li>`).join('');
     },
     prepEdit(i) {
-        const p = CT.dbLocal('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
+        const p = CT.db('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
     },
-    delP: (idStr) => { if(confirm("¿Eliminar?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
+    delP(i) { if(confirm("¿Eliminar?")) { let p = CT.db('p'); p.splice(i, 1); CT.save('p', p); this.renderAdminP(); }},
     renderAdminU() {
-        document.getElementById('admin-users-list').innerHTML = CT.dbLocal('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU('${u.h}')" class="btn-exit-outline" style="color:#f44;border-color:#400;">ELIMINAR</button></td></tr>`).join('');
+        document.getElementById('admin-users-list').innerHTML = CT.db('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU(${i})" class="btn-exit-outline" style="color:#f44;border-color:#400;">ELIMINAR</button></td></tr>`).join('');
     },
-    delU: (handle) => { if(confirm("¿Eliminar usuario?")) { db.collection('users').doc(handle).delete(); }},
+    delU(i) { if(confirm("¿Eliminar?")) { let u = CT.db('u'); u.splice(i, 1); CT.save('u', u); this.renderAdminU(); }},
     
     showTrackSelect() {
         UI.trackPage = 0; this.renderTrackList(); this.show('track-screen');
     },
     renderTrackList() {
-        const tracks = CT.dbLocal('p'); const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
+        const tracks = CT.db('p'); const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
         document.getElementById('track-list-full').innerHTML = pageData.map(t => `
             <div class="custom-track-row" onclick="App.startRaceWithTrack(${t.id})">
                 <div class="track-id">#${t.title}</div>
@@ -258,16 +263,18 @@ const UI = {
         document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
     },
     changeTrackPage(delta) {
-        const tracks = CT.dbLocal('p'); const nextStart = (UI.trackPage + delta) * 20;
+        const tracks = CT.db('p'); const nextStart = (UI.trackPage + delta) * 20;
         if(nextStart >= 0 && nextStart < tracks.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
 
+    // FIX CROP MATEMÁTICO (Sin bordes negros)
     openCropModal(src) {
         const img = document.getElementById('crop-image'); img.src = src;
         img.onload = () => {
             UI.cropScale = 1; UI.cropX = 0; UI.cropY = 0; document.getElementById('crop-zoom').value = 1;
             const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight;
-            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
+            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } 
+            else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
             UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); UI.setupCropEvents();
         };
     },
@@ -290,48 +297,47 @@ const UI = {
 
 const App = {
     currentTrack: null, activeEngine: null,
-    startRandomRace: () => { const tracks = CT.dbLocal('p'); if(!tracks || tracks.length === 0) return alert("Crea una pista."); App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack); },
-    startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id === id); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track); } },
+    
+    startRandomRace: () => { 
+        const tracks = CT.db('p'); 
+        if(!tracks || tracks.length === 0) return alert("Crea una pista."); 
+        App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)];
+        if(App.activeEngine) App.activeEngine.stop();
+        App.activeEngine = new Engine(App.currentTrack); 
+    },
+    startRaceWithTrack: (id) => { 
+        const track = CT.db('p').find(t => t.id === id); 
+        if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track); }
+    },
     retryRace: () => { if(App.activeEngine) App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack); },
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
-    
-    editDisplayName: () => { 
-        const u = CT.ses(); if(!u) return; 
-        const newName = prompt("Nuevo nombre:", u.n); 
-        if(newName && newName.trim()) { 
-            db.collection('users').doc(u.h).update({ n: newName });
-            db.collection('scores').where('h', '==', u.h).get().then(q => {
-                const batch = db.batch();
-                q.forEach(doc => { batch.update(doc.ref, { n: newName }); });
-                batch.commit();
-            });
-        } 
+
+    editDisplayName: () => {
+        const u = CT.ses(); if(!u) return;
+        const newName = prompt("Nuevo nombre:", u.n);
+        if(newName && newName.trim()) {
+            let users = CT.db('u'); const idx = users.findIndex(x => x.h === u.h);
+            users[idx].n = newName; CT.save('u', users);
+            let scores = CT.db('s'); scores.forEach(s => { if(s.h === u.h) s.n = newName; });
+            CT.save('s', scores); UI.showProfile('me');
+        }
     },
-    login: async () => { 
-        const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
-        const docRef = await db.collection('users').doc(handle).get();
-        if(docRef.exists && docRef.data().p === p) { 
-            sessionStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
-            UI.initLobby(); 
-        } else { alert("Usuario o contraseña incorrectos"); }
+    login: () => { 
+        const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; const u = CT.db('u').find(x => x.h === handle && x.p === p); 
+        if(u) { sessionStorage.setItem('ct_ses', JSON.stringify(u)); UI.initLobby(); } else alert("Usuario o contraseña incorrectos"); 
     },
-    register: async () => { 
+    register: () => { 
         const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
-        const docRef = await db.collection('users').doc(handle).get();
-        if(docRef.exists) return alert("Ese usuario ya está en uso");
-        const role = (CT.dbLocal('u').length === 0 || handle === '@angel') ? 'admin' : 'usuario'; 
-        const newUser = { h: handle, n, p, r: role, a: '', hi: [] };
-        await db.collection('users').doc(handle).set(newUser);
-        UI.toggleAuth(true); alert("Cuenta creada con éxito.");
+        let uList = CT.db('u'); if(uList.some(x => x.h === handle)) return alert("Ese usuario ya está en uso");
+        const role = (uList.length === 0 || handle === '@angel') ? 'admin' : 'usuario'; 
+        uList.push({ h: handle, n, p, r: role, a: '', hi: [] }); CT.save('u', uList); UI.toggleAuth(true); alert("Cuenta creada con éxito.");
     },
     savePhrase: () => { 
         const titleInp = document.getElementById('phrase-title'); const textInp = document.getElementById('phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos");
-        const p = CT.dbLocal('p'); 
-        const idStr = (CT.editIdx !== null) ? p[CT.editIdx].id.toString() : Date.now().toString();
-        db.collection('phrases').doc(idStr).set({ id: Number(idStr), title: titleInp.value, text: textInp.value });
-        CT.editIdx = null; document.getElementById('btn-save-phrase').innerText = "GUARDAR";
-        titleInp.value = ''; textInp.value = ''; 
+        let p = CT.db('p'); if(CT.editIdx !== null) { p[CT.editIdx].title = titleInp.value; p[CT.editIdx].text = textInp.value; CT.editIdx = null; document.getElementById('btn-save-phrase').innerText = "GUARDAR"; }
+        else { p.push({ id: Date.now(), title: titleInp.value, text: textInp.value }); }
+        CT.save('p', p); titleInp.value = ''; textInp.value = ''; UI.renderAdminP(); 
     },
     logout: () => { sessionStorage.clear(); location.reload(); },
 
@@ -351,20 +357,17 @@ const App = {
         ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); 
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88); 
         
-        const u = CT.ses();
-        if(u) {
-            db.collection('users').doc(u.h).update({ a: compressedBase64 });
-            db.collection('scores').where('h', '==', u.h).get().then(q => {
-                const batch = db.batch();
-                q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); });
-                batch.commit();
-            });
-            document.getElementById('prof-img').src = compressedBase64;
-        }
-        UI.closeCropModal();
+        let users = CT.db('u'); const idx = users.findIndex(x => x.h === CT.ses().h);
+        users[idx].a = compressedBase64; CT.save('u', users); 
+        let scores = CT.db('s'); scores.forEach(s => { if(s.h === CT.ses().h) s.a = compressedBase64; });
+        CT.save('s', scores);
+        
+        document.getElementById('prof-img').src = compressedBase64; 
+        UI.closeCropModal(); UI.showProfile('me');
     }
 };
 
+// MOTOR DE JUEGO CERO LATENCIA (Mecánica TypeRacer estricta)
 class Engine {
     constructor(trackObj) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
@@ -421,37 +424,26 @@ class Engine {
             } else { el.value = v; el.classList.add('input-error'); }
         }
     }
-    
-    // CERO LAG: Interfaz inmediata, Base de datos en segundo plano
     end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
-        // 1. Mostrar Pantalla (0ms de retraso)
+        const u = CT.ses(); 
+        if(u) {
+            let users = CT.db('u'); const uIdx = users.findIndex(x => x.h === u.h); users[uIdx].hi.push(finalCPM); CT.save('u', users); 
+            const dateStr = CT.getARDate();
+            let s = CT.db('s'); s.unshift({ id: Date.now().toString(), n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title }); CT.save('s', s); 
+        }
+        
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
+        
         const finalSpeedValue = UI.formatValue(finalCPM);
         const finalUnitLabel = CT.currentUnit.toUpperCase();
         document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
+        
         document.getElementById('game-result-modal').classList.remove('hidden');
-
-        // 2. Procesar en la nube (Fondo)
-        setTimeout(() => {
-            const u = CT.ses(); 
-            if(u) {
-                db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
-                const dateStr = CT.getARDate();
-                const scoreId = Date.now().toString();
-                
-                // Actualiza espejo local para la tabla
-                const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title };
-                let s = CT.dbLocal('s'); s.unshift(newScore); CT.data.s = s;
-                
-                // Envía a Firebase
-                db.collection('scores').doc(scoreId).set(newScore); 
-            }
-        }, 10);
     }
 }
 
