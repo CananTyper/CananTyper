@@ -1,6 +1,6 @@
-// ARQUITECTURA LOCALSTORAGE PURA (0 LATENCIA, ADAPTADO A GITHUB PAGES)
+// ARQUITECTURA OFFLINE / LOCALSTORAGE PURA (0 LATENCIA)
 const CT = {
-    keys: { u: 'ct_v12_users', s: 'ct_v12_scores', p: 'ct_v12_phrases' },
+    keys: { u: 'ct_master_u', s: 'ct_master_s', p: 'ct_master_p' },
     db: (k) => JSON.parse(localStorage.getItem(CT.keys[k])) || [],
     save: (k, d) => localStorage.setItem(CT.keys[k], JSON.stringify(d)),
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
@@ -8,20 +8,23 @@ const CT = {
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
     
-    getARDate: () => {
-        return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
-    },
+    getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
 
     init() {
         if(this.db('u').length === 0) this.save('u', []);
         if(this.db('s').length === 0) this.save('s', []);
-        if(this.db('p').length === 0) this.save('p', [{ id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." }]);
+        if(this.db('p').length === 0) this.save('p', [
+            { id: 1, title: "1", text: "La programación es un arte competitivo. En el código limpio se encuentra la verdadera maestría." },
+            { id: 2, title: "2", text: "La mecanografía no se trata solo de mover los dedos rápido, sino de entrenar la mente para procesar palabras completas de un solo golpe." }
+        ]);
         
         const storedUnit = localStorage.getItem('ct_unit_pref');
         if(storedUnit) this.currentUnit = storedUnit;
         
-        // Inyecta el color global en la raíz al arrancar
+        // Inyección de Tema Inmediata
         document.documentElement.setAttribute('data-theme', this.currentUnit);
+        
+        if(this.ses()) UI.initLobby(); else UI.show('auth-screen');
     },
     ses: () => {
         const s = JSON.parse(sessionStorage.getItem('ct_ses'));
@@ -33,9 +36,7 @@ const UI = {
     trackPage: 0,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
     
-    formatValue: (cpm) => {
-        return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm;
-    },
+    formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     show: (id) => { 
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); 
@@ -59,39 +60,38 @@ const UI = {
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('phrases'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
-    // INTERRUPTOR DE UNIDADES PERFECTO (Color y DOM)
-    toggleUnits: () => {
-        CT.currentUnit = (CT.currentUnit === 'cpm') ? 'wpm' : 'cpm';
-        localStorage.setItem('ct_unit_pref', CT.currentUnit);
-        UI.updateUnitVisuals(CT.currentUnit);
+    // SET UNIT: Cambia Tema y Renderiza (1ms)
+    setUnit: (unit) => {
+        if(CT.currentUnit === unit) return;
+        CT.currentUnit = unit;
+        localStorage.setItem('ct_unit_pref', unit);
+        UI.updateUnitVisuals(unit);
         
-        // Refrescar vistas activas
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
-        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
+        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminR(); }
     },
 
     updateUnitVisuals: (unit) => {
-        document.querySelectorAll('.unit-switcher span').forEach(s => s.classList.remove('active'));
-        document.getElementById(`unit-${unit}`).classList.add('active');
-        
-        // Inyección directa de variable CSS Global
         document.documentElement.setAttribute('data-theme', unit);
 
-        const unitLabel = unit.toUpperCase();
-        if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = unitLabel;
-        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = (unit === 'cpm' ? 'PROMEDIO CPM' : 'PROMEDIO WPM');
-        if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').innerText = 'Velocidad (' + unitLabel + ')';
-        if(document.getElementById('th-unit-admin')) document.getElementById('th-unit-admin').innerText = unitLabel;
+        document.getElementById('btn-cpm').classList.toggle('active', unit === 'cpm');
+        document.getElementById('btn-wpm').classList.toggle('active', unit === 'wpm');
+
+        const label = unit.toUpperCase();
+        if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').innerText = label;
+        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
+        if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').innerText = 'VEL. (' + label + ')';
+        if(document.getElementById('th-unit-admin')) document.getElementById('th-unit-admin').innerText = label;
         
         document.querySelectorAll('th.active-unit').forEach(th => th.classList.remove('active-unit'));
         if(document.getElementById('th-unit-times')) document.getElementById('th-unit-times').classList.add('active-unit');
         if(document.getElementById('th-unit-hist')) document.getElementById('th-unit-hist').classList.add('active-unit');
 
-        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + unitLabel;
-        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + unitLabel;
-        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + unitLabel;
-        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = unitLabel;
+        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
+        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
+        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
+        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
 
     renderGlobal() {
@@ -107,7 +107,7 @@ const UI = {
         
         document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => `<tr>
             <td>${idx + 1}</td>
-            <td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-frame-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td>
+            <td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td>
             <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td>
         </tr>`).join('');
 
@@ -122,26 +122,22 @@ const UI = {
 
         document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => `<tr>
             <td>${idx + 1}</td>
-            <td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-frame-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td>
+            <td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td>
             <td><b style="color:var(--p)">${UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
         </tr>`).join('');
     },
 
     showProfile(who) {
         try {
-            const currentSes = CT.ses();
-            const targetHandle = (who === 'me') ? currentSes.h : who;
-            const u = CT.db('u').find(x => x.h === targetHandle);
-            if(!u) return;
+            const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
+            const u = CT.db('u').find(x => x.h === targetHandle); if(!u) return;
             
             CT.activeProfHandle = u.h;
-            
-            document.getElementById('prof-name').innerText = u.n || "Piloto";
+            document.getElementById('prof-name').innerText = u.n;
             document.getElementById('prof-img').src = u.a || CT.defAvatar;
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
-            const hi = u.hi || [];
-            const total = hi.length;
+            const hi = u.hi || []; const total = hi.length;
             document.getElementById('st-total').innerText = total;
             
             const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
@@ -153,8 +149,7 @@ const UI = {
             document.getElementById('st-last-10').innerText = UI.formatValue(avg10CPM);
             document.getElementById('st-best').innerText = UI.formatValue(bestCPM);
             
-            CT.profPage = 0; 
-            this.renderProfileHistory();
+            CT.profPage = 0; this.renderProfileHistory();
             
             const isMe = (currentSes && u.h === currentSes.h);
             document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe);
@@ -162,35 +157,28 @@ const UI = {
             this.show('profile-screen');
         } catch (error) { console.error(error); }
     },
-
     toggleEditMenu() { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
 
     renderProfileHistory() {
-        const scores = CT.db('s');
-        const userScores = scores.filter(s => s.h === CT.activeProfHandle);
-        const start = CT.profPage * 10;
-        const pageData = userScores.slice(start, start + 10);
+        const scores = CT.db('s'); const userScores = scores.filter(s => s.h === CT.activeProfHandle);
+        const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
         
         document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr>
-            <td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td>
-            <td>${s.track}</td>
-            <td>${s.d}</td>
+            <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
         </tr>`).join('');
         
         document.getElementById('prof-prev').disabled = CT.profPage === 0;
         document.getElementById('prof-next').disabled = (start + 10) >= userScores.length;
         document.getElementById('prof-page-num').innerText = `Página ${CT.profPage + 1}`;
     },
-
     changeProfPage(delta) { 
-        const userScores = CT.db('s').filter(s => s.h === CT.activeProfHandle);
-        const nextStart = (CT.profPage + delta) * 10;
+        const userScores = CT.db('s').filter(s => s.h === CT.activeProfHandle); const nextStart = (CT.profPage + delta) * 10;
         if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); }
     },
 
     switchTab(tab) {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden'));
-        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-${tab}`).classList.remove('hidden');
         document.getElementById(`t-${tab.substring(0,2)}`).classList.add('active');
         if(tab === 'phrases') this.renderAdminP();
@@ -198,30 +186,20 @@ const UI = {
         if(tab === 'users') this.renderAdminU();
     },
     renderAdminR() {
-        const scores = CT.db('s');
-        const query = (document.getElementById('race-search').value || "").toLowerCase();
+        const scores = CT.db('s'); const query = (document.getElementById('race-search').value || "").toLowerCase();
         let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query));
         document.getElementById('admin-races-list').innerHTML = filtered.map((s) => `<tr>
-            <td><b>${s.n}</b></td>
-            <td style="color:var(--p)"><b>${UI.formatValue(s.c)}</b></td>
-            <td>${s.track}</td>
-            <td>${s.d}</td>
-            <td><button onclick="UI.editRace('${s.id}')" class="btn-exit-outline" style="border-color:var(--p);color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-exit-outline" style="color:#f44;border-color:#400">ELIMINAR</button></td>
+            <td><b>${s.n}</b></td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+            <td><button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p); margin-right:5px;">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-outline" style="color:var(--error); border-color:var(--error);">ELIMINAR</button></td>
         </tr>`).join('');
     },
     editRace(raceId) {
         let scores = CT.db('s'); const idx = scores.findIndex(s => s.id === raceId); if(idx === -1) return;
-        const oldCPM = Number(scores[idx].c);
-        const newCPM = prompt("Nuevo CPM (Base exacta):", oldCPM);
+        const oldCPM = Number(scores[idx].c); const newCPM = prompt("Nuevo CPM (Base exacta local):", oldCPM);
         if(!newCPM || isNaN(newCPM)) return;
-        
         const targetCPM = parseInt(newCPM);
         let users = CT.db('u'); const uIdx = users.findIndex(u => u.h === scores[idx].h);
-        if(uIdx !== -1) { 
-            const hIdx = users[uIdx].hi.indexOf(oldCPM); 
-            if(hIdx !== -1) users[uIdx].hi[hIdx] = targetCPM; 
-            CT.save('u', users); 
-        }
+        if(uIdx !== -1) { const hIdx = users[uIdx].hi.indexOf(oldCPM); if(hIdx !== -1) users[uIdx].hi[hIdx] = targetCPM; CT.save('u', users); }
         scores[idx].c = targetCPM; CT.save('s', scores); this.renderAdminR(); this.renderGlobal();
     },
     delRace(raceId) {
@@ -233,14 +211,14 @@ const UI = {
     },
     renderAdminP() {
         const tracks = CT.db('p');
-        document.getElementById('admin-phrases-list').innerHTML = tracks.map((t, i) => `<li class="phrase-item"><span><b>#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-exit-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP(${i})" class="btn-exit-outline" style="color:#f44;border-color:#400;">BORRAR</button></div></li>`).join('');
+        document.getElementById('admin-phrases-list').innerHTML = tracks.map((t, i) => `<li class="admin-list-item"><span><b style="color:var(--p)">#${t.title}</b></span><div><button onclick="UI.prepEdit(${i})" class="btn-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP(${i})" class="btn-outline" style="color:var(--error);border-color:var(--error);">BORRAR</button></div></li>`).join('');
     },
     prepEdit(i) {
         const p = CT.db('p'); document.getElementById('phrase-title').value = p[i].title; document.getElementById('phrase-input').value = p[i].text; CT.editIdx = i; document.getElementById('btn-save-phrase').innerText = "ACTUALIZAR";
     },
     delP(i) { if(confirm("¿Eliminar?")) { let p = CT.db('p'); p.splice(i, 1); CT.save('p', p); this.renderAdminP(); }},
     renderAdminU() {
-        document.getElementById('admin-users-list').innerHTML = CT.db('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU(${i})" class="btn-exit-outline" style="color:#f44;border-color:#400;">ELIMINAR</button></td></tr>`).join('');
+        document.getElementById('admin-users-list').innerHTML = CT.db('u').map((u, i) => `<tr><td>${u.n}</td><td>${u.h}</td><td>${u.r}</td><td><button onclick="UI.delU(${i})" class="btn-outline" style="color:var(--error);border-color:var(--error);">ELIMINAR</button></td></tr>`).join('');
     },
     delU(i) { if(confirm("¿Eliminar?")) { let u = CT.db('u'); u.splice(i, 1); CT.save('u', u); this.renderAdminU(); }},
     
@@ -250,11 +228,11 @@ const UI = {
     renderTrackList() {
         const tracks = CT.db('p'); const start = UI.trackPage * 20; const pageData = tracks.slice(start, start + 20);
         document.getElementById('track-list-full').innerHTML = pageData.map(t => `
-            <div class="custom-track-row" onclick="App.startRaceWithTrack(${t.id})">
-                <div class="track-id">#${t.title}</div>
-                <div class="track-content">
-                    <p class="track-full-text">${t.text}</p>
-                    <span class="track-meta">${t.text.split(' ').length} PALABRAS</span>
+            <div class="track-card" onclick="App.startRaceWithTrack(${t.id})">
+                <div class="track-card-id">#${t.title}</div>
+                <div class="track-card-content">
+                    <p class="track-card-text">${t.text}</p>
+                    <span class="track-card-meta">${t.text.split(' ').length} PALABRAS</span>
                 </div>
             </div>
         `).join('');
@@ -267,14 +245,12 @@ const UI = {
         if(nextStart >= 0 && nextStart < tracks.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
 
-    // FIX CROP MATEMÁTICO (Sin bordes negros)
     openCropModal(src) {
         const img = document.getElementById('crop-image'); img.src = src;
         img.onload = () => {
             UI.cropScale = 1; UI.cropX = 0; UI.cropY = 0; document.getElementById('crop-zoom').value = 1;
             const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight;
-            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } 
-            else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
+            if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; }
             UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); UI.setupCropEvents();
         };
     },
@@ -299,8 +275,7 @@ const App = {
     currentTrack: null, activeEngine: null,
     
     startRandomRace: () => { 
-        const tracks = CT.db('p'); 
-        if(!tracks || tracks.length === 0) return alert("Crea una pista."); 
+        const tracks = CT.db('p'); if(!tracks || tracks.length === 0) return alert("Crea un texto."); 
         App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)];
         if(App.activeEngine) App.activeEngine.stop();
         App.activeEngine = new Engine(App.currentTrack); 
@@ -325,13 +300,14 @@ const App = {
     },
     login: () => { 
         const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; const u = CT.db('u').find(x => x.h === handle && x.p === p); 
-        if(u) { sessionStorage.setItem('ct_ses', JSON.stringify(u)); UI.initLobby(); } else alert("Usuario o contraseña incorrectos"); 
+        if(u) { sessionStorage.setItem('ct_ses', JSON.stringify(u)); UI.initLobby(); } else alert("Usuario o contraseña incorrectos."); 
     },
     register: () => { 
         const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
-        let uList = CT.db('u'); if(uList.some(x => x.h === handle)) return alert("Ese usuario ya está en uso");
+        if(!n || !hRaw || !p) return alert("Completa todos los campos");
+        let uList = CT.db('u'); if(uList.some(x => x.h === handle)) return alert("Usuario en uso.");
         const role = (uList.length === 0 || handle === '@angel') ? 'admin' : 'usuario'; 
-        uList.push({ h: handle, n, p, r: role, a: '', hi: [] }); CT.save('u', uList); UI.toggleAuth(true); alert("Cuenta creada con éxito.");
+        uList.push({ h: handle, n, p, r: role, a: '', hi: [] }); CT.save('u', uList); UI.toggleAuth(true); alert("Cuenta creada.");
     },
     savePhrase: () => { 
         const titleInp = document.getElementById('phrase-title'); const textInp = document.getElementById('phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos");
@@ -355,19 +331,19 @@ const App = {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256);
         ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); 
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88); 
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); 
         
-        let users = CT.db('u'); const idx = users.findIndex(x => x.h === CT.ses().h);
-        users[idx].a = compressedBase64; CT.save('u', users); 
-        let scores = CT.db('s'); scores.forEach(s => { if(s.h === CT.ses().h) s.a = compressedBase64; });
-        CT.save('s', scores);
-        
-        document.getElementById('prof-img').src = compressedBase64; 
-        UI.closeCropModal(); UI.showProfile('me');
+        const u = CT.ses();
+        if(u) {
+            let users = CT.db('u'); const idx = users.findIndex(x => x.h === u.h); users[idx].a = compressedBase64; CT.save('u', users); 
+            let scores = CT.db('s'); scores.forEach(s => { if(s.h === u.h) s.a = compressedBase64; }); CT.save('s', scores);
+            document.getElementById('prof-img').src = compressedBase64;
+        }
+        UI.closeCropModal();
     }
 };
 
-// MOTOR DE JUEGO CERO LATENCIA (Mecánica TypeRacer estricta)
+// MOTOR TYPERACER (LOCAL, 0 LATENCIA)
 class Engine {
     constructor(trackObj) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
@@ -405,14 +381,14 @@ class Engine {
         let isPrefixValid = cur.startsWith(typed);
         if (isPrefixValid) {
             el.classList.remove('input-error');
-            activeSpan.innerHTML = `<span style="color:var(--ok)">${typed}</span>${cur.slice(typed.length)}`;
+            activeSpan.innerHTML = `<span class="char-ok">${typed}</span>${cur.slice(typed.length)}`;
         } else {
             el.classList.add('input-error');
             let matchLen = 0;
             while(matchLen < typed.length && matchLen < cur.length && typed[matchLen] === cur[matchLen]) matchLen++;
             let correctPart = cur.slice(0, matchLen); let errLen = typed.length - matchLen;
             let wordWrongPart = cur.slice(matchLen, matchLen + errLen); let remPart = cur.slice(matchLen + wordWrongPart.length);
-            activeSpan.innerHTML = `<span style="color:var(--ok)">${correctPart}</span><span style="background:rgba(244,67,54,0.4);color:var(--err)">${wordWrongPart}</span>${remPart}`;
+            activeSpan.innerHTML = `<span class="char-ok">${correctPart}</span><span class="char-err">${wordWrongPart}</span>${remPart}`;
         }
 
         if (isSubmitting || (last && v === cur)) {
@@ -424,6 +400,8 @@ class Engine {
             } else { el.value = v; el.classList.add('input-error'); }
         }
     }
+    
+    // RESPUESTA INMEDIATA (0 LATENCIA)
     end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
@@ -453,8 +431,8 @@ document.getElementById('img-input').onchange = (e) => {
     const file = e.target.files[0];
     if(!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if(!validTypes.includes(file.type)) { alert("Formato no válido. Solo se permiten imágenes (JPG, PNG, WEBP, GIF)."); e.target.value = ''; return; }
-    if(file.size > 5 * 1024 * 1024) { alert("La imagen es demasiado pesada. Máximo 5MB."); e.target.value = ''; return; }
+    if(!validTypes.includes(file.type)) { alert("Formato no válido."); e.target.value = ''; return; }
+    if(file.size > 5 * 1024 * 1024) { alert("Máximo 5MB."); e.target.value = ''; return; }
     const r = new FileReader();
     r.onload = (ev) => { UI.openCropModal(ev.target.result); };
     r.readAsDataURL(file);
