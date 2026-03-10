@@ -13,7 +13,7 @@ const db = firebase.firestore();
 
 // 2. CORE DE DATOS (ESPEJO LOCAL - CERO LATENCIA)
 const CT = {
-    data: { u: [], s: [], p: [], c: [] },
+    data: { u: [], s: [], p: [], c: [], a: [] }, // "a" guarda el historial de anuncios
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
@@ -66,7 +66,13 @@ const CT = {
             UI.refreshActiveViews(); 
         });
 
-        // NUEVO: Listener del Anuncio Global (MotD)
+        // Listener: Historial de Anuncios para la tabla Admin
+        db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => {
+            this.data.a = snap.docs.map(d => d.data());
+            UI.refreshActiveViews();
+        });
+
+        // Listener: Anuncio Global Activo (Pop-Up)
         db.collection('config').doc('announcement').onSnapshot(snap => {
             if(snap.exists && this.ses()) {
                 const data = snap.data();
@@ -86,7 +92,7 @@ const CT = {
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
-    currentAnnId: null, // Guarda el id del anuncio en pantalla
+    currentAnnId: null, 
     formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     show: (id) => { 
@@ -109,7 +115,7 @@ const UI = {
     },
     showLobby() { this.initLobby(); },
     
-    // FIX: Admin ahora abre por defecto en Anuncios
+    // Panel Admin abre en Anuncios por defecto
     showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
     showStats() {
@@ -284,7 +290,7 @@ const UI = {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
-        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
+        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminAnn(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
         if(!document.getElementById('track-screen').classList.contains('hidden')) {
             if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
         }
@@ -438,10 +444,34 @@ const UI = {
         const activeTabBtn = document.getElementById(btnId);
         if(activeTabBtn) activeTabBtn.classList.add('active');
         
+        if(tab === 'announcements') { UI.renderAdminAnn(); }
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') { this.renderAdminU(); }
         if(tab === 'create') { this.toggleCreateForm('text'); }
+    },
+
+    // RENDERIZAR TABLA DE ANUNCIOS EN ADMIN
+    renderAdminAnn() {
+        const list = CT.dbLocal('a');
+        document.getElementById('admin-ann-list').innerHTML = list.map(a => `
+            <tr>
+                <td>${a.date}</td>
+                <td style="font-size: 1.5rem; text-align: center;">${a.icon}</td>
+                <td style="white-space: normal; text-align: left;"><b>${a.title}</b></td>
+                <td>
+                    <span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold;">
+                        ${a.active ? 'VIGENTE' : 'FINALIZADO'}
+                    </span>
+                </td>
+                <td>
+                    ${a.active 
+                        ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-error" style="padding: 6px 12px; border-radius: 6px;">ANULAR</button>`
+                        : `<span style="color: var(--text-muted); font-size: 0.75rem; font-weight: bold;">-</span>`
+                    }
+                </td>
+            </tr>
+        `).join('');
     },
 
     toggleCreateForm(type) {
@@ -756,10 +786,11 @@ const UI = {
 
     // LÓGICA DE ANUNCIOS GLOBALES (MOTD)
     showAnnouncement(data) {
+        if(!data.id) return; // Se anuló el anuncio activo
         UI.currentAnnId = data.id.toString();
         document.getElementById('motd-icon').innerText = data.icon || "🚀";
         document.getElementById('motd-title').innerText = data.title || "Anuncio";
-        document.getElementById('motd-msg').innerText = data.msg || "";
+        document.getElementById('motd-msg').innerHTML = data.msg || ""; // InnerHTML para respetar formato enriquecido
         document.getElementById('announcement-modal').classList.remove('hidden');
     },
     closeAnnouncement() {
@@ -803,21 +834,63 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    // PUBLICAR ANUNCIO EN LA NUBE
-    publishAnnouncement: () => {
+    // PUBLICAR ANUNCIO EN LA NUBE Y CERRAR ANTERIORES
+    publishAnnouncement: async () => {
         const title = document.getElementById('ann-title').value.trim();
-        const msg = document.getElementById('ann-msg').value.trim();
+        const msg = document.getElementById('ann-msg').innerHTML.trim();
         const icon = document.getElementById('ann-icon').value;
-        if(!title || !msg) return alert("Rellena el título y el mensaje del anuncio.");
+        if(!title || !msg || msg === '<br>') return alert("Rellena el título y el mensaje del anuncio.");
         
         if(confirm("¿Seguro que deseas lanzar este Pop-Up a todos los jugadores?")) {
             const annId = Date.now().toString();
-            db.collection('config').doc('announcement').set({ id: annId, title: title, msg: msg, icon: icon })
-              .then(() => {
-                  alert("Anuncio publicado con éxito.");
-                  document.getElementById('ann-title').value = '';
-                  document.getElementById('ann-msg').value = '';
-              }).catch(() => alert("Error al publicar el anuncio."));
+            // Formateo de fecha y hora exacta
+            const timeStr = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit', timeZone: 'America/Argentina/Buenos_Aires'});
+            const dateStr = CT.getARDate() + " - " + timeStr;
+            
+            try {
+                // 1. Marcar todos los anuncios históricos activos como falsos
+                const activeDocs = await db.collection('announcements').where('active', '==', true).get();
+                const batch = db.batch();
+                activeDocs.forEach(d => {
+                    batch.update(d.ref, { active: false });
+                });
+                
+                // 2. Crear el nuevo registro en la colección de historia
+                const newAnn = { id: annId, title: title, msg: msg, icon: icon, date: dateStr, active: true };
+                batch.set(db.collection('announcements').doc(annId), newAnn);
+                
+                // 3. Actualizar el documento de Configuración para disparar el Pop-Up en tiempo real a los jugadores
+                batch.set(db.collection('config').doc('announcement'), { id: annId, title: title, msg: msg, icon: icon });
+                
+                await batch.commit();
+                alert("Anuncio publicado con éxito.");
+                document.getElementById('ann-title').value = '';
+                document.getElementById('ann-msg').innerHTML = '';
+            } catch(e) {
+                alert("Error al publicar el anuncio.");
+                console.error(e);
+            }
+        }
+    },
+    // ANULAR UN ANUNCIO VIGENTE
+    cancelAnnouncement: async (idStr) => {
+        if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) {
+            try {
+                const batch = db.batch();
+                batch.update(db.collection('announcements').doc(idStr.toString()), { active: false });
+                batch.update(db.collection('config').doc('announcement'), { id: null });
+                await batch.commit();
+            } catch(e) {
+                alert("Error al anular anuncio.");
+            }
+        }
+    },
+    // INSERTAR EMOJI EN EDITOR
+    insertEmoji: () => {
+        const emoji = prompt("Pega o escribe el emoji a insertar:", "🎮");
+        if(emoji) {
+            document.getElementById('ann-msg').focus();
+            document.execCommand('insertText', false, emoji);
         }
     },
 
