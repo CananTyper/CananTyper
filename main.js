@@ -13,7 +13,7 @@ const db = firebase.firestore();
 
 // 2. CORE DE DATOS (ESPEJO LOCAL - CERO LATENCIA)
 const CT = {
-    data: { u: [], s: [], p: [], c: [], a: [] }, // "a" guarda el historial de anuncios
+    data: { u: [], s: [], p: [], c: [], a: [], ui: null }, // "ui" guarda los textos dinámicos
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
@@ -66,13 +66,11 @@ const CT = {
             UI.refreshActiveViews(); 
         });
 
-        // Listener: Historial de Anuncios para la tabla Admin
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => {
             this.data.a = snap.docs.map(d => d.data());
             UI.refreshActiveViews();
         });
 
-        // Listener: Anuncio Global Activo (Pop-Up)
         db.collection('config').doc('announcement').onSnapshot(snap => {
             if(snap.exists && this.ses()) {
                 const data = snap.data();
@@ -81,6 +79,26 @@ const CT = {
                     UI.showAnnouncement(data);
                 }
             }
+        });
+
+        // NUEVO: Listener de UI Dinámica (Servidor)
+        db.collection('config').doc('ui_texts').onSnapshot(snap => {
+            if(snap.exists) {
+                this.data.ui = snap.data();
+            } else {
+                // Base por defecto si no existe
+                this.data.ui = {
+                    't_auth_title': { l: 'Título de Inicio', v: 'CananTyper' },
+                    't_auth_sub': { l: 'Subtítulo de Inicio', v: 'Mecanografía' },
+                    't_btn_random': { l: 'Botón: Modo Aleatorio', v: 'MODO ALEATORIO' },
+                    't_btn_custom': { l: 'Botón: Modo Personalizado', v: 'MODO PERSONALIZADO' },
+                    't_admin_title': { l: 'Título Panel Admin', v: 'CananTyper' },
+                    't_admin_sub': { l: 'Subtítulo Panel Admin', v: 'Panel de administración' }
+                };
+                if(this.ses() && this.ses().r === 'admin') db.collection('config').doc('ui_texts').set(this.data.ui);
+            }
+            UI.applyUITexts();
+            UI.refreshActiveViews();
         });
     },
     ses: () => { 
@@ -115,7 +133,6 @@ const UI = {
     },
     showLobby() { this.initLobby(); },
     
-    // Admin abre en Anuncios por defecto
     showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
     showStats() {
@@ -138,6 +155,15 @@ const UI = {
         if (tab === 'personal') this.renderPersonalStats();
         else if (tab === 'general') this.renderGlobalStats();
         else this.renderEliteStats();
+    },
+
+    // APLICA TEXTOS DINÁMICOS AL HTML
+    applyUITexts: () => {
+        if(!CT.data.ui) return;
+        Object.keys(CT.data.ui).forEach(k => {
+            const el = document.getElementById(k);
+            if(el) el.innerText = CT.data.ui[k].v;
+        });
     },
 
     renderPersonalStats() {
@@ -290,7 +316,9 @@ const UI = {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
-        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminAnn(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
+        if(!document.getElementById('admin-screen').classList.contains('hidden')) { 
+            UI.renderAdminAnn(); UI.renderAdminServer(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); 
+        }
         if(!document.getElementById('track-screen').classList.contains('hidden')) {
             if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
         }
@@ -445,20 +473,21 @@ const UI = {
         if(activeTabBtn) activeTabBtn.classList.add('active');
         
         if(tab === 'announcements') { UI.renderAdminAnn(); }
+        if(tab === 'server') { UI.renderAdminServer(); }
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') { this.renderAdminU(); }
         if(tab === 'create') { this.toggleCreateForm('text'); }
     },
 
-    // RENDERIZAR TABLA DE ANUNCIOS EN ADMIN (NUEVO ORDEN: Icono - Título - Fecha - Estado - Acción)
+    // RENDERIZAR TABLA DE ANUNCIOS EN ADMIN (Corregido alineación fecha y tamaño)
     renderAdminAnn() {
         const list = CT.dbLocal('a');
         document.getElementById('admin-ann-list').innerHTML = list.map(a => `
             <tr>
                 <td style="font-size: 1.5rem; text-align: center;">${a.icon}</td>
                 <td style="white-space: normal; text-align: center;"><b>${a.title}</b></td>
-                <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">${a.date}</td>
+                <td style="white-space: nowrap; font-size: 0.75rem; color: var(--text-muted);">${a.date}</td>
                 <td>
                     <span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold; font-size: 0.8rem;">
                         ${a.active ? 'VIGENTE' : 'FINALIZADO'}
@@ -470,11 +499,34 @@ const UI = {
                             ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px; border-color: var(--error); color: var(--error);" title="Anular">❌</button>`
                             : `<span style="display: inline-block; width: 30px;"></span>`
                         }
-                        <button onclick="App.deleteAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px;" title="Eliminar">🗑️</button>
+                        <button onclick="App.deleteAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px;" title="Eliminar del Historial">🗑️</button>
                     </div>
                 </td>
             </tr>
         `).join('');
+    },
+
+    // RENDERIZAR EDICIÓN DEL SERVIDOR (UI Dinámica con "Barra Radioactiva")
+    renderAdminServer() {
+        if(!CT.data.ui) return;
+        const query = (document.getElementById('server-search').value || "").toLowerCase();
+        const listEl = document.getElementById('admin-server-list');
+        let html = '';
+        Object.keys(CT.data.ui).forEach(k => {
+            const item = CT.data.ui[k];
+            if(item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query)) {
+                html += `
+                <li class="admin-list-item" style="border-left: 4px solid var(--p); border-radius: 4px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                        <small style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; text-transform: uppercase;">${item.l}</small>
+                        <span><b style="color:var(--text-main); font-size:1rem;">${item.v}</b></span>
+                    </div>
+                    <button onclick="App.editUIText('${k}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button>
+                </li>
+                `;
+            }
+        });
+        listEl.innerHTML = html;
     },
 
     toggleCreateForm(type) {
@@ -669,7 +721,9 @@ const UI = {
     adminEditUserName: async (handle) => {
         const u = CT.dbLocal('u').find(x => x.h === handle); if(!u) return;
         const newName = prompt(`Nuevo nombre visible para ${handle}:`, u.n);
+        // FIX: Validación en DB admin side
         if(newName && newName.trim() !== '' && newName.trim() !== u.n) {
+            if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres.");
             await db.collection('users').doc(handle).update({ n: newName.trim() });
             const q = await db.collection('scores').where('h', '==', handle).get();
             const batch = db.batch();
@@ -877,7 +931,6 @@ const App = {
                 const batch = db.batch();
                 batch.update(db.collection('announcements').doc(idStr.toString()), { active: false });
                 
-                // Borrar del popup global si es el activo
                 const activeDoc = await db.collection('config').doc('announcement').get();
                 if(activeDoc.exists && activeDoc.data().id === idStr.toString()) {
                     batch.update(db.collection('config').doc('announcement'), { id: null });
@@ -900,6 +953,17 @@ const App = {
             } catch(e) {
                 alert("Error al eliminar anuncio.");
             }
+        }
+    },
+    // EDITAR TEXTO DE LA UI DINÁMICAMENTE
+    editUIText: (key) => {
+        if(!CT.data.ui || !CT.data.ui[key]) return;
+        const currentVal = CT.data.ui[key].v;
+        const newVal = prompt(`Editar [${CT.data.ui[key].l}]:`, currentVal);
+        if(newVal && newVal.trim() !== currentVal) {
+            db.collection('config').doc('ui_texts').update({
+                [`${key}.v`]: newVal.trim()
+            }).then(() => alert("Actualizado con éxito. Los cambios son en vivo.")).catch(() => alert("Error al conectar con la base de datos."));
         }
     },
 
@@ -944,7 +1008,9 @@ const App = {
     editDisplayName: () => { 
         const u = CT.ses(); if(!u) return; 
         const newName = prompt("Nuevo nombre:", u.n); 
-        if(newName && newName.trim()) { 
+        // FIX: Validación limitante de nombre a 15 caracteres
+        if(newName && newName.trim() !== '') { 
+            if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres.");
             db.collection('users').doc(u.h).update({ n: newName });
             db.collection('scores').where('h', '==', u.h).get().then(q => {
                 const batch = db.batch();
@@ -967,6 +1033,8 @@ const App = {
     register: async () => { 
         const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
         if(!n || !hRaw || !p) return alert("Completa todos los campos");
+        // FIX: Validación de límite en registro
+        if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres.");
         try {
             const docRef = await db.collection('users').doc(handle).get();
             if(docRef.exists) return alert("Ese usuario ya está en uso");
@@ -1038,6 +1106,12 @@ class Engine {
         
         const inp = document.getElementById('game-input'); 
         inp.value = ''; inp.disabled = false; inp.focus(); 
+        
+        // FIX: ESCUDO ANTI-TRAMPAS (Bloqueo de Copiar y Pegar)
+        inp.onpaste = (e) => { e.preventDefault(); return false; };
+        inp.oncopy = (e) => { e.preventDefault(); return false; };
+        inp.oncontextmenu = (e) => { e.preventDefault(); return false; };
+        
         inp.oninput = (e) => this.check(e.target.value, e.target); 
         
         // Bloqueo de pérdida de foco
