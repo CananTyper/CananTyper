@@ -171,12 +171,10 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .hud-box small { display: block; color: var(--text-muted); font-weight: bold; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 5px; transition: color 0.3s; }
 .hud-box span { color: var(--text-main); font-size: 2.5rem; font-weight: 900; }
 
-/* NUEVO: Text Display fijo, texto limpio sin saltos raros */
 .game-text-display { font-size: 1.6rem; line-height: 1.8; background: var(--surface-light); padding: 35px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left; width: 100%; height: 220px; overflow: hidden; transition: font-size 0.2s, border-color 0.3s; }
 .game-text-display:hover { border-color: color-mix(in srgb, var(--p) 30%, transparent); }
 .game-input-box { font-size: 1.5rem; padding: 20px; text-align: center; }
 
-/* NUEVO VISUAL DE PALABRAS: Sin bordes radiactivos intrusivos, solo color fluido */
 .word { display: inline-block; color: var(--text-muted); border-radius: 4px; transition: color 0.1s; }
 .word.active { background: transparent; border-bottom: none; box-shadow: none; color: var(--text-main); text-shadow: 0 0 8px rgba(255,255,255,0.3); }
 .correct { color: var(--p); opacity: 1; }
@@ -195,3 +193,6 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 #crop-image { position: absolute; transform-origin: center center; pointer-events: none; max-width: none; }
 .crop-slider { width: 100%; margin-bottom: 20px; accent-color: var(--p); transition: accent-color 0.3s; }
 .crop-actions { display: flex; justify-content: center; gap: 15px; }
+
+/* Animación exclusiva para el MotD Pop-Up */
+@keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
