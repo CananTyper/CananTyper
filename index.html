@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.2">
+    <link rel="stylesheet" href="style.css?v=1.0.3">
 </head>
 <body>
 
@@ -288,7 +288,8 @@
                 
                 <div id="pane-announcements" class="pane">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 20px; display: flex; flex-direction: column;">
+                        
+                        <div class="table-box custom-scroll" style="margin: 0; padding: 20px; display: flex; flex-direction: column; overflow-y: auto;">
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px; flex-shrink: 0;">
                                 <h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Enviar Anuncio</h3>
                                 <small style="color: var(--text-muted);">Pop-Up de vista única</small>
@@ -318,12 +319,12 @@
                                 <button onclick="document.execCommand('insertUnorderedList', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Lista">•=</button>
                                 <div style="width: 1px; height: 16px; background: var(--border); margin: 0 4px;"></div>
                                 <input type="color" id="ann-color" onchange="document.execCommand('foreColor', false, this.value)" title="Color" style="width: 25px; height: 25px; padding: 0; cursor: pointer; border: none; background: transparent;">
-                                <button onclick="document.execCommand('removeFormat', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem; margin-left: auto;">🧹 Limpiar</button>
+                                <button onclick="document.execCommand('removeFormat', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 1rem; margin-left: auto;" title="Limpiar Formato">🧹</button>
                             </div>
                             
-                            <div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; flex-grow: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 0.95rem; line-height: 1.5; overflow-y: auto; min-height: 100px;"></div>
+                            <div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; flex-grow: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 0.95rem; line-height: 1.5; overflow-y: auto; min-height: 80px;"></div>
                             
-                            <button onclick="App.publishAnnouncement()" class="btn-primary" style="margin-top: 15px; padding: 12px; width: 100%; flex-shrink: 0;">PUBLICAR ANUNCIO</button>
+                            <button onclick="App.publishAnnouncement()" class="btn-primary" style="margin-top: 10px; padding: 10px; width: 100%; flex-shrink: 0; font-size: 0.9rem;">PUBLICAR ANUNCIO</button>
                         </div>
 
                         <div class="table-box" style="margin: 0; display: flex; flex-direction: column; min-height: 0;">
@@ -332,7 +333,7 @@
                             </div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th width="25%">Fecha</th><th width="15%">Icono</th><th width="30%">Título</th><th width="15%">Estado</th><th width="15%">Acción</th></tr></thead>
+                                    <thead><tr><th width="10%">Icono</th><th width="35%">Título</th><th width="20%">Fecha</th><th width="15%">Estado</th><th width="20%">Acción</th></tr></thead>
                                     <tbody id="admin-ann-list"></tbody>
                                 </table>
                             </div>
@@ -468,11 +469,11 @@
         </div>
 
         <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;">
-            <div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;">
-                <div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div>
-                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2>
-                <div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div>
-                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button>
+            <div class="auth-card" style="position: relative; max-width: 500px; padding: 40px;">
+                <div id="motd-icon" style="font-size: 3.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center;"></div>
+                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 2rem;"></h2>
+                <div id="motd-msg" style="color: var(--text-main); line-height: 1.6; margin-bottom: 30px; font-size: 1.1rem; white-space: pre-wrap; text-align: center;"></div>
+                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent);">¡ENTENDIDO!</button>
             </div>
         </div>
 
@@ -480,6 +481,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.2"></script>
+    <script src="main.js?v=1.0.3"></script>
 </body>
 </html>
