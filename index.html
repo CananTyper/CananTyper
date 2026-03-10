@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.3">
+    <link rel="stylesheet" href="style.css?v=1.0.4">
 </head>
 <body>
 
@@ -12,8 +12,8 @@
         
         <section id="auth-screen" class="screen">
             <div class="auth-card">
-                <h1>CananTyper</h1>
-                <p class="subtitle">Mecanografía</p>
+                <h1 id="t_auth_title">CananTyper</h1>
+                <p id="t_auth_sub" class="subtitle">Mecanografía</p>
                 <div id="login-form" class="auth-form">
                     <input type="text" id="login-user" placeholder="Usuario">
                     <input type="password" id="login-pass" placeholder="Contraseña">
@@ -21,8 +21,8 @@
                     <p class="switch-text">¿Nuevo? <span onclick="UI.toggleAuth(false)">Registrarse</span></p>
                 </div>
                 <div id="register-form" class="auth-form hidden">
-                    <input type="text" id="reg-display" placeholder="Nombre">
-                    <input type="text" id="reg-user" placeholder="Usuario">
+                    <input type="text" id="reg-display" placeholder="Nombre" maxlength="15">
+                    <input type="text" id="reg-user" placeholder="Usuario" maxlength="15">
                     <input type="password" id="reg-pass" placeholder="Contraseña">
                     <button class="btn-primary" onclick="App.register()">CREAR CUENTA</button>
                     <p class="switch-text">¿Tenés cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
@@ -53,8 +53,8 @@
             </header>
 
             <div class="mode-selectors">
-                <button onclick="App.startRandomRace()" class="btn-primary btn-large">MODO ALEATORIO</button>
-                <button onclick="UI.showTrackSelect()" class="btn-primary btn-alt btn-large">MODO PERSONALIZADO</button>
+                <button id="t_btn_random" onclick="App.startRandomRace()" class="btn-primary btn-large">MODO ALEATORIO</button>
+                <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt btn-large">MODO PERSONALIZADO</button>
             </div>
 
             <div class="tables-container">
@@ -206,7 +206,7 @@
                 <div class="profile-identity">
                     <div class="avatar-md"><img id="prof-img" src="" alt=""></div>
                     <input type="file" id="img-input" accept="image/*" hidden>
-                    <div class="identity-info">
+                    <div class="identity-info" style="align-items: center;">
                         <div class="name-edit-group">
                             <h2 id="prof-name"></h2>
                             <div class="edit-menu-wrapper">
@@ -272,13 +272,14 @@
         <section id="admin-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
-                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">CananTyper</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Panel de administración</p>
+                    <h2 id="t_admin_title" style="color: var(--p); margin: 0; font-size: 1.5rem;">CananTyper</h2>
+                    <p id="t_admin_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Panel de administración</p>
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="admin-tabs">
                 <button id="t-an" class="tab-btn active" onclick="UI.switchTab('announcements')">Anuncios</button>
+                <button id="t-se" class="tab-btn" onclick="UI.switchTab('server')">Servidor</button>
                 <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
                 <button id="t-ra" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
                 <button id="t-ph" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button>
@@ -322,9 +323,9 @@
                                 <button onclick="document.execCommand('removeFormat', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 1rem; margin-left: auto;" title="Limpiar Formato">🧹</button>
                             </div>
                             
-                            <div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; flex-grow: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 0.95rem; line-height: 1.5; overflow-y: auto; min-height: 80px;"></div>
+                            <div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; flex-grow: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 0.95rem; line-height: 1.5; overflow-y: auto; min-height: 100px;"></div>
                             
-                            <button onclick="App.publishAnnouncement()" class="btn-primary" style="margin-top: 10px; padding: 10px; width: 100%; flex-shrink: 0; font-size: 0.9rem;">PUBLICAR ANUNCIO</button>
+                            <button onclick="App.publishAnnouncement()" class="btn-primary" style="margin-top: 15px; padding: 12px; width: 100%; flex-shrink: 0;">PUBLICAR ANUNCIO</button>
                         </div>
 
                         <div class="table-box" style="margin: 0; display: flex; flex-direction: column; min-height: 0;">
@@ -338,6 +339,16 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div id="pane-server" class="pane hidden">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <input type="text" id="server-search" placeholder="Buscar texto por identificador (Ej: Botón Aleatorio)..." oninput="UI.renderAdminServer()" style="width: 100%; max-width: 400px;">
+                        <small style="color: var(--text-muted);">Edita los textos globales de la interfaz</small>
+                    </div>
+                    <div class="custom-scroll admin-table-wrapper" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-light);">
+                        <ul id="admin-server-list" class="custom-scroll admin-list" style="margin: 0; padding-right: 5px;"></ul>
                     </div>
                 </div>
 
@@ -469,11 +480,11 @@
         </div>
 
         <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;">
-            <div class="auth-card" style="position: relative; max-width: 500px; padding: 40px;">
-                <div id="motd-icon" style="font-size: 3.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center;"></div>
-                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 2rem;"></h2>
-                <div id="motd-msg" style="color: var(--text-main); line-height: 1.6; margin-bottom: 30px; font-size: 1.1rem; white-space: pre-wrap; text-align: center;"></div>
-                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent);">¡ENTENDIDO!</button>
+            <div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;">
+                <div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div>
+                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2>
+                <div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div>
+                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button>
             </div>
         </div>
 
@@ -481,6 +492,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.3"></script>
+    <script src="main.js?v=1.0.4"></script>
 </body>
 </html>
