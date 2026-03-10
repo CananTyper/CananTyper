@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.0.1">
 </head>
 <body>
 
@@ -287,27 +287,54 @@
             <div class="admin-content-area">
                 
                 <div id="pane-announcements" class="pane">
-                    <div class="admin-form" style="display: flex; flex-direction: column; gap: 20px; align-items: center; max-width: 600px; margin: 0 auto; width: 100%;">
-                        <div style="text-align: center;">
-                            <h3 style="color: var(--p); margin: 0 0 5px 0; font-size: 1.4rem;">Lanzar Anuncio Global</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Aparecerá una sola vez a todos los usuarios en la plataforma.</p>
+                    <div class="admin-form" style="margin-bottom: 20px; padding: 25px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px;">
+                            <h3 style="color: var(--p); margin: 0; font-size: 1.2rem; text-transform: uppercase;">Enviar Anuncio Global</h3>
+                            <small style="color: var(--text-muted);">El anuncio activo aparecerá como Pop-Up a los jugadores.</small>
                         </div>
                         
-                        <div style="display: flex; gap: 15px; width: 100%;">
-                            <select id="ann-icon" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px;">
-                                <option value="🚀">🚀</option>
-                                <option value="⚡">⚡</option>
-                                <option value="👑">👑</option>
-                                <option value="⚠️">⚠️</option>
-                                <option value="🛠️">🛠️</option>
-                                <option value="💎">💎</option>
-                            </select>
-                            <input type="text" id="ann-title" placeholder="Título impactante (Ej: Torneo este Domingo)" style="flex-grow: 1; font-weight: bold; font-size: 1.1rem;">
+                        <div class="form-row" style="align-items: center; margin-bottom: 15px;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">ICONO</span>
+                                <select id="ann-icon" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; text-align-last: center; padding: 10px;">
+                                    <option value="📢">📢</option>
+                                    <option value="🚀">🚀</option>
+                                    <option value="⚡">⚡</option>
+                                    <option value="👑">👑</option>
+                                    <option value="⚠️">⚠️</option>
+                                    <option value="🛠️">🛠️</option>
+                                    <option value="💎">💎</option>
+                                </select>
+                            </div>
+                            <input type="text" id="ann-title" placeholder="Título del anuncio (Ej: Torneo este Domingo)" style="flex-grow: 1; font-weight: bold; font-size: 1.1rem; padding: 18px;">
                         </div>
                         
-                        <textarea id="ann-msg" placeholder="Escribe el cuerpo del mensaje aquí. Se claro y directo." style="height: 150px; resize: none; line-height: 1.5; font-size: 1rem;"></textarea>
+                        <div style="display: flex; gap: 8px; margin-top: 5px; background: var(--surface-light); padding: 10px; border: 1px solid var(--border); border-radius: 8px 8px 0 0; border-bottom: none; align-items: center;">
+                            <button onclick="document.execCommand('bold', false, null)" class="btn-outline" style="padding: 6px 12px; font-size: 0.85rem;"><b>B</b></button>
+                            <button onclick="document.execCommand('italic', false, null)" class="btn-outline" style="padding: 6px 12px; font-size: 0.85rem;"><i>I</i></button>
+                            <button onclick="document.execCommand('underline', false, null)" class="btn-outline" style="padding: 6px 12px; font-size: 0.85rem;"><u>U</u></button>
+                            <div style="width: 1px; height: 20px; background: var(--border); margin: 0 5px;"></div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">COLOR:</span>
+                            <input type="color" id="ann-color" onchange="document.execCommand('foreColor', false, this.value)" style="width: 35px; height: 35px; padding: 0; cursor: pointer; border: none; background: transparent;">
+                            <div style="width: 1px; height: 20px; background: var(--border); margin: 0 5px;"></div>
+                            <button onclick="App.insertEmoji()" class="btn-outline" style="padding: 6px 12px; font-size: 0.85rem;">😀 Insertar Emoji</button>
+                        </div>
                         
-                        <button onclick="App.publishAnnouncement()" class="btn-primary btn-large" style="width: 100%; box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent);">ENVIAR A TODOS</button>
+                        <div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; min-height: 140px; padding: 16px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 1rem; line-height: 1.6; overflow-y: auto;">Escribe el cuerpo del mensaje aquí...</div>
+                        
+                        <button onclick="App.publishAnnouncement()" class="btn-primary" style="align-self: flex-end; margin-top: 15px; padding: 12px 30px;">PUBLICAR</button>
+                    </div>
+
+                    <div class="table-box" style="margin: 0; display: flex; flex-direction: column; flex-grow: 1; min-height: 0;">
+                        <div class="table-header">
+                            <h3>Lista de Anuncios Enviados</h3>
+                        </div>
+                        <div class="custom-scroll table-body-wrapper">
+                            <table class="data-table">
+                                <thead><tr><th width="20%">Fecha</th><th width="10%">Icono</th><th width="40%">Título</th><th width="15%">Estado</th><th width="15%">Acción</th></tr></thead>
+                                <tbody id="admin-ann-list"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -440,9 +467,9 @@
 
         <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;">
             <div class="auth-card" style="position: relative; max-width: 500px; padding: 40px;">
-                <div id="motd-icon" style="font-size: 3.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));"></div>
+                <div id="motd-icon" style="font-size: 3.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center;"></div>
                 <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 2rem;"></h2>
-                <p id="motd-msg" style="color: var(--text-main); line-height: 1.6; margin-bottom: 30px; font-size: 1.1rem; white-space: pre-wrap;"></p>
+                <div id="motd-msg" style="color: var(--text-main); line-height: 1.6; margin-bottom: 30px; font-size: 1.1rem; white-space: pre-wrap; text-align: center;"></div>
                 <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent);">¡ENTENDIDO!</button>
             </div>
         </div>
@@ -451,6 +478,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js"></script>
+    <script src="main.js?v=1.0.1"></script>
 </body>
 </html>
