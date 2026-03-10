@@ -171,15 +171,17 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .hud-box small { display: block; color: var(--text-muted); font-weight: bold; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 5px; transition: color 0.3s; }
 .hud-box span { color: var(--text-main); font-size: 2.5rem; font-weight: 900; }
 
-.game-text-display { font-size: 1.6rem; line-height: 2; background: var(--surface-light); padding: 35px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left; width: 100%; max-height: 180px; transition: border-color 0.3s; }
+/* NUEVO: Text Display fijo, texto limpio sin saltos raros */
+.game-text-display { font-size: 1.6rem; line-height: 1.8; background: var(--surface-light); padding: 35px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left; width: 100%; height: 220px; overflow: hidden; transition: font-size 0.2s, border-color 0.3s; }
 .game-text-display:hover { border-color: color-mix(in srgb, var(--p) 30%, transparent); }
 .game-input-box { font-size: 1.5rem; padding: 20px; text-align: center; }
 
-.word { display: inline-block; margin-right: 8px; transition: background-color 0.1s; border-radius: 4px; padding: 2px; }
-.word.active { background: var(--bg); border-bottom: 3px solid var(--p); box-shadow: 0 5px 10px -5px color-mix(in srgb, var(--p) 50%, transparent); }
-.correct { color: var(--success); opacity: 0.7; }
+/* NUEVO VISUAL DE PALABRAS: Sin bordes radiactivos intrusivos, solo color fluido */
+.word { display: inline-block; color: var(--text-muted); border-radius: 4px; transition: color 0.1s; }
+.word.active { background: transparent; border-bottom: none; box-shadow: none; color: var(--text-main); text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+.correct { color: var(--p); opacity: 1; }
 .char-err { background: color-mix(in srgb, var(--error) 30%, transparent); color: var(--error); text-decoration: underline; }
-.char-ok { color: var(--success); }
+.char-ok { color: var(--p); }
 
 .game-controls { display: flex; gap: 15px; margin-top: 20px; }
 .game-result { text-align: center; background: var(--surface-light); padding: 40px; border-radius: 20px; border: 1px solid var(--p); box-shadow: 0 15px 50px color-mix(in srgb, var(--p) 20%, transparent); margin-top: 20px; width: 100%; transition: border-color 0.3s, box-shadow 0.3s; }
