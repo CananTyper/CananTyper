@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.4">
+    <link rel="stylesheet" href="style.css?v=1.0.5">
 </head>
 <body>
 
@@ -17,15 +17,15 @@
                 <div id="login-form" class="auth-form">
                     <input type="text" id="login-user" placeholder="Usuario">
                     <input type="password" id="login-pass" placeholder="Contraseña">
-                    <button class="btn-primary" onclick="App.login()">Iniciar sesión</button>
-                    <p class="switch-text">¿Nuevo? <span onclick="UI.toggleAuth(false)">Registrarse</span></p>
+                    <button id="t_btn_login" class="btn-primary" onclick="App.login()">Iniciar sesión</button>
+                    <p class="switch-text" id="t_txt_new">¿Nuevo? <span onclick="UI.toggleAuth(false)">Registrarse</span></p>
                 </div>
                 <div id="register-form" class="auth-form hidden">
                     <input type="text" id="reg-display" placeholder="Nombre" maxlength="15">
                     <input type="text" id="reg-user" placeholder="Usuario" maxlength="15">
                     <input type="password" id="reg-pass" placeholder="Contraseña">
-                    <button class="btn-primary" onclick="App.register()">CREAR CUENTA</button>
-                    <p class="switch-text">¿Tenés cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
+                    <button id="t_btn_register" class="btn-primary" onclick="App.register()">CREAR CUENTA</button>
+                    <p class="switch-text" id="t_txt_haveacc">¿Tenés cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
                 </div>
             </div>
         </section>
@@ -46,9 +46,9 @@
                     </div>
                 </div>
                 <div class="nav-right">
-                    <button id="btn-go-admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
-                    <button onclick="UI.showStats()" class="btn-outline" style="margin-right: 15px;">Estadísticas</button>
-                    <button onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
+                    <button id="t_nav_admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
+                    <button id="t_nav_stats" onclick="UI.showStats()" class="btn-outline" style="margin-right: 15px;">Estadísticas</button>
+                    <button id="t_nav_logout" onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
                 </div>
             </header>
 
@@ -60,7 +60,7 @@
             <div class="tables-container">
                 <div class="table-box">
                     <div class="table-header">
-                        <h3>Ranking | Carreras</h3>
+                        <h3 id="t_hd_rank_races">Ranking | Carreras</h3>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="today">Hoy</option>
                             <option value="history">Histórico</option>
@@ -76,7 +76,7 @@
 
                 <div class="table-box">
                     <div class="table-header">
-                        <h3>Ranking | Promedios</h3>
+                        <h3 id="t_hd_rank_avg">Ranking | Promedios</h3>
                         <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
                             <option value="general">General</option>
@@ -95,8 +95,8 @@
         <section id="stats-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
-                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
+                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
+                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
@@ -116,16 +116,16 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3>Mejores Carreras (TOP 10)</h3></div>
+                            <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th>TOP</th><th id="th-st-p-vel">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead>
+                                    <thead><tr><th>TOP</th><th>Texto</th><th id="th-st-p-vel">Velocidad</th><th>Fecha</th></tr></thead>
                                     <tbody id="st-p-top10-races"></tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3>Mejores Textos (Top 10)</h3></div>
+                            <div class="table-header"><h3 id="t_st_box_texts">Mejores Textos (Top 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
                                     <thead><tr><th>TOP</th><th>Texto</th><th id="th-st-p-t-max">MÁX. REGISTRADO</th></tr></thead>
@@ -247,8 +247,8 @@
         <section id="track-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
-                    <h2 style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2>
-                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p>
+                    <h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2>
+                    <p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p>
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
@@ -279,7 +279,7 @@
             </header>
             <div class="admin-tabs">
                 <button id="t-an" class="tab-btn active" onclick="UI.switchTab('announcements')">Anuncios</button>
-                <button id="t-se" class="tab-btn" onclick="UI.switchTab('server')">Servidor</button>
+                <button id="t-le" class="tab-btn" onclick="UI.switchTab('lexicon')">Léxico</button>
                 <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
                 <button id="t-ra" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
                 <button id="t-ph" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button>
@@ -334,7 +334,7 @@
                             </div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th width="10%">Icono</th><th width="35%">Título</th><th width="20%">Fecha</th><th width="15%">Estado</th><th width="20%">Acción</th></tr></thead>
+                                    <thead><tr><th width="15%">Icono</th><th width="25%">Estado</th><th width="35%">Fecha</th><th width="25%">Acción</th></tr></thead>
                                     <tbody id="admin-ann-list"></tbody>
                                 </table>
                             </div>
@@ -342,13 +342,18 @@
                     </div>
                 </div>
 
-                <div id="pane-server" class="pane hidden">
+                <div id="pane-lexicon" class="pane hidden">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <input type="text" id="server-search" placeholder="Buscar texto por identificador (Ej: Botón Aleatorio)..." oninput="UI.renderAdminServer()" style="width: 100%; max-width: 400px;">
+                        <input type="text" id="lexicon-search" placeholder="Buscar texto por identificador (Ej: Botón Aleatorio)..." oninput="UI.renderAdminLexicon()" style="width: 100%; max-width: 400px;">
                         <small style="color: var(--text-muted);">Edita los textos globales de la interfaz</small>
                     </div>
-                    <div class="custom-scroll admin-table-wrapper" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-light);">
-                        <ul id="admin-server-list" class="custom-scroll admin-list" style="margin: 0; padding-right: 5px;"></ul>
+                    <div class="custom-scroll admin-table-wrapper" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-light); display: flex; flex-direction: column;">
+                        <ul id="admin-lexicon-list" class="custom-scroll admin-list" style="margin: 0; padding-right: 5px; flex-grow: 1;"></ul>
+                    </div>
+                    <div class="pagination-bar" style="margin-top: 10px;">
+                        <button id="admin-le-prev" class="btn-outline" onclick="UI.changeAdminLexiconPage(-1)">←</button>
+                        <span id="admin-le-page-num" class="page-indicator">Página 1</span>
+                        <button id="admin-le-next" class="btn-outline" onclick="UI.changeAdminLexiconPage(1)">→</button>
                     </div>
                 </div>
 
@@ -448,17 +453,17 @@
                 <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
                 
                 <div id="in-game-controls" class="game-controls">
-                    <button onclick="App.quitRace()" class="btn-outline">Volver</button>
-                    <button onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
-                    <button onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                    <button id="t_btn_back" onclick="App.quitRace()" class="btn-outline">Volver</button>
+                    <button id="t_btn_retry" onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
+                    <button id="t_btn_new" onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
 
                 <div id="game-result-modal" class="game-result hidden">
                     <h2 id="final-speed-display" class="result-score">0 CPM</h2>
                     <div class="result-actions">
-                        <button onclick="App.retryRace()" class="btn-outline">Repetir</button>
-                        <button onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
-                        <button onclick="App.quitRace()" class="btn-outline">Volver</button>
+                        <button id="t_btn_retry2" onclick="App.retryRace()" class="btn-outline">Repetir</button>
+                        <button id="t_btn_cont" onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button id="t_btn_back2" onclick="App.quitRace()" class="btn-outline">Volver</button>
                     </div>
                 </div>
             </div>
@@ -492,6 +497,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.4"></script>
+    <script src="main.js?v=1.0.5"></script>
 </body>
 </html>
