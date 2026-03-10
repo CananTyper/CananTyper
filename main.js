@@ -11,9 +11,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 2. CORE DE DATOS (ESPEJO LOCAL - CERO LATENCIA)
+// 2. CORE DE DATOS
 const CT = {
-    data: { u: [], s: [], p: [], c: [], a: [], ui: null }, // "ui" guarda los textos dinámicos
+    data: { u: [], s: [], p: [], c: [], a: [], ui: null }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
@@ -37,6 +37,7 @@ const CT = {
         if(cC) this.data.c = JSON.parse(cC);
 
         UI.updateUnitVisuals(this.currentUnit);
+        // FIX SESIÓN: Ahora usamos localStorage en todo para persistencia.
         if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
 
         db.collection('users').onSnapshot(snap => { 
@@ -81,34 +82,57 @@ const CT = {
             }
         });
 
-        // NUEVO: Listener de UI Dinámica (Servidor)
+        // NUEVO: Diccionario Masivo de Léxico
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
+            const defaults = {
+                't_auth_title': { l: 'Título de Inicio', v: 'CananTyper' },
+                't_auth_sub': { l: 'Subtítulo de Inicio', v: 'Mecanografía' },
+                't_btn_login': { l: 'Botón: Iniciar sesión', v: 'Iniciar sesión' },
+                't_btn_register': { l: 'Botón: Crear Cuenta', v: 'CREAR CUENTA' },
+                't_txt_new': { l: 'Texto: ¿Nuevo?', v: '¿Nuevo? Registrarse' },
+                't_txt_haveacc': { l: 'Texto: ¿Tenés cuenta?', v: '¿Tenés cuenta? Inicia sesión' },
+                't_btn_random': { l: 'Botón: Modo Aleatorio', v: 'MODO ALEATORIO' },
+                't_btn_custom': { l: 'Botón: Modo Personalizado', v: 'MODO PERSONALIZADO' },
+                't_admin_title': { l: 'Título Panel Admin', v: 'CananTyper' },
+                't_admin_sub': { l: 'Subtítulo Panel Admin', v: 'Panel de administración' },
+                't_nav_admin': { l: 'Menú: Administración', v: 'Administración' },
+                't_nav_stats': { l: 'Menú: Estadísticas', v: 'Estadísticas' },
+                't_nav_logout': { l: 'Menú: Cerrar sesión', v: 'Cerrar sesión' },
+                't_hd_rank_races': { l: 'Título: Ranking Carreras', v: 'Ranking | Carreras' },
+                't_hd_rank_avg': { l: 'Título: Ranking Promedios', v: 'Ranking | Promedios' },
+                't_hd_stats': { l: 'Título: Estadísticas', v: 'Estadísticas' },
+                't_hd_stats_sub': { l: 'Subtítulo: Estadísticas', v: 'Análisis de rendimiento' },
+                't_hd_track': { l: 'Título: Personalizado', v: 'Modo Personalizado' },
+                't_hd_track_sub': { l: 'Subtítulo: Personalizado', v: 'Selecciona una categoría o texto' },
+                't_st_box_top10': { l: 'Caja: Mejores Carreras', v: 'Mejores Carreras (TOP 10)' },
+                't_st_box_texts': { l: 'Caja: Mejores Textos', v: 'Mejores Textos (Top 10)' },
+                't_btn_back': { l: 'Juego Botón: Volver', v: 'Volver' },
+                't_btn_retry': { l: 'Juego Botón: Repetir', v: 'Repetir' },
+                't_btn_new': { l: 'Juego Botón: Nueva', v: 'Nueva' },
+                't_btn_cont': { l: 'Juego Botón: Continuar', v: 'Continuar' },
+                't_btn_retry2': { l: 'Result Botón: Repetir', v: 'Repetir' },
+                't_btn_back2': { l: 'Result Botón: Volver', v: 'Volver' }
+            };
+
             if(snap.exists) {
-                this.data.ui = snap.data();
+                this.data.ui = { ...defaults, ...snap.data() };
             } else {
-                // Base por defecto si no existe
-                this.data.ui = {
-                    't_auth_title': { l: 'Título de Inicio', v: 'CananTyper' },
-                    't_auth_sub': { l: 'Subtítulo de Inicio', v: 'Mecanografía' },
-                    't_btn_random': { l: 'Botón: Modo Aleatorio', v: 'MODO ALEATORIO' },
-                    't_btn_custom': { l: 'Botón: Modo Personalizado', v: 'MODO PERSONALIZADO' },
-                    't_admin_title': { l: 'Título Panel Admin', v: 'CananTyper' },
-                    't_admin_sub': { l: 'Subtítulo Panel Admin', v: 'Panel de administración' }
-                };
-                if(this.ses() && this.ses().r === 'admin') db.collection('config').doc('ui_texts').set(this.data.ui);
+                this.data.ui = defaults;
             }
             UI.applyUITexts();
             UI.refreshActiveViews();
         });
     },
     ses: () => { 
-        const s = JSON.parse(sessionStorage.getItem('ct_ses')); 
+        // FIX SESIÓN: Persistencia total (localStorage en vez de sessionStorage)
+        const s = JSON.parse(localStorage.getItem('ct_ses')); 
         return s ? (CT.data.u || []).find(x => x.h === s.h) : null; 
     }
 };
 
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null,
+    lexiconPage: 0, // Nueva paginación para Léxico
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
     currentAnnId: null, 
     formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
@@ -157,12 +181,16 @@ const UI = {
         else this.renderEliteStats();
     },
 
-    // APLICA TEXTOS DINÁMICOS AL HTML
     applyUITexts: () => {
         if(!CT.data.ui) return;
         Object.keys(CT.data.ui).forEach(k => {
             const el = document.getElementById(k);
-            if(el) el.innerText = CT.data.ui[k].v;
+            if(el) {
+                // Validación para no borrar el HTML de los links de Auth
+                if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
+                else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
+                else { el.innerText = CT.data.ui[k].v; }
+            }
         });
     },
 
@@ -175,8 +203,9 @@ const UI = {
         document.getElementById('st-p-total-races').innerText = userScores.length;
         
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        // FIX ORDEN TABLA: TOP - Texto - Velocidad - Fecha
         document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr>
-            <td>${i+1}</td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+            <td>${i+1}</td><td>${s.track}</td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
         </tr>`).join('');
         
         const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
@@ -317,7 +346,7 @@ const UI = {
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { 
-            UI.renderAdminAnn(); UI.renderAdminServer(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); 
+            UI.renderAdminAnn(); UI.renderAdminLexicon(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); 
         }
         if(!document.getElementById('track-screen').classList.contains('hidden')) {
             if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
@@ -473,26 +502,25 @@ const UI = {
         if(activeTabBtn) activeTabBtn.classList.add('active');
         
         if(tab === 'announcements') { UI.renderAdminAnn(); }
-        if(tab === 'server') { UI.renderAdminServer(); }
+        if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); }
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') { this.renderAdminU(); }
         if(tab === 'create') { this.toggleCreateForm('text'); }
     },
 
-    // RENDERIZAR TABLA DE ANUNCIOS EN ADMIN (Corregido alineación fecha y tamaño)
+    // FIX ORDEN TABLA ANUNCIOS: Icono - Estado - Fecha - Acción
     renderAdminAnn() {
         const list = CT.dbLocal('a');
         document.getElementById('admin-ann-list').innerHTML = list.map(a => `
             <tr>
                 <td style="font-size: 1.5rem; text-align: center;">${a.icon}</td>
-                <td style="white-space: normal; text-align: center;"><b>${a.title}</b></td>
-                <td style="white-space: nowrap; font-size: 0.75rem; color: var(--text-muted);">${a.date}</td>
                 <td>
                     <span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold; font-size: 0.8rem;">
                         ${a.active ? 'VIGENTE' : 'FINALIZADO'}
                     </span>
                 </td>
+                <td style="white-space: nowrap; font-size: 0.75rem; color: var(--text-muted); text-align: center;">${a.date}</td>
                 <td>
                     <div style="display: flex; gap: 5px; justify-content: center;">
                         ${a.active 
@@ -506,27 +534,47 @@ const UI = {
         `).join('');
     },
 
-    // RENDERIZAR EDICIÓN DEL SERVIDOR (UI Dinámica con "Barra Radioactiva")
-    renderAdminServer() {
+    // RENDERIZAR LÉXICO CON PAGINACIÓN (Máx 20 por página)
+    renderAdminLexicon() {
         if(!CT.data.ui) return;
-        const query = (document.getElementById('server-search').value || "").toLowerCase();
-        const listEl = document.getElementById('admin-server-list');
-        let html = '';
-        Object.keys(CT.data.ui).forEach(k => {
+        const query = (document.getElementById('lexicon-search').value || "").toLowerCase();
+        const listEl = document.getElementById('admin-lexicon-list');
+        
+        let filtered = Object.keys(CT.data.ui).filter(k => {
             const item = CT.data.ui[k];
-            if(item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query)) {
-                html += `
-                <li class="admin-list-item" style="border-left: 4px solid var(--p); border-radius: 4px;">
-                    <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                        <small style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; text-transform: uppercase;">${item.l}</small>
-                        <span><b style="color:var(--text-main); font-size:1rem;">${item.v}</b></span>
-                    </div>
-                    <button onclick="App.editUIText('${k}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button>
-                </li>
-                `;
-            }
+            return item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query);
+        });
+
+        const start = UI.lexiconPage * 20;
+        const pageData = filtered.slice(start, start + 20);
+
+        let html = '';
+        pageData.forEach(k => {
+            const item = CT.data.ui[k];
+            html += `
+            <li class="admin-list-item" style="border-left: 4px solid var(--p); border-radius: 4px;">
+                <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                    <small style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; text-transform: uppercase;">${item.l}</small>
+                    <span><b style="color:var(--text-main); font-size:1rem;">${item.v}</b></span>
+                </div>
+                <button onclick="App.editUIText('${k}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button>
+            </li>
+            `;
         });
         listEl.innerHTML = html;
+
+        document.getElementById('admin-le-prev').disabled = UI.lexiconPage === 0;
+        document.getElementById('admin-le-next').disabled = (start + 20) >= filtered.length;
+        document.getElementById('admin-le-page-num').innerText = `Página ${UI.lexiconPage + 1}`;
+    },
+    changeAdminLexiconPage(delta) {
+        const query = (document.getElementById('lexicon-search').value || "").toLowerCase();
+        let filtered = Object.keys(CT.data.ui).filter(k => {
+            const item = CT.data.ui[k];
+            return item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query);
+        });
+        const nextStart = (UI.lexiconPage + delta) * 20;
+        if(nextStart >= 0 && nextStart < filtered.length) { UI.lexiconPage += delta; this.renderAdminLexicon(); }
     },
 
     toggleCreateForm(type) {
@@ -721,7 +769,6 @@ const UI = {
     adminEditUserName: async (handle) => {
         const u = CT.dbLocal('u').find(x => x.h === handle); if(!u) return;
         const newName = prompt(`Nuevo nombre visible para ${handle}:`, u.n);
-        // FIX: Validación en DB admin side
         if(newName && newName.trim() !== '' && newName.trim() !== u.n) {
             if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres.");
             await db.collection('users').doc(handle).update({ n: newName.trim() });
@@ -891,7 +938,6 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    // PUBLICAR ANUNCIO EN LA NUBE Y CERRAR ANTERIORES
     publishAnnouncement: async () => {
         const title = document.getElementById('ann-title').value.trim();
         const msg = document.getElementById('ann-msg').innerHTML.trim();
@@ -924,7 +970,6 @@ const App = {
             }
         }
     },
-    // ANULAR UN ANUNCIO VIGENTE
     cancelAnnouncement: async (idStr) => {
         if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) {
             try {
@@ -941,7 +986,6 @@ const App = {
             }
         }
     },
-    // ELIMINAR ANUNCIO DEL HISTORIAL
     deleteAnnouncement: async (idStr) => {
         if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) {
             try {
@@ -955,6 +999,7 @@ const App = {
             }
         }
     },
+    
     // EDITAR TEXTO DE LA UI DINÁMICAMENTE
     editUIText: (key) => {
         if(!CT.data.ui || !CT.data.ui[key]) return;
@@ -1008,7 +1053,6 @@ const App = {
     editDisplayName: () => { 
         const u = CT.ses(); if(!u) return; 
         const newName = prompt("Nuevo nombre:", u.n); 
-        // FIX: Validación limitante de nombre a 15 caracteres
         if(newName && newName.trim() !== '') { 
             if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres.");
             db.collection('users').doc(u.h).update({ n: newName });
@@ -1024,7 +1068,8 @@ const App = {
         try {
             const docRef = await db.collection('users').doc(handle).get();
             if(docRef.exists && docRef.data().p === p) { 
-                sessionStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+                // FIX SESIÓN: Guardado en localStorage
+                localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                 if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data());
                 UI.initLobby(); 
             } else { alert("Usuario o contraseña incorrectos"); }
@@ -1033,7 +1078,6 @@ const App = {
     register: async () => { 
         const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
         if(!n || !hRaw || !p) return alert("Completa todos los campos");
-        // FIX: Validación de límite en registro
         if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres.");
         try {
             const docRef = await db.collection('users').doc(handle).get();
@@ -1057,7 +1101,8 @@ const App = {
             UI.cancelEditP();
         } 
     },
-    logout: () => { sessionStorage.clear(); location.reload(); },
+    // FIX SESIÓN: Eliminar token del disco sin borrar preferencias de caché
+    logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
 
     saveCrop: () => {
         const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d');
@@ -1107,17 +1152,15 @@ class Engine {
         const inp = document.getElementById('game-input'); 
         inp.value = ''; inp.disabled = false; inp.focus(); 
         
-        // FIX: ESCUDO ANTI-TRAMPAS (Bloqueo de Copiar y Pegar)
+        // ESCUDO ANTI-TRAMPAS: Bloqueo total de pegado y menús de contexto
         inp.onpaste = (e) => { e.preventDefault(); return false; };
         inp.oncopy = (e) => { e.preventDefault(); return false; };
         inp.oncontextmenu = (e) => { e.preventDefault(); return false; };
         
         inp.oninput = (e) => this.check(e.target.value, e.target); 
         
-        // Bloqueo de pérdida de foco
         inp.onblur = () => { if(!inp.disabled) inp.focus(); };
 
-        // AUTO-AJUSTE
         const display = document.getElementById('target-text');
         display.style.fontSize = '1.6rem';
         setTimeout(() => {
@@ -1143,7 +1186,6 @@ class Engine {
         
         const cur = this.w[this.i]; const spans = document.querySelectorAll('.word'); const activeSpan = spans[this.i]; const last = this.i === this.w.length - 1; 
         
-        // REGLA TYPERACER
         if (v.length > cur.length + 5) {
             v = v.slice(0, cur.length + 5);
             el.value = v;
