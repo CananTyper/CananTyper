@@ -65,6 +65,17 @@ const CT = {
             UI.updateCategorySelects();
             UI.refreshActiveViews(); 
         });
+
+        // NUEVO: Listener del Anuncio Global (MotD)
+        db.collection('config').doc('announcement').onSnapshot(snap => {
+            if(snap.exists && this.ses()) {
+                const data = snap.data();
+                const lastSeen = localStorage.getItem('ct_last_announcement');
+                if(data.id && data.id.toString() !== lastSeen) {
+                    UI.showAnnouncement(data);
+                }
+            }
+        });
     },
     ses: () => { 
         const s = JSON.parse(sessionStorage.getItem('ct_ses')); 
@@ -74,8 +85,8 @@ const CT = {
 
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null,
-    prPage: 0, prTrack: '',
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
+    currentAnnId: null, // Guarda el id del anuncio en pantalla
     formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     show: (id) => { 
@@ -97,7 +108,9 @@ const UI = {
         this.renderGlobal(); this.show('home-screen');
     },
     showLobby() { this.initLobby(); },
-    showAdmin() { this.switchTab('users'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
+    
+    // FIX: Admin ahora abre por defecto en Anuncios
+    showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
     showStats() {
         this.switchStatsTab('personal');
@@ -267,45 +280,8 @@ const UI = {
         }).join('');
     },
 
-    // NUEVO: SISTEMA DE ESTADÍSTICAS POST-CARRERA (LATENCIA CERO)
-    renderPostRaceStats() {
-        const track = UI.prTrack;
-        const scores = CT.dbLocal('s');
-        const u = CT.ses();
-        
-        let globalTop = scores.filter(s => s.track === track).sort((a,b)=>b.c - a.c).slice(0,10);
-        document.getElementById('pr-global-list').innerHTML = globalTop.map((s,i) => `<tr>
-            <td>${i+1}</td>
-            <td><div style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td>
-            <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td>
-            <td>${s.d}</td>
-        </tr>`).join('');
-        
-        let userHist = scores.filter(s => s.track === track && s.h === u.h).sort((a,b)=>b.id - a.id);
-        const start = UI.prPage * 10; 
-        const pageData = userHist.slice(start, start + 10);
-        document.getElementById('pr-user-list').innerHTML = pageData.map((s,i) => `<tr>
-            <td>${start + i + 1}</td>
-            <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td>
-            <td>${s.d}</td>
-        </tr>`).join('');
-        
-        document.getElementById('pr-prev').disabled = UI.prPage === 0;
-        document.getElementById('pr-next').disabled = (start + 10) >= userHist.length;
-        document.getElementById('pr-page-num').innerText = `Página ${UI.prPage + 1}`;
-    },
-    changePRPage(delta) {
-        const u = CT.ses();
-        let userHist = CT.dbLocal('s').filter(s => s.track === UI.prTrack && s.h === u.h);
-        const nextStart = (UI.prPage + delta) * 10;
-        if(nextStart >= 0 && nextStart < userHist.length) { UI.prPage += delta; UI.renderPostRaceStats(); }
-    },
-
     refreshActiveViews: () => {
-        if(!document.getElementById('game-screen').classList.contains('hidden')) {
-            if(!document.getElementById('post-race-stats').classList.contains('hidden')) { UI.renderPostRaceStats(); }
-            return; 
-        }
+        if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); }
@@ -335,7 +311,7 @@ const UI = {
 
         const label = unit.toUpperCase();
         
-        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel', 'th-pr-vel-1', 'th-pr-vel-2'];
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel'];
         thIds.forEach(id => {
             if(document.getElementById(id)) {
                 document.getElementById(id).innerText = 'VEL. (' + label + ')';
@@ -778,6 +754,21 @@ const UI = {
         if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
 
+    // LÓGICA DE ANUNCIOS GLOBALES (MOTD)
+    showAnnouncement(data) {
+        UI.currentAnnId = data.id.toString();
+        document.getElementById('motd-icon').innerText = data.icon || "🚀";
+        document.getElementById('motd-title').innerText = data.title || "Anuncio";
+        document.getElementById('motd-msg').innerText = data.msg || "";
+        document.getElementById('announcement-modal').classList.remove('hidden');
+    },
+    closeAnnouncement() {
+        if(UI.currentAnnId) {
+            localStorage.setItem('ct_last_announcement', UI.currentAnnId);
+        }
+        document.getElementById('announcement-modal').classList.add('hidden');
+    },
+
     openCropModal(src) {
         const img = document.getElementById('crop-image'); img.src = src;
         img.onload = () => {
@@ -812,6 +803,24 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
+    // PUBLICAR ANUNCIO EN LA NUBE
+    publishAnnouncement: () => {
+        const title = document.getElementById('ann-title').value.trim();
+        const msg = document.getElementById('ann-msg').value.trim();
+        const icon = document.getElementById('ann-icon').value;
+        if(!title || !msg) return alert("Rellena el título y el mensaje del anuncio.");
+        
+        if(confirm("¿Seguro que deseas lanzar este Pop-Up a todos los jugadores?")) {
+            const annId = Date.now().toString();
+            db.collection('config').doc('announcement').set({ id: annId, title: title, msg: msg, icon: icon })
+              .then(() => {
+                  alert("Anuncio publicado con éxito.");
+                  document.getElementById('ann-title').value = '';
+                  document.getElementById('ann-msg').value = '';
+              }).catch(() => alert("Error al publicar el anuncio."));
+        }
+    },
+
     createNewCategory: () => {
         const nameInp = document.getElementById('new-cat-name');
         const catName = nameInp.value.trim();
@@ -939,7 +948,6 @@ class Engine {
     init() { 
         UI.show('game-screen'); 
         document.getElementById('game-result-modal').classList.add('hidden');
-        document.getElementById('post-race-stats').classList.add('hidden');
         document.getElementById('game-input').classList.remove('hidden');
         document.getElementById('in-game-controls').classList.remove('hidden');
         document.getElementById('target-text').innerHTML = this.w.map((w,idx) => `<span class="word ${idx===0?'active':''}">${w}</span>`).join(' '); 
@@ -950,10 +958,10 @@ class Engine {
         inp.value = ''; inp.disabled = false; inp.focus(); 
         inp.oninput = (e) => this.check(e.target.value, e.target); 
         
-        // Bloqueo de pérdida de foco: el usuario no necesita clickear la barra
+        // Bloqueo de pérdida de foco
         inp.onblur = () => { if(!inp.disabled) inp.focus(); };
 
-        // AUTO-AJUSTE: Escala el texto si es demasiado largo para el contenedor
+        // AUTO-AJUSTE
         const display = document.getElementById('target-text');
         display.style.fontSize = '1.6rem';
         setTimeout(() => {
@@ -979,7 +987,7 @@ class Engine {
         
         const cur = this.w[this.i]; const spans = document.querySelectorAll('.word'); const activeSpan = spans[this.i]; const last = this.i === this.w.length - 1; 
         
-        // REGLA TYPERACER: Bloqueo de teclado si el usuario teclea más de 5 errores por encima de la palabra
+        // REGLA TYPERACER
         if (v.length > cur.length + 5) {
             v = v.slice(0, cur.length + 5);
             el.value = v;
@@ -1015,7 +1023,7 @@ class Engine {
         const sec = (new Date()-this.s)/1000;
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
-        document.getElementById('game-input').disabled = true; // Libera el input para evitar loop de focus
+        document.getElementById('game-input').disabled = true; 
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
         
@@ -1038,12 +1046,6 @@ class Engine {
             db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
             db.collection('scores').doc(scoreId).set(newScore); 
         }
-
-        // CARGA LOS RECUADROS ESTADÍSTICOS POST-CARRERA INSTANTÁNEAMENTE
-        document.getElementById('post-race-stats').classList.remove('hidden');
-        UI.prPage = 0;
-        UI.prTrack = this.track.title;
-        setTimeout(() => UI.renderPostRaceStats(), 50);
     }
 }
 
