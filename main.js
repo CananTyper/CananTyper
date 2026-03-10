@@ -451,24 +451,27 @@ const UI = {
         if(tab === 'create') { this.toggleCreateForm('text'); }
     },
 
-    // RENDERIZAR TABLA DE ANUNCIOS EN ADMIN
+    // RENDERIZAR TABLA DE ANUNCIOS EN ADMIN (NUEVO ORDEN: Icono - Título - Fecha - Estado - Acción)
     renderAdminAnn() {
         const list = CT.dbLocal('a');
         document.getElementById('admin-ann-list').innerHTML = list.map(a => `
             <tr>
-                <td>${a.date}</td>
                 <td style="font-size: 1.5rem; text-align: center;">${a.icon}</td>
                 <td style="white-space: normal; text-align: center;"><b>${a.title}</b></td>
+                <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">${a.date}</td>
                 <td>
-                    <span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold;">
+                    <span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold; font-size: 0.8rem;">
                         ${a.active ? 'VIGENTE' : 'FINALIZADO'}
                     </span>
                 </td>
                 <td>
-                    ${a.active 
-                        ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-error" style="padding: 6px 12px; border-radius: 6px;">ANULAR</button>`
-                        : `<span style="color: var(--text-muted); font-size: 0.75rem; font-weight: bold;">-</span>`
-                    }
+                    <div style="display: flex; gap: 5px; justify-content: center;">
+                        ${a.active 
+                            ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px; border-color: var(--error); color: var(--error);" title="Anular">❌</button>`
+                            : `<span style="display: inline-block; width: 30px;"></span>`
+                        }
+                        <button onclick="App.deleteAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px;" title="Eliminar">🗑️</button>
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -873,10 +876,29 @@ const App = {
             try {
                 const batch = db.batch();
                 batch.update(db.collection('announcements').doc(idStr.toString()), { active: false });
-                batch.update(db.collection('config').doc('announcement'), { id: null });
+                
+                // Borrar del popup global si es el activo
+                const activeDoc = await db.collection('config').doc('announcement').get();
+                if(activeDoc.exists && activeDoc.data().id === idStr.toString()) {
+                    batch.update(db.collection('config').doc('announcement'), { id: null });
+                }
                 await batch.commit();
             } catch(e) {
                 alert("Error al anular anuncio.");
+            }
+        }
+    },
+    // ELIMINAR ANUNCIO DEL HISTORIAL
+    deleteAnnouncement: async (idStr) => {
+        if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) {
+            try {
+                await db.collection('announcements').doc(idStr.toString()).delete();
+                const activeDoc = await db.collection('config').doc('announcement').get();
+                if(activeDoc.exists && activeDoc.data().id === idStr.toString()) {
+                    await db.collection('config').doc('announcement').update({ id: null });
+                }
+            } catch(e) {
+                alert("Error al eliminar anuncio.");
             }
         }
     },
