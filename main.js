@@ -115,7 +115,7 @@ const UI = {
     },
     showLobby() { this.initLobby(); },
     
-    // Panel Admin abre en Anuncios por defecto
+    // Admin abre en Anuncios por defecto
     showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
 
     showStats() {
@@ -458,7 +458,7 @@ const UI = {
             <tr>
                 <td>${a.date}</td>
                 <td style="font-size: 1.5rem; text-align: center;">${a.icon}</td>
-                <td style="white-space: normal; text-align: left;"><b>${a.title}</b></td>
+                <td style="white-space: normal; text-align: center;"><b>${a.title}</b></td>
                 <td>
                     <span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold;">
                         ${a.active ? 'VIGENTE' : 'FINALIZADO'}
@@ -786,11 +786,11 @@ const UI = {
 
     // LÓGICA DE ANUNCIOS GLOBALES (MOTD)
     showAnnouncement(data) {
-        if(!data.id) return; // Se anuló el anuncio activo
+        if(!data.id) return; 
         UI.currentAnnId = data.id.toString();
         document.getElementById('motd-icon').innerText = data.icon || "🚀";
         document.getElementById('motd-title').innerText = data.title || "Anuncio";
-        document.getElementById('motd-msg').innerHTML = data.msg || ""; // InnerHTML para respetar formato enriquecido
+        document.getElementById('motd-msg').innerHTML = data.msg || ""; 
         document.getElementById('announcement-modal').classList.remove('hidden');
     },
     closeAnnouncement() {
@@ -843,23 +843,18 @@ const App = {
         
         if(confirm("¿Seguro que deseas lanzar este Pop-Up a todos los jugadores?")) {
             const annId = Date.now().toString();
-            // Formateo de fecha y hora exacta
             const timeStr = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit', timeZone: 'America/Argentina/Buenos_Aires'});
             const dateStr = CT.getARDate() + " - " + timeStr;
             
             try {
-                // 1. Marcar todos los anuncios históricos activos como falsos
                 const activeDocs = await db.collection('announcements').where('active', '==', true).get();
                 const batch = db.batch();
                 activeDocs.forEach(d => {
                     batch.update(d.ref, { active: false });
                 });
                 
-                // 2. Crear el nuevo registro en la colección de historia
                 const newAnn = { id: annId, title: title, msg: msg, icon: icon, date: dateStr, active: true };
                 batch.set(db.collection('announcements').doc(annId), newAnn);
-                
-                // 3. Actualizar el documento de Configuración para disparar el Pop-Up en tiempo real a los jugadores
                 batch.set(db.collection('config').doc('announcement'), { id: annId, title: title, msg: msg, icon: icon });
                 
                 await batch.commit();
@@ -883,14 +878,6 @@ const App = {
             } catch(e) {
                 alert("Error al anular anuncio.");
             }
-        }
-    },
-    // INSERTAR EMOJI EN EDITOR
-    insertEmoji: () => {
-        const emoji = prompt("Pega o escribe el emoji a insertar:", "🎮");
-        if(emoji) {
-            document.getElementById('ann-msg').focus();
-            document.execCommand('insertText', false, emoji);
         }
     },
 
