@@ -114,9 +114,6 @@ const CT = {
                 't_btn_custom': { l: 'Botón: Modo Personalizado', v: 'MODO PERSONALIZADO' },
                 't_admin_title': { l: 'Título Panel Admin', v: 'CananTyper' },
                 't_admin_sub': { l: 'Subtítulo Panel Admin', v: 'Panel de administración' },
-                't_nav_admin': { l: 'Menú: Administración', v: 'Administración' },
-                't_nav_stats': { l: 'Menú: Estadísticas', v: 'Estadísticas' },
-                't_nav_logout': { l: 'Menú: Cerrar sesión', v: 'Cerrar sesión' },
                 't_hd_rank_races': { l: 'Título: Ranking Carreras', v: 'Ranking | Carreras' },
                 't_hd_rank_avg': { l: 'Título: Ranking Promedios', v: 'Ranking | Promedios' },
                 't_hd_stats': { l: 'Título: Estadísticas', v: 'Estadísticas' },
@@ -214,7 +211,9 @@ const UI = {
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         
-        document.getElementById('t_nav_admin').classList.toggle('hidden', u.r !== 'admin');
+        // Carga de la vista de administrador asegurando el nuevo ID
+        const adminBtn = document.getElementById('btn-nav-admin');
+        if(adminBtn) adminBtn.classList.toggle('hidden', u.r !== 'admin');
         
         UI.updateUnitVisuals(CT.currentUnit);
         this.renderGlobal(); this.show('home-screen');
@@ -537,7 +536,6 @@ const UI = {
         } catch (error) { console.error(error); }
     },
     
-    // NAVEGACIÓN v1.0.3 (El Toggle del engranaje que apaga la luz amarilla)
     toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
     toggleSettings: () => { 
         document.getElementById('settings-dropdown').classList.toggle('hidden'); 
