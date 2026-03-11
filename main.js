@@ -37,7 +37,6 @@ const CT = {
         if(cC) this.data.c = JSON.parse(cC);
 
         UI.updateUnitVisuals(this.currentUnit);
-        // FIX SESIÓN: Ahora usamos localStorage en todo para persistencia.
         if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
 
         db.collection('users').onSnapshot(snap => { 
@@ -82,7 +81,6 @@ const CT = {
             }
         });
 
-        // NUEVO: Diccionario Masivo de Léxico
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título de Inicio', v: 'CananTyper' },
@@ -124,7 +122,6 @@ const CT = {
         });
     },
     ses: () => { 
-        // FIX SESIÓN: Persistencia total (localStorage en vez de sessionStorage)
         const s = JSON.parse(localStorage.getItem('ct_ses')); 
         return s ? (CT.data.u || []).find(x => x.h === s.h) : null; 
     }
@@ -132,7 +129,7 @@ const CT = {
 
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null,
-    lexiconPage: 0, // Nueva paginación para Léxico
+    lexiconPage: 0, 
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
     currentAnnId: null, 
     formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
@@ -150,7 +147,9 @@ const UI = {
         document.getElementById('val-display-name').innerText = u.n;
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
-        document.getElementById('btn-go-admin').classList.toggle('hidden', u.r !== 'admin');
+        
+        // FIX DE ERROR: El ID correcto es t_nav_admin
+        document.getElementById('t_nav_admin').classList.toggle('hidden', u.r !== 'admin');
         
         UI.updateUnitVisuals(CT.currentUnit);
         this.renderGlobal(); this.show('home-screen');
@@ -186,7 +185,6 @@ const UI = {
         Object.keys(CT.data.ui).forEach(k => {
             const el = document.getElementById(k);
             if(el) {
-                // Validación para no borrar el HTML de los links de Auth
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
                 else { el.innerText = CT.data.ui[k].v; }
@@ -203,7 +201,6 @@ const UI = {
         document.getElementById('st-p-total-races').innerText = userScores.length;
         
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        // FIX ORDEN TABLA: TOP - Texto - Velocidad - Fecha
         document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr>
             <td>${i+1}</td><td>${s.track}</td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
         </tr>`).join('');
@@ -509,7 +506,6 @@ const UI = {
         if(tab === 'create') { this.toggleCreateForm('text'); }
     },
 
-    // FIX ORDEN TABLA ANUNCIOS: Icono - Estado - Fecha - Acción
     renderAdminAnn() {
         const list = CT.dbLocal('a');
         document.getElementById('admin-ann-list').innerHTML = list.map(a => `
@@ -534,7 +530,6 @@ const UI = {
         `).join('');
     },
 
-    // RENDERIZAR LÉXICO CON PAGINACIÓN (Máx 20 por página)
     renderAdminLexicon() {
         if(!CT.data.ui) return;
         const query = (document.getElementById('lexicon-search').value || "").toLowerCase();
@@ -1000,7 +995,6 @@ const App = {
         }
     },
     
-    // EDITAR TEXTO DE LA UI DINÁMICAMENTE
     editUIText: (key) => {
         if(!CT.data.ui || !CT.data.ui[key]) return;
         const currentVal = CT.data.ui[key].v;
@@ -1068,12 +1062,14 @@ const App = {
         try {
             const docRef = await db.collection('users').doc(handle).get();
             if(docRef.exists && docRef.data().p === p) { 
-                // FIX SESIÓN: Guardado en localStorage
                 localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                 if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data());
                 UI.initLobby(); 
             } else { alert("Usuario o contraseña incorrectos"); }
-        } catch(e) { alert("Fallo de conexión a la base de datos"); }
+        } catch(e) { 
+            console.error("Error en login:", e);
+            alert("Fallo de conexión a la base de datos"); 
+        }
     },
     register: async () => { 
         const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; 
@@ -1101,7 +1097,6 @@ const App = {
             UI.cancelEditP();
         } 
     },
-    // FIX SESIÓN: Eliminar token del disco sin borrar preferencias de caché
     logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
 
     saveCrop: () => {
@@ -1152,7 +1147,6 @@ class Engine {
         const inp = document.getElementById('game-input'); 
         inp.value = ''; inp.disabled = false; inp.focus(); 
         
-        // ESCUDO ANTI-TRAMPAS: Bloqueo total de pegado y menús de contexto
         inp.onpaste = (e) => { e.preventDefault(); return false; };
         inp.oncopy = (e) => { e.preventDefault(); return false; };
         inp.oncontextmenu = (e) => { e.preventDefault(); return false; };
