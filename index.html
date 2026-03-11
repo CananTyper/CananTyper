@@ -55,25 +55,25 @@
                     </div>
                 </div>
                 <div class="nav-right">
-                    <button id="btn-nav-admin" class="nav-icon-btn hidden" onclick="UI.showAdmin()" title="Administración">🛠️</button>
-                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" title="Estadísticas">📊</button>
+                    <button id="btn-nav-admin" class="nav-icon-btn hidden" onclick="UI.showAdmin()" data-tooltip="Administración">🛠️</button>
+                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" data-tooltip="Estadísticas">📊</button>
                     
                     <div style="position: relative; display: inline-block;">
-                        <button id="btn-nav-settings" onclick="UI.toggleSettings()" class="nav-icon-btn" title="Ajustes">
-                            ⚙️
-                            <span id="update-dot" class="update-dot hidden"></span>
+                        <button id="btn-nav-settings" onclick="UI.toggleSettings()" class="nav-icon-btn" data-tooltip="Ajustes">
+                            ⚙️<span id="update-dot" class="update-dot hidden"></span>
                         </button>
-                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 200px; z-index: 100; cursor: default;">
+                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 210px; z-index: 100; cursor: default;">
                             <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
-                            <button onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 10px 15px; background: transparent; border: none; color: inherit; width: 100%;">⛶ Pantalla Completa</button>
+                            <button onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
+                            <button onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%;">🧹 Limpiar Caché Local</button>
                             <div class="version-seal">
                                 CananTyper v1.0.3 
-                                <span class="online-dot" title="Conexión Estable"></span>
+                                <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
                     
-                    <button id="btn-nav-logout" class="nav-icon-btn" onclick="App.logout()" title="Cerrar sesión">🚪</button>
+                    <button id="btn-nav-logout" class="nav-icon-btn" onclick="App.logout()" style="font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; padding: 10px 15px;">SALIR</button>
                 </div>
             </header>
 
@@ -131,7 +131,6 @@
                 <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')">Élite</button>
             </div>
             <div class="admin-content-area" style="padding: 15px;">
-                
                 <div id="pane-stats-personal" class="pane">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0; flex-grow: 0;">
                         <div class="stat-card"><small id="lbl-st-p-best-avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
@@ -142,368 +141,80 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th width="15%">TOP</th><th width="35%">Texto</th><th width="25%" id="th-st-p-vel">Velocidad</th><th width="25%">Fecha</th></tr></thead>
-                                    <tbody id="st-p-top10-races"></tbody>
-                                </table>
-                            </div>
+                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><tbody id="st-p-top10-races"></tbody></table></div>
                         </div>
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_texts">Mejores Textos (Top 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th width="20%">TOP</th><th width="50%">Texto</th><th width="30%" id="th-st-p-t-max">MÁX. REGISTRADO</th></tr></thead>
-                                    <tbody id="st-p-top10-texts"></tbody>
-                                </table>
-                            </div>
+                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><tbody id="st-p-top10-texts"></tbody></table></div>
                         </div>
                     </div>
                 </div>
-
                 <div id="pane-stats-general" class="pane hidden">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card"><small>USUARIOS REGISTRADOS</small><b id="st-g-users">0</b></div>
-                        <div class="stat-card"><small>CARRERAS GLOBALES</small><b id="st-g-races">0</b></div>
-                        <div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg" class="val-blurrable">0</b></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD DE VELOCIDAD</small><b id="st-g-record" class="val-blurrable">0</b></div>
-                    </div>
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;"><div class="stat-card"><small>USUARIOS REGISTRADOS</small><b id="st-g-users">0</b></div><div class="stat-card"><small>CARRERAS GLOBALES</small><b id="st-g-races">0</b></div><div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD DE VELOCIDAD</small><b id="st-g-record" class="val-blurrable">0</b></div></div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3>Textos Más Jugados (Top 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th>Top</th><th>Texto</th><th>Veces Jugado</th></tr></thead>
-                                    <tbody id="st-g-top-texts"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3>Categorías Más Jugadas (Top 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th>Top</th><th>Categoría</th><th>Veces Jugada</th></tr></thead>
-                                    <tbody id="st-g-top-cats"></tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Textos Más Jugados (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Texto</th><th>Veces Jugado</th></tr></thead><tbody id="st-g-top-texts"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Categorías Más Jugadas (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Categoría</th><th>Veces Jugada</th></tr></thead><tbody id="st-g-top-cats"></tbody></table></div></div>
                     </div>
                 </div>
-
                 <div id="pane-stats-elite" class="pane hidden">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card"><small>MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small>MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                    </div>
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;"><div class="stat-card"><small>MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small>MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div></div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3>Máxima Velocidad en Top Textos</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th width="15%">N°</th><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead>
-                                    <tbody id="st-e-table-texts"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3>Máxima Velocidad en Top Categorías</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead>
-                                    <tbody id="st-e-table-cats"></tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Textos</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead><tbody id="st-e-table-texts"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Categorías</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead><tbody id="st-e-table-cats"></tbody></table></div></div>
                     </div>
                 </div>
-
             </div>
         </section>
 
         <section id="profile-screen" class="screen hidden">
-            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;">
-                <button onclick="UI.showLobby()" class="btn-outline">Volver</button>
-            </header>
-            
+            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
             <div class="profile-top-area">
-                <div class="profile-identity">
-                    <div class="avatar-md"><img id="prof-img" src="" alt=""></div>
-                    <input type="file" id="img-input" accept="image/*" hidden>
-                    <div class="identity-info" style="align-items: center;">
-                        <div class="name-edit-group">
-                            <h2 id="prof-name"></h2>
-                            <div class="edit-menu-wrapper">
-                                <span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span>
-                                <div id="edit-dropdown" class="edit-dropdown hidden">
-                                    <button onclick="App.editDisplayName()">Nombre</button>
-                                    <button onclick="document.getElementById('img-input').click()">Imagen</button>
-                                </div>
-                            </div>
-                        </div>
-                        <span id="prof-role" class="role-badge"></span>
-                    </div>
-                </div>
-
-                <div class="profile-stats">
-                    <div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div>
-                    <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div>
-                    <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div>
-                    <div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div>
-                </div>
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button onclick="App.editDisplayName()">Nombre</button><button onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
+                <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
             </div>
-
             <div class="profile-history-area">
-                <div class="custom-scroll history-list-wrapper">
-                    <table class="data-table">
-                        <thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead>
-                        <tbody id="prof-history-list"></tbody>
-                    </table>
-                </div>
-                <div class="pagination-bar">
-                    <button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button>
-                    <span id="prof-page-num" class="page-indicator">Página 1</span>
-                    <button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button>
-                </div>
+                <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
+                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button></div>
             </div>
         </section>
 
         <section id="track-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
-                    <h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2>
-                    <p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p>
-                </div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="UI.showLobby()" class="btn-outline">VOLVER</button></header>
             <div class="track-selection-area">
                 <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="UI.renderTrackList()" style="margin-bottom: 15px;">
-                
                 <div id="track-category-view" class="category-grid custom-scroll"></div>
-                
                 <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; flex-grow: 1; min-height: 0;">
                     <button id="btn-back-cat-track" onclick="UI.showTrackCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
                     <div id="track-list-full" class="custom-scroll track-list"></div>
-                    <div class="pagination-bar" style="margin-top: 15px;">
-                        <button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button>
-                        <span id="track-page-num" class="page-indicator">Página 1</span>
-                        <button id="track-next" class="btn-outline" onclick="UI.changeTrackPage(1)">→</button>
-                    </div>
+                    <div class="pagination-bar" style="margin-top: 15px;"><button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button><span id="track-page-num" class="page-indicator">Página 1</span><button id="track-next" class="btn-outline" onclick="UI.changeTrackPage(1)">→</button></div>
                 </div>
             </div>
         </section>
 
         <section id="admin-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
-                    <h2 id="t_admin_title" style="color: var(--p); margin: 0; font-size: 1.5rem;">CananTyper</h2>
-                    <p id="t_admin_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Panel de administración</p>
-                </div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
-            <div class="admin-tabs">
-                <button id="t_tab_ann" class="tab-btn active" onclick="UI.switchTab('announcements')">Anuncios</button>
-                <button id="t_tab_lex" class="tab-btn" onclick="UI.switchTab('lexicon')">Léxico</button>
-                <button id="t_tab_srv" class="tab-btn" onclick="UI.switchTab('server')">Servidor</button>
-                <button id="t_tab_usr" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
-                <button id="t_tab_rac" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
-                <button id="t_tab_txt" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button>
-                <button id="t_tab_cre" class="tab-btn" onclick="UI.switchTab('create')">Crear</button>
-            </div>
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_admin_title" style="color: var(--p); margin: 0; font-size: 1.5rem;">CananTyper</h2><p id="t_admin_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Panel de administración</p></div><button onclick="UI.showLobby()" class="btn-outline">VOLVER</button></header>
+            <div class="admin-tabs"><button id="t_tab_ann" class="tab-btn active" onclick="UI.switchTab('announcements')">Anuncios</button><button id="t_tab_lex" class="tab-btn" onclick="UI.switchTab('lexicon')">Léxico</button><button id="t_tab_srv" class="tab-btn" onclick="UI.switchTab('server')">Servidor</button><button id="t_tab_usr" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button><button id="t_tab_rac" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button><button id="t_tab_txt" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button><button id="t_tab_cre" class="tab-btn" onclick="UI.switchTab('create')">Crear</button></div>
             <div class="admin-content-area">
-                
-                <div id="pane-announcements" class="pane">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        
-                        <div class="table-box custom-scroll" style="margin: 0; padding: 20px; display: flex; flex-direction: column; overflow-y: auto;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px; flex-shrink: 0;">
-                                <h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Enviar Anuncio</h3>
-                                <small style="color: var(--text-muted);">Pop-Up de vista única</small>
-                            </div>
-                            
-                            <div class="form-row" style="align-items: center; margin-bottom: 10px; flex-shrink: 0;">
-                                <select id="ann-icon" class="admin-select" style="width: 70px; font-size: 1.3rem; text-align: center; text-align-last: center; padding: 10px;">
-                                    <option value="📢">📢</option>
-                                    <option value="🚀">🚀</option>
-                                    <option value="⚡">⚡</option>
-                                    <option value="👑">👑</option>
-                                    <option value="⚠️">⚠️</option>
-                                    <option value="🛠️">🛠️</option>
-                                    <option value="💎">💎</option>
-                                </select>
-                                <input type="text" id="ann-title" placeholder="Título (Ej: Torneo)" style="flex-grow: 1; font-weight: bold; font-size: 1rem; padding: 14px;">
-                            </div>
-                            
-                            <div style="display: flex; flex-wrap: wrap; gap: 6px; background: var(--surface-light); padding: 8px; border: 1px solid var(--border); border-radius: 8px 8px 0 0; border-bottom: none; align-items: center; flex-shrink: 0;">
-                                <button onclick="document.execCommand('bold', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Negrita"><b>B</b></button>
-                                <button onclick="document.execCommand('italic', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Cursiva"><i>I</i></button>
-                                <button onclick="document.execCommand('underline', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Subrayado"><u>U</u></button>
-                                <button onclick="document.execCommand('strikeThrough', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Tachado"><s>S</s></button>
-                                <div style="width: 1px; height: 16px; background: var(--border); margin: 0 4px;"></div>
-                                <button onclick="document.execCommand('justifyLeft', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Izquierda">⫷</button>
-                                <button onclick="document.execCommand('justifyCenter', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Centro">≣</button>
-                                <button onclick="document.execCommand('insertUnorderedList', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Lista">•=</button>
-                                <div style="width: 1px; height: 16px; background: var(--border); margin: 0 4px;"></div>
-                                <input type="color" id="ann-color" onchange="document.execCommand('foreColor', false, this.value)" title="Color" style="width: 25px; height: 25px; padding: 0; cursor: pointer; border: none; background: transparent;">
-                                <button onclick="document.execCommand('removeFormat', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 1rem; margin-left: auto;" title="Limpiar Formato">🧹</button>
-                            </div>
-                            
-                            <div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; flex-grow: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 0.95rem; line-height: 1.5; overflow-y: auto; min-height: 100px;"></div>
-                            
-                            <button onclick="App.publishAnnouncement()" class="btn-primary" style="margin-top: 15px; padding: 12px; width: 100%; flex-shrink: 0;">PUBLICAR ANUNCIO</button>
-                        </div>
-
-                        <div class="table-box" style="margin: 0; display: flex; flex-direction: column; min-height: 0;">
-                            <div class="table-header" style="flex-shrink: 0;">
-                                <h3>Anuncios Enviados</h3>
-                            </div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th width="15%">Icono</th><th width="25%">Estado</th><th width="35%">Fecha</th><th width="25%">Acción</th></tr></thead>
-                                    <tbody id="admin-ann-list"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="pane-lexicon" class="pane hidden">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <input type="text" id="lexicon-search" placeholder="Buscar texto por identificador (Ej: Botón Aleatorio)..." oninput="UI.renderAdminLexicon()" style="width: 100%; max-width: 400px;">
-                        <small style="color: var(--text-muted);">Edita los textos globales de la interfaz</small>
-                    </div>
-                    <div class="custom-scroll admin-table-wrapper" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-light); display: flex; flex-direction: column;">
-                        <ul id="admin-lexicon-list" class="custom-scroll admin-list" style="margin: 0; padding-right: 5px; flex-grow: 1;"></ul>
-                    </div>
-                    <div class="pagination-bar" style="margin-top: 10px;">
-                        <button id="admin-le-prev" class="btn-outline" onclick="UI.changeAdminLexiconPage(-1)">←</button>
-                        <span id="admin-le-page-num" class="page-indicator">Página 1</span>
-                        <button id="admin-le-next" class="btn-outline" onclick="UI.changeAdminLexiconPage(1)">→</button>
-                    </div>
-                </div>
-
-                <div id="pane-server" class="pane hidden">
-                    <div class="custom-scroll" style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow-y: auto;">
-                        <div class="table-box" style="max-width: 600px; width: 100%; padding: 40px; margin: auto; text-align: center; height: fit-content;">
-                            <div style="border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 25px;">
-                                <h3 style="color: var(--p); margin: 0 0 5px 0; font-size: 1.4rem; text-transform: uppercase;">Estado del Servidor</h3>
-                                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Activa el Kill Switch para bloquear el acceso a usuarios comunes.</p>
-                            </div>
-
-                            <div style="display: flex; justify-content: center; margin-bottom: 35px;">
-                                <button id="btn-maint-toggle" onclick="App.toggleMaintenance()" class="btn-outline" style="padding: 15px 30px; font-size: 1rem; border-width: 2px; width: 100%; transition: all 0.3s;">CARGANDO ESTADO...</button>
-                            </div>
-
-                            <h4 style="color: var(--text-main); margin: 0 0 15px 0; font-size: 1rem;">Configurar Cartel de Bloqueo</h4>
-                            
-                            <div class="form-row" style="margin-bottom: 15px;">
-                                <select id="maint-icon-input" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px;">
-                                    <option value="🛠️">🛠️</option>
-                                    <option value="🚧">🚧</option>
-                                    <option value="🛑">🛑</option>
-                                    <option value="⚡">⚡</option>
-                                    <option value="🔌">🔌</option>
-                                </select>
-                                <input type="text" id="maint-title-input" placeholder="Título (Ej: Mantenimiento)" style="flex-grow: 1; font-weight: bold; padding: 14px;">
-                            </div>
-                            <textarea id="maint-msg-input" placeholder="Mensaje que verán los jugadores bloqueados..." style="height: 120px; resize: none; padding: 15px; font-size: 0.95rem;"></textarea>
-                            
-                            <button onclick="App.saveMaintenanceInfo()" class="btn-primary" style="margin-top: 25px; width: 100%; padding: 15px;">GUARDAR CARTEL</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="pane-users" class="pane hidden">
-                    <input type="text" id="user-search" placeholder="Buscar" oninput="UI.renderAdminU()" style="margin-bottom: 15px;">
-                    <div class="custom-scroll admin-table-wrapper">
-                        <table class="data-table">
-                            <thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead>
-                            <tbody id="admin-users-list"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="pane-races" class="pane hidden">
-                    <input type="text" id="race-search" placeholder="Buscar" oninput="UI.renderAdminR()" style="margin-bottom: 15px;">
-                    <div class="custom-scroll admin-table-wrapper">
-                        <table class="data-table">
-                            <thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead>
-                            <tbody id="admin-races-list"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-bar" style="margin-top: 10px;">
-                        <button id="admin-ra-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button>
-                        <span id="admin-ra-page-num" class="page-indicator">Página 1</span>
-                        <button id="admin-ra-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button>
-                    </div>
-                </div>
-
-                <div id="pane-phrases" class="pane hidden">
-                    <input type="text" id="admin-phrase-search" placeholder="Buscar texto por título o palabras..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;">
-                    
-                    <div id="admin-phrase-form" class="admin-form hidden">
-                        <div class="form-row">
-                            <input type="text" id="phrase-title" placeholder="Número" style="width: 100px;" disabled>
-                            <select id="phrase-category" class="admin-select"></select>
-                            <textarea id="phrase-input" placeholder="Texto"></textarea>
-                        </div>
-                        <div style="display:flex; justify-content:center; gap:10px;">
-                            <button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary">ACTUALIZAR</button>
-                            <button onclick="UI.cancelEditP()" class="btn-outline">CANCELAR</button>
-                        </div>
-                    </div>
-
-                    <div id="admin-phrase-categories" class="category-grid custom-scroll"></div>
-                    <div id="admin-phrase-list-view" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 0;">
-                        <button id="btn-back-cat-admin" onclick="UI.showAdminPhraseCategories()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
-                        <ul id="admin-phrases-list" class="custom-scroll admin-list"></ul>
-                        <div class="pagination-bar" style="margin-top: 10px;">
-                            <button id="admin-ph-prev" class="btn-outline" onclick="UI.changeAdminPhrasePage(-1)">←</button>
-                            <span id="admin-ph-page-num" class="page-indicator">Página 1</span>
-                            <button id="admin-ph-next" class="btn-outline" onclick="UI.changeAdminPhrasePage(1)">→</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="pane-create" class="pane hidden">
-                    <div class="mode-selectors" style="margin-bottom: 20px;">
-                        <button id="btn-create-text" onclick="UI.toggleCreateForm('text')" class="btn-primary btn-admin-mode active">TEXTO</button>
-                        <button id="btn-create-cat" onclick="UI.toggleCreateForm('cat')" class="btn-primary btn-alt btn-admin-mode">CATEGORÍA</button>
-                    </div>
-
-                    <div id="create-text-form" class="admin-form hidden">
-                        <div class="form-row">
-                            <input type="text" id="new-phrase-title" placeholder="Número (ID)" style="width: 150px;">
-                            <select id="new-phrase-category" class="admin-select"></select>
-                            <textarea id="new-phrase-input" placeholder="Texto completo a tipear"></textarea>
-                        </div>
-                        <button onclick="App.createNewPhrase()" class="btn-primary" style="align-self: center;">GUARDAR TEXTO</button>
-                    </div>
-
-                    <div id="create-cat-form" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="admin-form" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;">
-                            <h3 style="color: var(--p); margin: 0; font-size: 1.2rem; text-align: center;">Crear Categoría</h3>
-                            <input type="text" id="new-cat-name" placeholder="Nombre de la Categoría" style="width: 100%; text-align: center;">
-                            <button onclick="App.createNewCategory()" class="btn-primary" style="width: 100%;">CREAR CATEGORÍA</button>
-                        </div>
-                        
-                        <div class="admin-form" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;">
-                            <h3 style="color: var(--p); margin: 0; font-size: 1.2rem; text-align: center;">Eliminar Categoría</h3>
-                            <select id="delete-cat-select" class="admin-select" style="width: 100%;"></select>
-                            <button onclick="App.deleteCategory()" class="btn-error" style="width: 100%; padding: 12px 20px; font-size: 0.9rem;">ELIMINAR</button>
-                        </div>
-                    </div>
-                </div>
-
+                <div id="pane-announcements" class="pane"><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;"><div class="table-box custom-scroll" style="margin: 0; padding: 20px; display: flex; flex-direction: column; overflow-y: auto;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px; flex-shrink: 0;"><h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Enviar Anuncio</h3><small style="color: var(--text-muted);">Pop-Up de vista única</small></div><div class="form-row" style="align-items: center; margin-bottom: 10px; flex-shrink: 0;"><select id="ann-icon" class="admin-select" style="width: 70px; font-size: 1.3rem; text-align: center; text-align-last: center; padding: 10px;"><option value="📢">📢</option><option value="🚀">🚀</option><option value="⚡">⚡</option><option value="👑">👑</option><option value="⚠️">⚠️</option><option value="🛠️">🛠️</option><option value="💎">💎</option></select><input type="text" id="ann-title" placeholder="Título (Ej: Torneo)" style="flex-grow: 1; font-weight: bold; font-size: 1rem; padding: 14px;"></div><div style="display: flex; flex-wrap: wrap; gap: 6px; background: var(--surface-light); padding: 8px; border: 1px solid var(--border); border-radius: 8px 8px 0 0; border-bottom: none; align-items: center; flex-shrink: 0;"><button onclick="document.execCommand('bold', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Negrita"><b>B</b></button><button onclick="document.execCommand('italic', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Cursiva"><i>I</i></button><button onclick="document.execCommand('underline', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Subrayado"><u>U</u></button><button onclick="document.execCommand('strikeThrough', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Tachado"><s>S</s></button><div style="width: 1px; height: 16px; background: var(--border); margin: 0 4px;"></div><button onclick="document.execCommand('justifyLeft', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Izquierda">⫷</button><button onclick="document.execCommand('justifyCenter', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Centro">≣</button><button onclick="document.execCommand('insertUnorderedList', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" title="Lista">•=</button><div style="width: 1px; height: 16px; background: var(--border); margin: 0 4px;"></div><input type="color" id="ann-color" onchange="document.execCommand('foreColor', false, this.value)" title="Color" style="width: 25px; height: 25px; padding: 0; cursor: pointer; border: none; background: transparent;"><button onclick="document.execCommand('removeFormat', false, null)" class="btn-outline" style="padding: 4px 10px; font-size: 1rem; margin-left: auto;" title="Limpiar Formato">🧹</button></div><div id="ann-msg" contenteditable="true" class="custom-scroll" style="width: 100%; flex-grow: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 0 0 8px 8px; outline: none; font-size: 0.95rem; line-height: 1.5; overflow-y: auto; min-height: 100px;"></div><button onclick="App.publishAnnouncement()" class="btn-primary" style="margin-top: 15px; padding: 12px; width: 100%; flex-shrink: 0;">PUBLICAR ANUNCIO</button></div><div class="table-box" style="margin: 0; display: flex; flex-direction: column; min-height: 0;"><div class="table-header" style="flex-shrink: 0;"><h3>Anuncios Enviados</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">Icono</th><th width="25%">Estado</th><th width="35%">Fecha</th><th width="25%">Acción</th></tr></thead><tbody id="admin-ann-list"></tbody></table></div></div></div></div>
+                <div id="pane-lexicon" class="pane hidden"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><input type="text" id="lexicon-search" placeholder="Buscar texto por identificador..." oninput="UI.renderAdminLexicon()" style="width: 100%; max-width: 400px;"><small style="color: var(--text-muted);">Edita los textos globales</small></div><div class="custom-scroll admin-table-wrapper" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-light); display: flex; flex-direction: column;"><ul id="admin-lexicon-list" class="custom-scroll admin-list" style="margin: 0; padding-right: 5px; flex-grow: 1;"></ul></div><div class="pagination-bar" style="margin-top: 10px;"><button id="admin-le-prev" class="btn-outline" onclick="UI.changeAdminLexiconPage(-1)">←</button><span id="admin-le-page-num" class="page-indicator">Página 1</span><button id="admin-le-next" class="btn-outline" onclick="UI.changeAdminLexiconPage(1)">→</button></div></div>
+                <div id="pane-server" class="pane hidden"><div class="custom-scroll" style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow-y: auto;"><div class="table-box" style="max-width: 600px; width: 100%; padding: 40px; margin: auto; text-align: center; height: fit-content;"><div style="border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 25px;"><h3 style="color: var(--p); margin: 0 0 5px 0; font-size: 1.4rem; text-transform: uppercase;">Estado del Servidor</h3><p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Activa el Kill Switch para bloquear el acceso a usuarios comunes.</p></div><div style="display: flex; justify-content: center; margin-bottom: 35px;"><button id="btn-maint-toggle" onclick="App.toggleMaintenance()" class="btn-outline" style="padding: 15px 30px; font-size: 1rem; border-width: 2px; width: 100%; transition: all 0.3s;">CARGANDO ESTADO...</button></div><h4 style="color: var(--text-main); margin: 0 0 15px 0; font-size: 1rem;">Configurar Cartel de Bloqueo</h4><div class="form-row" style="margin-bottom: 15px;"><select id="maint-icon-input" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px;"><option value="🛠️">🛠️</option><option value="🚧">🚧</option><option value="🛑">🛑</option><option value="⚡">⚡</option><option value="🔌">🔌</option></select><input type="text" id="maint-title-input" placeholder="Título (Ej: Mantenimiento)" style="flex-grow: 1; font-weight: bold; padding: 14px;"></div><textarea id="maint-msg-input" placeholder="Mensaje que verán los jugadores bloqueados..." style="height: 120px; resize: none; padding: 15px; font-size: 0.95rem;"></textarea><button onclick="App.saveMaintenanceInfo()" class="btn-primary" style="margin-top: 25px; width: 100%; padding: 15px;">GUARDAR CARTEL</button></div></div></div>
+                <div id="pane-users" class="pane hidden"><input type="text" id="user-search" placeholder="Buscar" oninput="UI.renderAdminU()" style="margin-bottom: 15px;"><div class="custom-scroll admin-table-wrapper"><table class="data-table"><thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead><tbody id="admin-users-list"></tbody></table></div></div>
+                <div id="pane-races" class="pane hidden"><input type="text" id="race-search" placeholder="Buscar" oninput="UI.renderAdminR()" style="margin-bottom: 15px;"><div class="custom-scroll admin-table-wrapper"><table class="data-table"><thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody id="admin-races-list"></tbody></table></div><div class="pagination-bar" style="margin-top: 10px;"><button id="admin-ra-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button><span id="admin-ra-page-num" class="page-indicator">Página 1</span><button id="admin-ra-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button></div></div>
+                <div id="pane-phrases" class="pane hidden"><input type="text" id="admin-phrase-search" placeholder="Buscar texto..." oninput="UI.renderAdminP()" style="margin-bottom: 15px;"><div id="admin-phrase-form" class="admin-form hidden"><div class="form-row"><input type="text" id="phrase-title" placeholder="Número" style="width: 100px;" disabled><select id="phrase-category" class="admin-select"></select><textarea id="phrase-input" placeholder="Texto"></textarea></div><div style="display:flex; justify-content:center; gap:10px;"><button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary">ACTUALIZAR</button><button onclick="UI.cancelEditP()" class="btn-outline">CANCELAR</button></div></div><div id="admin-phrase-categories" class="category-grid custom-scroll"></div><div id="admin-phrase-list-view" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 0;"><button id="btn-back-cat-admin" onclick="UI.showAdminPhraseCategories()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button><ul id="admin-phrases-list" class="custom-scroll admin-list"></ul><div class="pagination-bar" style="margin-top: 10px;"><button id="admin-ph-prev" class="btn-outline" onclick="UI.changeAdminPhrasePage(-1)">←</button><span id="admin-ph-page-num" class="page-indicator">Página 1</span><button id="admin-ph-next" class="btn-outline" onclick="UI.changeAdminPhrasePage(1)">→</button></div></div></div>
+                <div id="pane-create" class="pane hidden"><div class="mode-selectors" style="margin-bottom: 20px;"><button id="btn-create-text" onclick="UI.toggleCreateForm('text')" class="btn-primary btn-admin-mode active">TEXTO</button><button id="btn-create-cat" onclick="UI.toggleCreateForm('cat')" class="btn-primary btn-alt btn-admin-mode">CATEGORÍA</button></div><div id="create-text-form" class="admin-form hidden"><div class="form-row"><input type="text" id="new-phrase-title" placeholder="Número (ID)" style="width: 150px;"><select id="new-phrase-category" class="admin-select"></select><textarea id="new-phrase-input" placeholder="Texto completo a tipear"></textarea></div><button onclick="App.createNewPhrase()" class="btn-primary" style="align-self: center;">GUARDAR TEXTO</button></div><div id="create-cat-form" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div class="admin-form" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;"><h3 style="color: var(--p); margin: 0; font-size: 1.2rem; text-align: center;">Crear Categoría</h3><input type="text" id="new-cat-name" placeholder="Nombre" style="width: 100%; text-align: center;"><button onclick="App.createNewCategory()" class="btn-primary" style="width: 100%;">CREAR CATEGORÍA</button></div><div class="admin-form" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;"><h3 style="color: var(--p); margin: 0; font-size: 1.2rem; text-align: center;">Eliminar Categoría</h3><select id="delete-cat-select" class="admin-select" style="width: 100%;"></select><button onclick="App.deleteCategory()" class="btn-error" style="width: 100%; padding: 12px 20px; font-size: 0.9rem;">ELIMINAR</button></div></div></div>
             </div>
         </section>
 
         <section id="game-screen" class="screen hidden">
             <div class="game-container" style="max-width: 950px; width: 100%;">
+                
                 <div class="game-hud">
                     <div class="hud-box"><small>TIEMPO</small><span id="game-timer">0s</span></div>
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
+                </div>
+
+                <div class="progress-container" style="margin-bottom: 25px;">
+                    <div id="race-progress" class="progress-bar"></div>
                 </div>
 
                 <div id="target-text" class="game-text-display"></div>
@@ -517,7 +228,10 @@
 
                 <div id="game-result-modal" class="game-result hidden">
                     <h2 id="final-speed-display" class="result-score">0 CPM</h2>
-                    <div class="result-actions">
+                    
+                    <div id="pb-alert" class="hidden pb-badge">👑 ¡NUEVO RÉCORD PERSONAL!</div>
+                    
+                    <div class="result-actions" style="margin-top: 25px;">
                         <button id="t_btn_retry2" onclick="App.retryRace()" class="btn-outline">Repetir</button>
                         <button id="t_btn_cont" onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
                         <button id="t_btn_back2" onclick="App.quitRace()" class="btn-outline">Volver</button>
@@ -526,29 +240,8 @@
             </div>
         </section>
 
-        <div id="crop-modal" class="crop-overlay hidden">
-            <div class="crop-box">
-                <h3 style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3>
-                <p style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p>
-                <div class="crop-viewport" id="crop-area">
-                    <img id="crop-image" src="" alt="preview">
-                </div>
-                <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider">
-                <div class="crop-actions">
-                    <button onclick="App.saveCrop()" class="btn-primary">Guardar</button>
-                    <button onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;">
-            <div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;">
-                <div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div>
-                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2>
-                <div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div>
-                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button>
-            </div>
-        </div>
+        <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button onclick="App.saveCrop()" class="btn-primary">Guardar</button><button onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
+        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
 
     </div>
 
