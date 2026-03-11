@@ -38,7 +38,6 @@ const CT = {
 
         UI.updateUnitVisuals(this.currentUnit);
         
-        // Listener Kill Switch (Mantenimiento)
         db.collection('config').doc('maintenance').onSnapshot(snap => {
             if(snap.exists) {
                 this.data.maint = snap.data();
@@ -49,7 +48,6 @@ const CT = {
             UI.checkMaintenance();
         });
 
-        // Autenticación con localStorage (Persistente)
         if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
 
         db.collection('users').onSnapshot(snap => { 
@@ -94,7 +92,6 @@ const CT = {
             }
         });
 
-        // LÉXICO EXPANDIDO
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título de Inicio', v: 'CananTyper' },
@@ -156,7 +153,6 @@ const UI = {
     currentAnnId: null, 
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
-    // GESTIÓN DEL KILL SWITCH
     checkMaintenance: () => {
         if(!CT.data.maint) return;
         const m = CT.data.maint;
@@ -175,7 +171,6 @@ const UI = {
             }
         }
 
-        // Actualizar botón en el panel de Admin
         const toggleBtn = document.getElementById('btn-maint-toggle');
         if(toggleBtn) {
             if(m.active) {
@@ -261,8 +256,9 @@ const UI = {
         document.getElementById('st-p-total-races').innerText = userScores.length;
         
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        // FIX: Inyección de val-blurrable en velocidad dinámica
         document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr>
-            <td>${i+1}</td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
+            <td>${i+1}</td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
         </tr>`).join('');
         
         const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
@@ -278,7 +274,7 @@ const UI = {
         });
         const topTexts = Object.keys(textMaxes).map(k => ({ t: k, max: textMaxes[k] })).sort((a,b) => b.max - a.max).slice(0, 10);
         document.getElementById('st-p-top10-texts').innerHTML = topTexts.map((tr, i) => `<tr>
-            <td><b style="color:var(--p)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tr.t}</div></td><td><b style="color:var(--p)">${UI.formatValue(tr.max)}</b></td>
+            <td><b style="color:var(--p)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tr.t}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(tr.max)}</b></td>
         </tr>`).join('');
         
         const phrases = CT.dbLocal('p');
@@ -382,7 +378,7 @@ const UI = {
         let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-texts').innerHTML = top10T.map((tr, i) => {
             let trMax = scores.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p);
-            return `<tr><td><b>#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(trMax.c)}</b></td></tr>`;
+            return `<tr><td><b>#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(trMax.c)}</b></td></tr>`;
         }).join('');
 
         let scoresWithCat = scores.map(s => {
@@ -394,7 +390,7 @@ const UI = {
         let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-cats').innerHTML = top10C.map((cat, i) => {
             let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p);
-            return `<tr><td><b>#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)">${UI.formatValue(catMax.c)}</b></td></tr>`;
+            return `<tr><td><b>#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(catMax.c)}</b></td></tr>`;
         }).join('');
     },
 
@@ -430,14 +426,9 @@ const UI = {
         const activeBtn = document.getElementById(`btn-${unit}`);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // FIX ZEN BLUR
-        if (unit === 'zen') {
-            document.getElementById('game-speed-display').classList.add('zen-blur');
-        } else {
-            document.getElementById('game-speed-display').classList.remove('zen-blur');
-        }
+        // La magia de difuminar ahora la hace puramente el CSS en .val-blurrable
 
-        const label = unit.toUpperCase();
+        const label = unit === 'zen' ? 'CPM (ZEN)' : unit.toUpperCase();
         
         const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel'];
         thIds.forEach(id => {
@@ -492,7 +483,7 @@ const UI = {
         document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => `<tr>
             <td>${idx + 1}</td>
             <td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td>
-            <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td>
+            <td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td>
         </tr>`).join('');
 
         const rankingMode = rankTypeEl.value;
@@ -507,7 +498,7 @@ const UI = {
         document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => `<tr>
             <td>${idx + 1}</td>
             <td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td>
-            <td><b style="color:var(--p)">${UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
+            <td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
         </tr>`).join('');
     },
 
@@ -545,7 +536,7 @@ const UI = {
         const userScores = scores.filter(s => s.h === CT.activeProfHandle).sort((a,b) => b.id - a.id);
         const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
         document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr>
-            <td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+            <td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
         </tr>`).join('');
         document.getElementById('prof-prev').disabled = CT.profPage === 0;
         document.getElementById('prof-next').disabled = (start + 10) >= userScores.length;
@@ -792,7 +783,7 @@ const UI = {
         const pageData = filtered.slice(start, start + 20);
 
         document.getElementById('admin-races-list').innerHTML = pageData.map((s) => `<tr>
-            <td><b>${s.n}</b></td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
+            <td><b>${s.n}</b></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td>
             <td>
                 <div class="action-buttons">
                     <button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button>
@@ -1016,7 +1007,6 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    // KILL SWITCH LOGIC
     toggleMaintenance: () => {
         const current = CT.data.maint ? CT.data.maint.active : false;
         const next = !current;
@@ -1324,7 +1314,6 @@ class Engine {
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
         
-        // FIX: Mostrar el resultado final desencriptado si es ZEN
         const finalUnitLabel = CT.currentUnit === 'zen' ? 'CPM (ZEN)' : CT.currentUnit.toUpperCase();
         const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
         
