@@ -63,18 +63,16 @@
                             ⚙️
                             <span id="update-dot" class="update-dot hidden"></span>
                         </button>
-                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 0; top: 125%; min-width: 200px; z-index: 100;">
+                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 200px; z-index: 100; cursor: default;">
                             <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
-                            
-                            <button onclick="App.toggleFullscreen()" style="padding: 12px 15px; text-align: left; width: 100%;">⛶ Pantalla Completa</button>
-                            
+                            <button onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 10px 15px; background: transparent; border: none; color: inherit; width: 100%;">⛶ Pantalla Completa</button>
                             <div class="version-seal">
                                 CananTyper v1.0.3 
                                 <span class="online-dot" title="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
-
+                    
                     <button id="t_nav_logout" class="nav-icon-btn" onclick="App.logout()" title="Cerrar sesión">🚪</button>
                 </div>
             </header>
