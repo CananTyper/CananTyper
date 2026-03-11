@@ -10,6 +10,14 @@
 
     <div id="app" class="main-shell">
         
+        <section id="maintenance-screen" class="screen hidden" style="justify-content: center; align-items: center; z-index: 9999;">
+            <div class="auth-card" style="text-align: center; border-color: var(--error); box-shadow: 0 15px 50px rgba(244, 67, 54, 0.2);">
+                <div id="maint-icon-display" style="font-size: 4.5rem; margin-bottom: 20px;">🛠️</div>
+                <h1 id="maint-title-display" style="color: var(--error); margin: 0 0 15px 0; font-size: 2.2rem;">Mantenimiento</h1>
+                <p id="maint-msg-display" style="color: var(--text-main); font-size: 1.1rem; line-height: 1.6; margin-bottom: 0;">Estamos afilando los teclados. Volvemos pronto.</p>
+            </div>
+        </section>
+
         <section id="auth-screen" class="screen">
             <div class="auth-card">
                 <h1 id="t_auth_title">CananTyper</h1>
@@ -43,6 +51,7 @@
                     <div class="unit-switcher">
                         <div id="btn-cpm" class="sw-btn active" onclick="UI.setUnit('cpm')">CPM</div>
                         <div id="btn-wpm" class="sw-btn" onclick="UI.setUnit('wpm')">WPM</div>
+                        <div id="btn-zen" class="sw-btn" onclick="UI.setUnit('zen')">ZEN</div>
                     </div>
                 </div>
                 <div class="nav-right">
@@ -119,7 +128,7 @@
                             <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th>TOP</th><th>Texto</th><th id="th-st-p-vel">Velocidad</th><th>Fecha</th></tr></thead>
+                                    <thead><tr><th width="15%">TOP</th><th width="35%">Texto</th><th width="25%" id="th-st-p-vel">Velocidad</th><th width="25%">Fecha</th></tr></thead>
                                     <tbody id="st-p-top10-races"></tbody>
                                 </table>
                             </div>
@@ -128,7 +137,7 @@
                             <div class="table-header"><h3 id="t_st_box_texts">Mejores Textos (Top 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
-                                    <thead><tr><th>TOP</th><th>Texto</th><th id="th-st-p-t-max">MÁX. REGISTRADO</th></tr></thead>
+                                    <thead><tr><th width="20%">TOP</th><th width="50%">Texto</th><th width="30%" id="th-st-p-t-max">MÁX. REGISTRADO</th></tr></thead>
                                     <tbody id="st-p-top10-texts"></tbody>
                                 </table>
                             </div>
@@ -222,7 +231,7 @@
                 </div>
 
                 <div class="profile-stats">
-                    <div class="stat-card"><small>CARRERAS</small><b id="st-total">0</b></div>
+                    <div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div>
                     <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg">0</b></div>
                     <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10">0</b></div>
                     <div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best">0</b></div>
@@ -278,12 +287,13 @@
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="admin-tabs">
-                <button id="t-an" class="tab-btn active" onclick="UI.switchTab('announcements')">Anuncios</button>
-                <button id="t-le" class="tab-btn" onclick="UI.switchTab('lexicon')">Léxico</button>
-                <button id="t-us" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
-                <button id="t-ra" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
-                <button id="t-ph" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button>
-                <button id="t-cr" class="tab-btn" onclick="UI.switchTab('create')">Crear</button>
+                <button id="t_tab_ann" class="tab-btn active" onclick="UI.switchTab('announcements')">Anuncios</button>
+                <button id="t_tab_lex" class="tab-btn" onclick="UI.switchTab('lexicon')">Léxico</button>
+                <button id="t_tab_srv" class="tab-btn" onclick="UI.switchTab('server')">Servidor</button>
+                <button id="t_tab_usr" class="tab-btn" onclick="UI.switchTab('users')">Usuarios</button>
+                <button id="t_tab_rac" class="tab-btn" onclick="UI.switchTab('races')">Carreras</button>
+                <button id="t_tab_txt" class="tab-btn" onclick="UI.switchTab('phrases')">Textos</button>
+                <button id="t_tab_cre" class="tab-btn" onclick="UI.switchTab('create')">Crear</button>
             </div>
             <div class="admin-content-area">
                 
@@ -354,6 +364,35 @@
                         <button id="admin-le-prev" class="btn-outline" onclick="UI.changeAdminLexiconPage(-1)">←</button>
                         <span id="admin-le-page-num" class="page-indicator">Página 1</span>
                         <button id="admin-le-next" class="btn-outline" onclick="UI.changeAdminLexiconPage(1)">→</button>
+                    </div>
+                </div>
+
+                <div id="pane-server" class="pane hidden">
+                    <div class="admin-form" style="max-width: 600px; margin: 0 auto; width: 100%; padding: 30px;">
+                        <div style="text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px;">
+                            <h3 style="color: var(--p); margin: 0 0 5px 0; font-size: 1.4rem; text-transform: uppercase;">Estado del Servidor</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Activa el Kill Switch para bloquear el acceso a usuarios comunes.</p>
+                        </div>
+
+                        <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                            <button id="btn-maint-toggle" onclick="App.toggleMaintenance()" class="btn-outline" style="padding: 15px 30px; font-size: 1rem; border-width: 2px; width: 100%;">CARGANDO ESTADO...</button>
+                        </div>
+
+                        <h4 style="color: var(--text-main); margin: 0 0 15px 0; font-size: 1rem;">Configurar Cartel de Bloqueo</h4>
+                        
+                        <div class="form-row" style="margin-bottom: 15px;">
+                            <select id="maint-icon-input" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px;">
+                                <option value="🛠️">🛠️</option>
+                                <option value="🚧">🚧</option>
+                                <option value="🛑">🛑</option>
+                                <option value="⚡">⚡</option>
+                                <option value="🔌">🔌</option>
+                            </select>
+                            <input type="text" id="maint-title-input" placeholder="Título (Ej: Mantenimiento)" style="flex-grow: 1; font-weight: bold; padding: 14px;">
+                        </div>
+                        <textarea id="maint-msg-input" placeholder="Mensaje que verán los jugadores bloqueados..." style="height: 120px; resize: none; padding: 15px; font-size: 0.95rem;"></textarea>
+                        
+                        <button onclick="App.saveMaintenanceInfo()" class="btn-primary" style="margin-top: 20px; width: 100%; padding: 15px;">GUARDAR CARTEL</button>
                     </div>
                 </div>
 
@@ -481,15 +520,6 @@
                     <button onclick="App.saveCrop()" class="btn-primary">Guardar</button>
                     <button onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button>
                 </div>
-            </div>
-        </div>
-
-        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;">
-            <div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;">
-                <div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div>
-                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2>
-                <div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div>
-                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button>
             </div>
         </div>
 
