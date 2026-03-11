@@ -1,6 +1,21 @@
 // 1. CONFIGURACIÓN FIREBASE
+// 1. CONFIGURACIÓN FIREBASE (HÍBRIDA PRO)
+
+// A) Llave para la WEB (Restringida por dominio). Esta SÍ va aquí en texto plano.
+let currentApiKey = "AIzaSyDWtm9wGj5mOYT1CIz2jugteKrJoMDUhiw"; 
+
+// B) Detectamos si el código está corriendo en tu programa de Windows (Electron)
+const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
+
+if (isDesktopEnv) {
+    // C) Si estamos en Windows, ignoramos la llave de arriba y usamos la bóveda secreta
+    require('dotenv').config();
+    currentApiKey = process.env.FIREBASE_API_KEY_DESKTOP;
+}
+
+// Inicializamos Firebase con la llave correcta según dónde se abrió la app
 const firebaseConfig = {
-    apiKey: "AIzaSyDlDLS1X6u3zodYVadV4T-hw5Uq7eHHuFk",
+    apiKey: currentApiKey,
     authDomain: "canantyper.firebaseapp.com",
     projectId: "canantyper",
     storageBucket: "canantyper.firebasestorage.app",
@@ -592,3 +607,4 @@ document.getElementById('img-input').onchange = (e) => {
     if(file.size > 5 * 1024 * 1024) { alert("Máximo 5MB."); e.target.value = ''; return; }
     const r = new FileReader(); r.onload = (ev) => { UI.openCropModal(ev.target.result); }; r.readAsDataURL(file);
 };
+
