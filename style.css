@@ -207,3 +207,26 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 #btn-zen.active { background: var(--theme-zen, #b388ff); color: #000; box-shadow: 0 0 15px color-mix(in srgb, #b388ff 40%, transparent); }
 :root[data-theme="zen"] .val-blurrable { filter: blur(6px); opacity: 0.5; user-select: none; pointer-events: none; transition: filter 0.3s, opacity 0.3s; }
 
+/* --- ESCUDO VISUAL Y ANTI-SELECCIÓN --- */
+body {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Permitimos seleccionar solo en inputs y el creador de anuncios */
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* Color de selección premium */
+::selection {
+    background-color: var(--p);
+    color: var(--bg);
+}
+
+
