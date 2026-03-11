@@ -13,7 +13,7 @@ const db = firebase.firestore();
 
 // 2. CORE DE DATOS
 const CT = {
-    data: { u: [], s: [], p: [], c: [], a: [], ui: null }, 
+    data: { u: [], s: [], p: [], c: [], a: [], ui: null, maint: null }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5,
     editIdx: null, profPage: 0, activeProfHandle: null,
@@ -23,7 +23,7 @@ const CT = {
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
-        if (storedUnit !== 'cpm' && storedUnit !== 'wpm') { storedUnit = 'cpm'; localStorage.setItem('ct_unit_pref', 'cpm'); }
+        if (storedUnit !== 'cpm' && storedUnit !== 'wpm' && storedUnit !== 'zen') { storedUnit = 'cpm'; localStorage.setItem('ct_unit_pref', 'cpm'); }
         this.currentUnit = storedUnit;
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
@@ -37,6 +37,19 @@ const CT = {
         if(cC) this.data.c = JSON.parse(cC);
 
         UI.updateUnitVisuals(this.currentUnit);
+        
+        // Listener Kill Switch (Mantenimiento)
+        db.collection('config').doc('maintenance').onSnapshot(snap => {
+            if(snap.exists) {
+                this.data.maint = snap.data();
+            } else {
+                this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Estamos actualizando el servidor.' };
+                if(this.ses() && this.ses().r === 'admin') db.collection('config').doc('maintenance').set(this.data.maint);
+            }
+            UI.checkMaintenance();
+        });
+
+        // Autenticación con localStorage (Persistente)
         if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
 
         db.collection('users').onSnapshot(snap => { 
@@ -81,6 +94,7 @@ const CT = {
             }
         });
 
+        // LÉXICO EXPANDIDO
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título de Inicio', v: 'CananTyper' },
@@ -109,7 +123,15 @@ const CT = {
                 't_btn_new': { l: 'Juego Botón: Nueva', v: 'Nueva' },
                 't_btn_cont': { l: 'Juego Botón: Continuar', v: 'Continuar' },
                 't_btn_retry2': { l: 'Result Botón: Repetir', v: 'Repetir' },
-                't_btn_back2': { l: 'Result Botón: Volver', v: 'Volver' }
+                't_btn_back2': { l: 'Result Botón: Volver', v: 'Volver' },
+                't_prof_races': { l: 'Perfil: Carreras', v: 'CARRERAS' },
+                't_tab_ann': { l: 'Admin Tab: Anuncios', v: 'Anuncios' },
+                't_tab_lex': { l: 'Admin Tab: Léxico', v: 'Léxico' },
+                't_tab_srv': { l: 'Admin Tab: Servidor', v: 'Servidor' },
+                't_tab_usr': { l: 'Admin Tab: Usuarios', v: 'Usuarios' },
+                't_tab_rac': { l: 'Admin Tab: Carreras', v: 'Carreras' },
+                't_tab_txt': { l: 'Admin Tab: Textos', v: 'Textos' },
+                't_tab_cre': { l: 'Admin Tab: Crear', v: 'Crear' }
             };
 
             if(snap.exists) {
@@ -132,7 +154,41 @@ const UI = {
     lexiconPage: 0, 
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0,
     currentAnnId: null, 
-    formatValue: (cpm) => { return CT.currentUnit === 'wpm' ? Math.round(cpm / CT.charPerWord) : cpm; },
+    formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
+
+    // GESTIÓN DEL KILL SWITCH
+    checkMaintenance: () => {
+        if(!CT.data.maint) return;
+        const m = CT.data.maint;
+        const u = CT.ses();
+        const isAdmin = u && u.r === 'admin';
+
+        if(m.active && !isAdmin) {
+            document.getElementById('maint-icon-display').innerText = m.icon || '🛠️';
+            document.getElementById('maint-title-display').innerText = m.title || 'Mantenimiento';
+            document.getElementById('maint-msg-display').innerText = m.msg || 'Volvemos pronto.';
+            UI.show('maintenance-screen');
+        } else {
+            if(!document.getElementById('maintenance-screen').classList.contains('hidden')) {
+                if(u) UI.showLobby();
+                else UI.show('auth-screen');
+            }
+        }
+
+        // Actualizar botón en el panel de Admin
+        const toggleBtn = document.getElementById('btn-maint-toggle');
+        if(toggleBtn) {
+            if(m.active) {
+                toggleBtn.innerText = "⛔ MANTENIMIENTO: ACTIVADO (WEB BLOQUEADA)";
+                toggleBtn.style.borderColor = "var(--error)";
+                toggleBtn.style.color = "var(--error)";
+            } else {
+                toggleBtn.innerText = "✅ MANTENIMIENTO: DESACTIVADO (WEB PÚBLICA)";
+                toggleBtn.style.borderColor = "var(--success)";
+                toggleBtn.style.color = "var(--success)";
+            }
+        }
+    },
 
     show: (id) => { 
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); 
@@ -143,12 +199,16 @@ const UI = {
         document.getElementById('register-form').classList.toggle('hidden', login); 
     },
     initLobby() {
+        if(CT.data.maint && CT.data.maint.active) {
+            const u = CT.ses();
+            if(!u || u.r !== 'admin') { UI.checkMaintenance(); return; }
+        }
+
         const u = CT.ses(); if(!u) return this.show('auth-screen');
         document.getElementById('val-display-name').innerText = u.n;
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         
-        // FIX DE ERROR: El ID correcto es t_nav_admin
         document.getElementById('t_nav_admin').classList.toggle('hidden', u.r !== 'admin');
         
         UI.updateUnitVisuals(CT.currentUnit);
@@ -202,7 +262,7 @@ const UI = {
         
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
         document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr>
-            <td>${i+1}</td><td>${s.track}</td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
+            <td>${i+1}</td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
         </tr>`).join('');
         
         const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
@@ -218,7 +278,7 @@ const UI = {
         });
         const topTexts = Object.keys(textMaxes).map(k => ({ t: k, max: textMaxes[k] })).sort((a,b) => b.max - a.max).slice(0, 10);
         document.getElementById('st-p-top10-texts').innerHTML = topTexts.map((tr, i) => `<tr>
-            <td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td><b style="color:var(--p)">${UI.formatValue(tr.max)}</b></td>
+            <td><b style="color:var(--p)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tr.t}</div></td><td><b style="color:var(--p)">${UI.formatValue(tr.max)}</b></td>
         </tr>`).join('');
         
         const phrases = CT.dbLocal('p');
@@ -344,6 +404,7 @@ const UI = {
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('admin-screen').classList.contains('hidden')) { 
             UI.renderAdminAnn(); UI.renderAdminLexicon(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); 
+            UI.renderAdminServerConfig();
         }
         if(!document.getElementById('track-screen').classList.contains('hidden')) {
             if(UI.activeTrackCat) UI.renderTrackList(); else UI.showTrackCategorySelect();
@@ -368,6 +429,13 @@ const UI = {
         document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
         const activeBtn = document.getElementById(`btn-${unit}`);
         if(activeBtn) activeBtn.classList.add('active');
+
+        // FIX ZEN BLUR
+        if (unit === 'zen') {
+            document.getElementById('game-speed-display').classList.add('zen-blur');
+        } else {
+            document.getElementById('game-speed-display').classList.remove('zen-blur');
+        }
 
         const label = unit.toUpperCase();
         
@@ -495,11 +563,20 @@ const UI = {
         
         let btnId = 't-' + tab.substring(0,2);
         if (tab === 'create') btnId = 't-cr';
+        if (tab === 'announcements') btnId = 't_tab_ann';
+        if (tab === 'lexicon') btnId = 't_tab_lex';
+        if (tab === 'server') btnId = 't_tab_srv';
+        if (tab === 'users') btnId = 't_tab_usr';
+        if (tab === 'races') btnId = 't_tab_rac';
+        if (tab === 'phrases') btnId = 't_tab_txt';
+        if (tab === 'create') btnId = 't_tab_cre';
+
         const activeTabBtn = document.getElementById(btnId);
         if(activeTabBtn) activeTabBtn.classList.add('active');
         
         if(tab === 'announcements') { UI.renderAdminAnn(); }
         if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); }
+        if(tab === 'server') { UI.renderAdminServerConfig(); }
         if(tab === 'phrases') { UI.showAdminPhraseCategories(); }
         if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); }
         if(tab === 'users') { this.renderAdminU(); }
@@ -570,6 +647,13 @@ const UI = {
         });
         const nextStart = (UI.lexiconPage + delta) * 20;
         if(nextStart >= 0 && nextStart < filtered.length) { UI.lexiconPage += delta; this.renderAdminLexicon(); }
+    },
+
+    renderAdminServerConfig() {
+        if(!CT.data.maint) return;
+        document.getElementById('maint-icon-input').value = CT.data.maint.icon || '🛠️';
+        document.getElementById('maint-title-input').value = CT.data.maint.title || 'Mantenimiento';
+        document.getElementById('maint-msg-input').value = CT.data.maint.msg || '';
     },
 
     toggleCreateForm(type) {
@@ -883,7 +967,6 @@ const UI = {
         if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); }
     },
 
-    // LÓGICA DE ANUNCIOS GLOBALES (MOTD)
     showAnnouncement(data) {
         if(!data.id) return; 
         UI.currentAnnId = data.id.toString();
@@ -933,6 +1016,28 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
+    // KILL SWITCH LOGIC
+    toggleMaintenance: () => {
+        const current = CT.data.maint ? CT.data.maint.active : false;
+        const next = !current;
+        const confirmMsg = next 
+            ? "⚠️ ¿Seguro que deseas ACTIVAR el mantenimiento? Todos los usuarios no administradores serán expulsados a la pantalla de bloqueo." 
+            : "✅ ¿Seguro que deseas DESACTIVAR el mantenimiento? La web volverá a ser pública.";
+        
+        if(confirm(confirmMsg)) {
+            db.collection('config').doc('maintenance').update({ active: next }).catch(e => alert("Error al cambiar estado."));
+        }
+    },
+    saveMaintenanceInfo: () => {
+        const icon = document.getElementById('maint-icon-input').value;
+        const title = document.getElementById('maint-title-input').value.trim();
+        const msg = document.getElementById('maint-msg-input').value.trim();
+        if(!title || !msg) return alert("Completa los datos del cartel de mantenimiento.");
+        db.collection('config').doc('maintenance').update({ icon, title, msg })
+            .then(() => alert("Cartel de mantenimiento actualizado con éxito."))
+            .catch(() => alert("Error al guardar el cartel."));
+    },
+
     publishAnnouncement: async () => {
         const title = document.getElementById('ann-title').value.trim();
         const msg = document.getElementById('ann-msg').innerHTML.trim();
@@ -1219,8 +1324,10 @@ class Engine {
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
         
-        const finalSpeedValue = UI.formatValue(finalCPM);
-        const finalUnitLabel = CT.currentUnit.toUpperCase();
+        // FIX: Mostrar el resultado final desencriptado si es ZEN
+        const finalUnitLabel = CT.currentUnit === 'zen' ? 'CPM (ZEN)' : CT.currentUnit.toUpperCase();
+        const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
+        
         document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
         document.getElementById('game-result-modal').classList.remove('hidden');
 
