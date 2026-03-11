@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.6">
+    <link rel="stylesheet" href="style.css?v=1.0.7">
 </head>
 <body>
 
@@ -118,8 +118,8 @@
                 
                 <div id="pane-stats-personal" class="pane">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0; flex-grow: 0;">
-                        <div class="stat-card"><small id="lbl-st-p-best-avg">PROM. GENERAL</small><b id="st-p-best-avg" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="lbl-st-p-last10-avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="lbl-st-p-best-avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="lbl-st-p-last10-avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                         <div class="stat-card"><small>MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                         <div class="stat-card stat-highlight"><small>CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
@@ -149,8 +149,8 @@
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card"><small>USUARIOS REGISTRADOS</small><b id="st-g-users">0</b></div>
                         <div class="stat-card"><small>CARRERAS GLOBALES</small><b id="st-g-races">0</b></div>
-                        <div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg">0</b></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD DE VELOCIDAD</small><b id="st-g-record">0</b></div>
+                        <div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg" class="val-blurrable">0</b></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD DE VELOCIDAD</small><b id="st-g-record" class="val-blurrable">0</b></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
@@ -178,8 +178,8 @@
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card"><small>MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                         <div class="stat-card"><small>MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
@@ -232,9 +232,9 @@
 
                 <div class="profile-stats">
                     <div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div>
-                    <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg">0</b></div>
-                    <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10">0</b></div>
-                    <div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best">0</b></div>
+                    <div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div>
+                    <div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div>
+                    <div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div>
                 </div>
             </div>
 
@@ -368,31 +368,33 @@
                 </div>
 
                 <div id="pane-server" class="pane hidden">
-                    <div class="admin-form" style="max-width: 600px; margin: 0 auto; width: 100%; padding: 30px;">
-                        <div style="text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px;">
-                            <h3 style="color: var(--p); margin: 0 0 5px 0; font-size: 1.4rem; text-transform: uppercase;">Estado del Servidor</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Activa el Kill Switch para bloquear el acceso a usuarios comunes.</p>
-                        </div>
+                    <div class="custom-scroll" style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow-y: auto;">
+                        <div class="table-box" style="max-width: 600px; width: 100%; padding: 40px; margin: auto; text-align: center; height: fit-content;">
+                            <div style="border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 25px;">
+                                <h3 style="color: var(--p); margin: 0 0 5px 0; font-size: 1.4rem; text-transform: uppercase;">Estado del Servidor</h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Activa el Kill Switch para bloquear el acceso a usuarios comunes.</p>
+                            </div>
 
-                        <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-                            <button id="btn-maint-toggle" onclick="App.toggleMaintenance()" class="btn-outline" style="padding: 15px 30px; font-size: 1rem; border-width: 2px; width: 100%;">CARGANDO ESTADO...</button>
-                        </div>
+                            <div style="display: flex; justify-content: center; margin-bottom: 35px;">
+                                <button id="btn-maint-toggle" onclick="App.toggleMaintenance()" class="btn-outline" style="padding: 15px 30px; font-size: 1rem; border-width: 2px; width: 100%; transition: all 0.3s;">CARGANDO ESTADO...</button>
+                            </div>
 
-                        <h4 style="color: var(--text-main); margin: 0 0 15px 0; font-size: 1rem;">Configurar Cartel de Bloqueo</h4>
-                        
-                        <div class="form-row" style="margin-bottom: 15px;">
-                            <select id="maint-icon-input" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px;">
-                                <option value="🛠️">🛠️</option>
-                                <option value="🚧">🚧</option>
-                                <option value="🛑">🛑</option>
-                                <option value="⚡">⚡</option>
-                                <option value="🔌">🔌</option>
-                            </select>
-                            <input type="text" id="maint-title-input" placeholder="Título (Ej: Mantenimiento)" style="flex-grow: 1; font-weight: bold; padding: 14px;">
+                            <h4 style="color: var(--text-main); margin: 0 0 15px 0; font-size: 1rem;">Configurar Cartel de Bloqueo</h4>
+                            
+                            <div class="form-row" style="margin-bottom: 15px;">
+                                <select id="maint-icon-input" class="admin-select" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px;">
+                                    <option value="🛠️">🛠️</option>
+                                    <option value="🚧">🚧</option>
+                                    <option value="🛑">🛑</option>
+                                    <option value="⚡">⚡</option>
+                                    <option value="🔌">🔌</option>
+                                </select>
+                                <input type="text" id="maint-title-input" placeholder="Título (Ej: Mantenimiento)" style="flex-grow: 1; font-weight: bold; padding: 14px;">
+                            </div>
+                            <textarea id="maint-msg-input" placeholder="Mensaje que verán los jugadores bloqueados..." style="height: 120px; resize: none; padding: 15px; font-size: 0.95rem;"></textarea>
+                            
+                            <button onclick="App.saveMaintenanceInfo()" class="btn-primary" style="margin-top: 25px; width: 100%; padding: 15px;">GUARDAR CARTEL</button>
                         </div>
-                        <textarea id="maint-msg-input" placeholder="Mensaje que verán los jugadores bloqueados..." style="height: 120px; resize: none; padding: 15px; font-size: 0.95rem;"></textarea>
-                        
-                        <button onclick="App.saveMaintenanceInfo()" class="btn-primary" style="margin-top: 20px; width: 100%; padding: 15px;">GUARDAR CARTEL</button>
                     </div>
                 </div>
 
@@ -485,7 +487,7 @@
             <div class="game-container" style="max-width: 950px; width: 100%;">
                 <div class="game-hud">
                     <div class="hud-box"><small>TIEMPO</small><span id="game-timer">0s</span></div>
-                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display">0</span></div>
+                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
 
                 <div id="target-text" class="game-text-display"></div>
@@ -523,10 +525,19 @@
             </div>
         </div>
 
+        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;">
+                <div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div>
+                <h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2>
+                <div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div>
+                <button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.6"></script>
+    <script src="main.js?v=1.0.7"></script>
 </body>
 </html>
