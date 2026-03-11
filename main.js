@@ -266,7 +266,6 @@ const UI = {
         document.getElementById('st-p-total-races').innerText = userScores.length;
         
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        // FIX: Inyección de val-blurrable en velocidad dinámica
         document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr>
             <td>${i+1}</td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.d}</td>
         </tr>`).join('');
@@ -436,8 +435,6 @@ const UI = {
         const activeBtn = document.getElementById(`btn-${unit}`);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // La magia de difuminar ahora la hace puramente el CSS en .val-blurrable
-
         const label = unit === 'zen' ? 'CPM (ZEN)' : unit.toUpperCase();
         
         const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel'];
@@ -539,7 +536,8 @@ const UI = {
             this.show('profile-screen');
         } catch (error) { console.error(error); }
     },
-    toggleEditMenu() { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
+    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
+    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); },
 
     renderProfileHistory() {
         const scores = CT.dbLocal('s'); 
@@ -1016,6 +1014,14 @@ const App = {
     retryRace: () => { if(App.activeEngine) App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack); },
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
+    toggleFullscreen: () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => console.warn(err));
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+        UI.toggleSettings();
+    },
     
     toggleMaintenance: () => {
         const current = CT.data.maint ? CT.data.maint.active : false;
@@ -1359,4 +1365,3 @@ document.getElementById('img-input').onchange = (e) => {
     r.onload = (ev) => { UI.openCropModal(ev.target.result); };
     r.readAsDataURL(file);
 };
-
