@@ -11,6 +11,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// NUEVO: ESCUDO DE CUOTA (Persistencia Offline)
+db.enablePersistence()
+  .catch((err) => {
+      if (err.code == 'failed-precondition') {
+          console.error("Persistencia falló: Múltiples pestañas abiertas.");
+      } else if (err.code == 'unimplemented') {
+          console.error("El navegador actual no soporta persistencia.");
+      }
+  });
+
 // 2. CORE DE DATOS
 const CT = {
     data: { u: [], s: [], p: [], c: [], a: [], ui: null, maint: null }, 
@@ -1349,3 +1359,4 @@ document.getElementById('img-input').onchange = (e) => {
     r.onload = (ev) => { UI.openCropModal(ev.target.result); };
     r.readAsDataURL(file);
 };
+
