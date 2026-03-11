@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.8">
+    <link rel="stylesheet" href="style.css?v=1.0.3">
 </head>
 <body>
 
@@ -55,19 +55,27 @@
                     </div>
                 </div>
                 <div class="nav-right">
+                    <button id="t_nav_admin" class="nav-icon-btn hidden" onclick="UI.showAdmin()" title="Administración">🛠️</button>
+                    <button id="t_nav_stats" class="nav-icon-btn" onclick="UI.showStats()" title="Estadísticas">📊</button>
+                    
                     <div style="position: relative; display: inline-block;">
-                        <button id="t_nav_settings" onclick="UI.toggleSettings()" class="btn-outline" style="margin-right: 15px; padding: 6px 10px; font-size: 1.1rem; border: none; background: transparent;" title="Ajustes">⚙️</button>
-                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 180px; z-index: 100; cursor: default;">
-                            <button onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 10px 15px;">⛶ Pantalla Completa</button>
-                            <div style="padding: 10px; text-align: center; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                CananTyper v1.0.1 
-                                <span style="display: inline-block; width: 8px; height: 8px; background-color: #00ff00; border-radius: 50%; box-shadow: 0 0 8px #00ff00;" title="Conexión Estable"></span>
+                        <button id="t_nav_settings" onclick="UI.toggleSettings()" class="nav-icon-btn" title="Ajustes">
+                            ⚙️
+                            <span id="update-dot" class="update-dot hidden"></span>
+                        </button>
+                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 0; top: 125%; min-width: 200px; z-index: 100;">
+                            <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
+                            
+                            <button onclick="App.toggleFullscreen()" style="padding: 12px 15px; text-align: left; width: 100%;">⛶ Pantalla Completa</button>
+                            
+                            <div class="version-seal">
+                                CananTyper v1.0.3 
+                                <span class="online-dot" title="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
-                    <button id="t_nav_admin" class="btn-outline hidden" onclick="UI.showAdmin()" style="margin-right: 15px;">Administración</button>
-                    <button id="t_nav_stats" onclick="UI.showStats()" class="btn-outline" style="margin-right: 15px;">Estadísticas</button>
-                    <button id="t_nav_logout" onclick="App.logout()" class="btn-outline">Cerrar sesión</button>
+
+                    <button id="t_nav_logout" class="nav-icon-btn" onclick="App.logout()" title="Cerrar sesión">🚪</button>
                 </div>
             </header>
 
@@ -548,6 +556,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.7"></script>
+    <script src="main.js?v=1.0.3"></script>
 </body>
 </html>
