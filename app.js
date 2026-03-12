@@ -68,7 +68,6 @@ app.whenReady().then(() => {
     createWindow();
 
     // --- 4. SISTEMA DE ACTUALIZACIONES AUTOMÁTICAS ---
-    // Inicia la búsqueda de parches 3 segundos después de abrir
     setTimeout(() => {
         try {
             autoUpdater.checkForUpdatesAndNotify();
@@ -76,7 +75,6 @@ app.whenReady().then(() => {
     }, 3000);
 });
 
-// Eventos del Auto-Updater hacia la Interfaz
 autoUpdater.on('update-available', () => {
     if (mainWindow) mainWindow.webContents.send('update-status', 'downloading');
 });
