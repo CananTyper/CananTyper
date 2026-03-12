@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.3">
+    <link rel="stylesheet" href="style.css?v=1.1.4">
 </head>
 <body>
 
@@ -71,13 +71,13 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.3 
+                                CananTyper v1.1.4 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
                     
-                    <button id="btn-nav-logout" class="nav-icon-btn" onclick="App.logout()" data-tooltip="Cerrar Sesión" style="color: #f44336; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px; padding: 10px 20px; border: 1px solid color-mix(in srgb, #f44336 30%, transparent) !important; border-radius: 50px; background: color-mix(in srgb, #f44336 10%, transparent) !important;">SALIR</button>
+                    <button id="btn-nav-logout" class="nav-icon-btn btn-exit-strict" onclick="App.logout()" data-tooltip="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
                 </div>
             </header>
 
@@ -193,11 +193,11 @@
                             </div>
                         </div>
                         <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_p_worst_txt">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="table-header"><h3 id="t_st_box_w_trk">Textos a Mejorar (Bottom 5)</h3></div>
                             <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
                         </div>
                         <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_p_worst_wrd">Palabras Críticas (Top 30)</h3></div>
+                            <div class="table-header"><h3 id="t_st_box_w_wrd">Palabras Críticas (Top 30)</h3></div>
                             <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
                     </div>
@@ -232,8 +232,8 @@
                         <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate">TASA DE MORTALIDAD</small><b id="st-hc-rate">0%</b></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_1">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
-                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_2">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
+                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_surv">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
+                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_dead">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
                     </div>
                 </div>
 
@@ -458,6 +458,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.1.3"></script>
+    <script src="main.js?v=1.1.4"></script>
 </body>
 </html>
