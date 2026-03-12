@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.0.8 (Modularidad & UI)
+    Capitán del Código: Ángel | Versión 1.0.9 (Cirugía UI/UX Élite)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -74,7 +74,7 @@ const CT = {
         db.collection('scores').onSnapshot(snap => { this.data.s = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_s', JSON.stringify(this.data.s)); UI.refreshActiveViews(); });
         db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
-            if(this.data.p.length === 0) { db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte." }); }
+            if(this.data.p.length === 0) { db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: 0 }); }
             localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); UI.refreshActiveViews(); 
         });
         db.collection('categories').onSnapshot(snap => { 
@@ -131,20 +131,14 @@ const CT = {
                 't_game_dead_sub': { l: 'Juego. Muerte Sub', v: 'Un error es letal en Hardcore.' }, 't_sett_fast': { l: 'Aj. Modo Rápido', v: '⚡ Modo Rápido:' },
                 't_sett_fast_on': { l: 'Aj. Modo Ráp. SI', v: 'SI' }, 't_sett_fast_off': { l: 'Aj. Modo Ráp. NO', v: 'NO' },
                 't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' }, 't_btn_pin_on': { l: 'Pista Fijado', v: '📌 FIJADO' },
-                't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' },
-                // --- NUEVA TANDA LÉXICO (FASE 1.0.8) ---
-                't_theme_btn': { l: 'Aj. Tema Btn', v: '🎨 Personalizar' },
-                't_theme_title': { l: 'Tema Título', v: 'Personalizar Tema' },
-                't_theme_save': { l: 'Tema Guardar', v: 'Guardar' },
-                't_theme_reset': { l: 'Tema Reset', v: 'Restaurar' },
-                't_trn_tab_cre': { l: 'Trn Tab Crear', v: 'CREAR' },
-                't_trn_tab_ed': { l: 'Trn Tab Edit', v: 'EDITAR' },
-                't_trn_tab_cat': { l: 'Trn Tab Mods', v: 'MODALIDADES' },
-                't_trn_cre_btn': { l: 'Trn Crear Btn', v: 'GUARDAR PISTA DE ENTRENAMIENTO' },
-                't_trn_mod_cre': { l: 'Trn Mod Crear', v: 'CREAR MODALIDAD' },
-                't_trn_mod_del': { l: 'Trn Mod Elim', v: 'ELIMINAR' },
-                't_trn_mod_t1': { l: 'Trn Titulo C1', v: 'Nueva Modalidad' },
-                't_trn_mod_t2': { l: 'Trn Titulo C2', v: 'Eliminar Modalidad' }
+                't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' }, 't_theme_btn': { l: 'Aj. Tema Btn', v: '🎨 Personalizar' },
+                't_theme_title': { l: 'Tema Título', v: 'Personalizar Tema' }, 't_theme_save': { l: 'Tema Guardar', v: 'Guardar' },
+                't_theme_reset': { l: 'Tema Reset', v: 'Restaurar' }, 't_trn_tab_cre': { l: 'Trn Tab Crear', v: 'CREAR' },
+                't_trn_tab_ed': { l: 'Trn Tab Edit', v: 'EDITAR' }, 't_trn_tab_cat': { l: 'Trn Tab Mods', v: 'MODALIDADES' },
+                't_trn_cre_btn': { l: 'Trn Crear Btn', v: 'GUARDAR PISTA DE ENTRENAMIENTO' }, 't_trn_mod_cre': { l: 'Trn Mod Crear', v: 'CREAR MODALIDAD' },
+                't_trn_mod_del': { l: 'Trn Mod Elim', v: 'ELIMINAR' }, 't_trn_mod_t1': { l: 'Trn Titulo C1', v: 'Nueva Modalidad' },
+                't_trn_mod_t2': { l: 'Trn Titulo C2', v: 'Eliminar Modalidad' }, 't_lbl_st_top10_txt': { l: 'Est. TH Texto', v: 'Texto' },
+                't_lbl_st_top10_num': { l: 'Est. TH Nro', v: 'N°' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -403,7 +397,6 @@ const UI = {
         if(editSel) { const currentVal = editSel.value; editSel.innerHTML = options; editSel.value = currentVal || (cats[0] ? cats[0].name : ''); }
         if(deleteSel) { deleteSel.innerHTML = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).map(c => `<option value="${c.name}">${c.name}</option>`).join(''); }
 
-        // Training Specific Selects
         const trnCats = cats.filter(c => c.name.startsWith('[TRN]'));
         const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
         const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
@@ -550,12 +543,15 @@ const UI = {
 
     showAdminPhraseCategories() { UI.activeAdminCat = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden'); document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-search').value = ''; UI.renderAdminP(); },
     selectAdminPhraseCategory(cat) { UI.activeAdminCat = cat; UI.adminPhrasePage = 0; document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden'); UI.renderAdminP(); },
+    
     renderAdminP() {
         const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let tracks = CT.dbLocal('p');
         if (query) {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.add('hidden');
-            let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:70%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
+            const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
@@ -563,8 +559,10 @@ const UI = {
             document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
-            let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat); const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:70%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
+            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
+            const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         }
     },
@@ -575,7 +573,8 @@ const UI = {
 
     renderAdminTrn() {
         let tracks = CT.dbLocal('p').filter(t => t.c && t.c.startsWith('[TRN]'));
-        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item" style="border-color:#ffd700;"><div style="display:flex; flex-direction:column; gap:4px; max-width:70%;"><span><b style="color:#ffd700">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+        tracks = tracks.sort((a,b) => (a.order || 0) - (b.order || 0));
+        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Bajar">▼</button></div><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
     },
 
     renderAdminR() {
@@ -627,6 +626,8 @@ const UI = {
             filtered = tracks.filter(t => (t.c || 'General') === UI.activeTrackCat); 
         }
         
+        filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
+
         let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '📌 FIJADO';
         let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '📌 FIJAR';
 
@@ -725,6 +726,25 @@ const App = {
         UI.renderTrackList(); 
     },
 
+    moveTrack: async (idStr, direction) => {
+        let tracks = CT.dbLocal('p');
+        let track = tracks.find(t => t.id.toString() === idStr.toString());
+        if(!track) return;
+        let filtered = tracks.filter(t => t.c === track.c).sort((a,b) => (a.order || 0) - (b.order || 0));
+        let idx = filtered.findIndex(t => t.id === track.id);
+        let swapIdx = idx + direction;
+        if(swapIdx >= 0 && swapIdx < filtered.length) {
+            let track2 = filtered[swapIdx];
+            let order1 = track.order !== undefined ? track.order : idx;
+            let order2 = track2.order !== undefined ? track2.order : swapIdx;
+            if(order1 === order2) { order1 = idx; order2 = swapIdx; }
+            const batch = db.batch();
+            batch.update(db.collection('phrases').doc(track.id.toString()), {order: order2});
+            batch.update(db.collection('phrases').doc(track2.id.toString()), {order: order1});
+            await batch.commit();
+        }
+    },
+
     saveTheme: () => {
         const p = document.getElementById('theme-p').value;
         const bg = document.getElementById('theme-bg').value;
@@ -769,11 +789,11 @@ const App = {
 
     createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName }); nameInp.value = ''; alert("Categoría Creada."); UI.toggleCreateForm('text'); },
     deleteCategory: () => { const sel = document.getElementById('delete-cat-select'); const catName = sel.value; if(!catName) return; if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { db.collection('categories').doc(catName).delete(); let pList = CT.dbLocal('p'); let updated = false; pList.forEach(p => { if (p.c === catName) { p.c = 'General'; updated = true; db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); } }); if (updated) CT.save('p', pList); alert("Categoría eliminada con éxito."); } },
-    createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto."); const idStr = titleInp.value.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito."); },
+    createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto."); const idStr = titleInp.value.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value, order: Date.now() }); titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito."); },
 
     createTrnCategory: () => { const nameInp = document.getElementById('trn-new-cat-name'); const baseName = nameInp.value.trim(); if(!baseName) return alert("Falta el nombre."); const catName = `[TRN] ${baseName}`; db.collection('categories').doc(catName).set({ name: catName }); nameInp.value = ''; alert("Modalidad Creada."); },
     deleteTrnCategory: () => { const sel = document.getElementById('trn-delete-cat-select'); const catName = sel.value; if(!catName) return; if(confirm(`¿Eliminar modalidad "${catName}"?`)) { db.collection('categories').doc(catName).delete(); alert("Eliminada con éxito."); } },
-    createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); const catValue = catInp.value || '[TRN] Pistas Extremas'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto de Entrenamiento Guardado."); },
+    createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); const catValue = catInp.value || '[TRN] Pistas Extremas'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value, order: Date.now() }); titleInp.value = ''; textInp.value = ''; alert("Texto de Entrenamiento Guardado."); },
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     login: async () => { const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists && docRef.data().p === p) { localStorage.setItem('ct_ses', JSON.stringify({h: handle})); if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); UI.initLobby(); } else { alert("Usuario o contraseña incorrectos"); } } catch(e) { console.error("Error en login:", e); alert("Fallo de conexión a la base de datos"); } },
@@ -929,6 +949,9 @@ class Engine {
         updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
         const speedDisplayEl = document.getElementById('final-speed-display');
         speedDisplayEl.innerText = finalSpeedValue + " " + finalUnitLabel;
+
+        document.getElementById('game-speed-display').innerText = finalSpeedValue;
+        document.getElementById('game-timer').innerText = sec.toFixed(1) + 's';
         
         if (CT.currentUnit === 'zen') { speedDisplayEl.classList.add('val-blurrable'); }
         if (this.mode === 'training') { document.getElementById('game-result-modal').classList.remove('hidden'); return; }
