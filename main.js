@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.0 (Arquitectura Élite)
+    Capitán del Código: Ángel | Versión 1.1.1 (Control Maestro)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -59,7 +59,7 @@ const CT = {
             if (dlBtn) dlBtn.classList.remove('hidden');
         }
 
-        // KEYLOGGER GLOBAL PARA ATAJOS
+        // KEYLOGGER GLOBAL
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
             if (!App.activeEngine) return;
@@ -71,7 +71,7 @@ const CT = {
         
         db.collection('config').doc('maintenance').onSnapshot(snap => {
             if(snap.exists) { this.data.maint = snap.data(); } else {
-                this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Actualizando.' };
+                this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Actualizando.', info: true, theme: true };
                 if(this.ses() && this.ses().r === 'admin') db.collection('config').doc('maintenance').set(this.data.maint);
             }
             UI.checkMaintenance();
@@ -104,6 +104,7 @@ const CT = {
         });
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
 
+        // SISTEMA DE LEXICÓN BLINDADO (SANITIZACIÓN DE DATOS)
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título', v: 'CananTyper' }, 't_auth_sub': { l: 'Subtítulo', v: 'Mecanografía' },
@@ -159,20 +160,26 @@ const CT = {
                 't_trn_mod_del': { l: 'Trn Mod Elim', v: 'ELIMINAR' }, 't_trn_mod_t1': { l: 'Trn Titulo C1', v: 'Nueva Modalidad' },
                 't_trn_mod_t2': { l: 'Trn Titulo C2', v: 'Eliminar Modalidad' }, 't_lbl_st_top10_txt': { l: 'Est. TH Texto', v: 'Texto' },
                 't_lbl_st_top10_num': { l: 'Est. TH Nro', v: 'N°' }, 
-                // --- NUEVA TANDA LÉXICO (FASE 1.1.0) ---
-                't_tab_info': { l: 'A. Info Tab', v: 'Información' },
-                't_tab_sc': { l: 'A. Atajos Tab', v: 'Atajos' },
-                't_adm_sc_title': { l: 'Admin Atajos Titulo', v: 'Configuración de Atajos' },
-                't_adm_sc_sub': { l: 'Admin Atajos Sub', v: 'Define las teclas globales de acción' },
-                't_adm_sc_btn': { l: 'Admin Atajos Btn', v: 'GUARDAR ATAJOS' },
-                't_adm_info_title': { l: 'Admin Info Titulo', v: 'Página de Información' },
-                't_adm_info_sub': { l: 'Admin Info Sub', v: 'Redacta la historia y notas del parche' },
-                't_adm_info_btn': { l: 'Admin Info Btn', v: 'PUBLICAR INFORMACIÓN' },
-                't_sc_lbl_res': { l: 'Atajo Reiniciar', v: 'Reiniciar Carrera' },
-                't_sc_lbl_nxt': { l: 'Atajo Siguiente', v: 'Siguiente Pista' },
+                't_tab_info': { l: 'A. Info Tab', v: 'Información' }, 't_tab_sc': { l: 'A. Atajos Tab', v: 'Atajos' },
+                't_adm_sc_title': { l: 'Admin Atajos Titulo', v: 'Configuración de Atajos' }, 't_adm_sc_sub': { l: 'Admin Atajos Sub', v: 'Define las teclas globales de acción' },
+                't_adm_sc_btn': { l: 'Admin Atajos Btn', v: 'GUARDAR ATAJOS' }, 't_adm_info_title': { l: 'Admin Info Titulo', v: 'Página de Información' },
+                't_adm_info_sub': { l: 'Admin Info Sub', v: 'Redacta la historia y notas del parche' }, 't_adm_info_btn': { l: 'Admin Info Btn', v: 'PUBLICAR INFORMACIÓN' },
+                't_sc_lbl_res': { l: 'Atajo Reiniciar', v: 'Reiniciar Carrera' }, 't_sc_lbl_nxt': { l: 'Atajo Siguiente', v: 'Siguiente Pista' },
                 't_sc_lbl_qt': { l: 'Atajo Salir', v: 'Abandonar Carrera' }
             };
-            if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
+            
+            CT.data.ui = {};
+            const snapData = snap.exists ? snap.data() : {};
+            
+            Object.keys(defaults).forEach(k => {
+                if (snapData[k] && typeof snapData[k] === 'object' && snapData[k].v !== undefined) {
+                    CT.data.ui[k] = { l: snapData[k].l || defaults[k].l, v: snapData[k].v };
+                } else if (typeof snapData[k] === 'string') {
+                    CT.data.ui[k] = { l: defaults[k].l, v: snapData[k] };
+                } else {
+                    CT.data.ui[k] = { l: defaults[k].l, v: defaults[k].v };
+                }
+            });
             UI.applyUITexts(); UI.refreshActiveViews();
         });
     },
@@ -185,8 +192,9 @@ const UI = {
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     checkMaintenance: () => {
-        if(!CT.data.maint) return;
-        const m = CT.data.maint; const u = CT.ses(); const isAdmin = u && u.r === 'admin';
+        const m = CT.data.maint || { active: false, info: true, theme: true };
+        const u = CT.ses(); const isAdmin = u && u.r === 'admin';
+        
         if(m.active && !isAdmin) {
             document.getElementById('maint-icon-display').innerText = m.icon || '🛠️';
             document.getElementById('maint-title-display').innerText = m.title || 'Mantenimiento';
@@ -195,12 +203,36 @@ const UI = {
         } else {
             if(!document.getElementById('maintenance-screen').classList.contains('hidden')) { if(u) UI.showLobby(); else UI.show('auth-screen'); }
         }
+        
         const toggleBtn = document.getElementById('btn-maint-toggle');
         if(toggleBtn) {
-            if(m.active) { toggleBtn.innerText = "⛔ MANTENIMIENTO: ACTIVADO (WEB BLOQUEADA)"; toggleBtn.style.borderColor = "var(--error)"; toggleBtn.style.color = "var(--error)"; } 
-            else { toggleBtn.innerText = "✅ MANTENIMIENTO: DESACTIVADO (WEB PÚBLICA)"; toggleBtn.style.borderColor = "var(--success)"; toggleBtn.style.color = "var(--success)"; }
+            if(m.active) { toggleBtn.innerText = "⛔ MANTENIMIENTO: ACTIVADO"; toggleBtn.style.borderColor = "var(--error)"; toggleBtn.style.color = "var(--error)"; } 
+            else { toggleBtn.innerText = "✅ MANTENIMIENTO: DESACTIVADO"; toggleBtn.style.borderColor = "var(--success)"; toggleBtn.style.color = "var(--success)"; }
+        }
+
+        const infoEnabled = m.info !== false;
+        const themeEnabled = m.theme !== false;
+
+        const navInfoBtn = document.getElementById('btn-nav-info');
+        if(navInfoBtn) navInfoBtn.classList.toggle('hidden', !infoEnabled && !isAdmin);
+
+        const themeBtn = document.getElementById('t_theme_btn');
+        if(themeBtn) themeBtn.classList.toggle('hidden', !themeEnabled && !isAdmin);
+
+        const fInfoBtn = document.getElementById('btn-feat-info');
+        if(fInfoBtn) {
+            fInfoBtn.innerText = `ℹ️ INFO: ${infoEnabled ? 'ON' : 'OFF'}`;
+            fInfoBtn.style.borderColor = infoEnabled ? 'var(--success)' : 'var(--error)';
+            fInfoBtn.style.color = infoEnabled ? 'var(--success)' : 'var(--error)';
+        }
+        const fThemeBtn = document.getElementById('btn-feat-theme');
+        if(fThemeBtn) {
+            fThemeBtn.innerText = `🎨 TEMAS: ${themeEnabled ? 'ON' : 'OFF'}`;
+            fThemeBtn.style.borderColor = themeEnabled ? 'var(--success)' : 'var(--error)';
+            fThemeBtn.style.color = themeEnabled ? 'var(--success)' : 'var(--error)';
         }
     },
+    
     show: (id) => { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); },
     toggleAuth: (login) => { document.getElementById('login-form').classList.toggle('hidden', !login); document.getElementById('register-form').classList.toggle('hidden', login); },
     
@@ -256,7 +288,7 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off'].includes(k)) { /* js dynamic */ }
+                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off'].includes(k)) { }
                 else if(el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = CT.data.ui[k].v; }
                 else { el.innerText = CT.data.ui[k].v; }
             }
@@ -599,19 +631,19 @@ const UI = {
             let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
             filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
             const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
             cats.sort((a,b) => (a.order || 0) - (b.order || 0));
-            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
             filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
             const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         }
     },
@@ -623,7 +655,7 @@ const UI = {
     renderAdminTrn() {
         let tracks = CT.dbLocal('p').filter(t => t.c && t.c.startsWith('[TRN]'));
         tracks = tracks.sort((a,b) => (a.order || 0) - (b.order || 0));
-        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline" style="padding:2px 5px; font-size:0.6rem; border:none;" title="Bajar">▼</button></div><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
     },
 
     renderAdminR() {
@@ -813,6 +845,11 @@ const App = {
         }
     },
 
+    toggleFeature: (feat) => {
+        const current = CT.data.maint ? CT.data.maint[feat] !== false : true;
+        db.collection('config').doc('maintenance').set({ [feat]: !current }, {merge: true});
+    },
+
     saveTheme: (themeName) => {
         let themeObj;
         if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
@@ -870,7 +907,7 @@ const App = {
     cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
     deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
     
-    // CORRECCIÓN QUIRÚRGICA LEXICÓN
+    // BUG LÉXICO: SOLUCIÓN QUIRÚRGICA CON MERGE:TRUE Y VERIFICACIÓN DE OBJETOS
     editUIText: (key) => { 
         if(!CT.data.ui || !CT.data.ui[key]) return; 
         const currentVal = CT.data.ui[key].v; 
@@ -906,7 +943,7 @@ class Engine {
         this.mode = mode; 
         this.ghostCPM = ghostCPM;
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
-        App.activeEngine = this; // Asegurar referencia global para atajos
+        App.activeEngine = this; // Referencia global para atajos de teclado
         this.init(); 
     }
     stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; App.activeEngine = null; }
