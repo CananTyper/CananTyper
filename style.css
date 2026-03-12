@@ -103,7 +103,7 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .player-link { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-main); cursor: pointer; transition: color 0.2s; }
 .player-link:hover { color: var(--p); text-shadow: 0 0 8px color-mix(in srgb, var(--p) 40%, transparent); }
 
-/* PODIO VISUAL (Oro, Plata, Bronce) */
+/* PODIO VISUAL */
 .podium-1 { color: #ffd700 !important; font-weight: 900 !important; font-size: 1.1rem !important; text-shadow: 0 0 10px rgba(255,215,0,0.6); }
 .podium-2 { color: #c0c0c0 !important; font-weight: bold !important; font-size: 1rem !important; text-shadow: 0 0 8px rgba(192,192,192,0.4); }
 .podium-3 { color: #cd7f32 !important; font-weight: bold !important; font-size: 0.9rem !important; text-shadow: 0 0 8px rgba(205,127,50,0.4); }
@@ -135,6 +135,12 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .stat-card b { display: block; font-size: 1.8rem; color: var(--text-main); margin-top: 5px; transition: color 0.3s, text-shadow 0.3s; }
 .stat-card:hover b { color: var(--p); text-shadow: 0 0 10px color-mix(in srgb, var(--p) 30%, transparent); }
 .stat-highlight { border-color: color-mix(in srgb, var(--p) 40%, transparent); box-shadow: inset 0 0 15px color-mix(in srgb, var(--p) 5%, transparent); }
+
+/* VIRTUAL KEYBOARD HEATMAP CSS */
+.keyboard-container { display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%; padding: 15px 0; }
+.keyboard-row { display: flex; gap: 8px; }
+kbd { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; background: var(--surface-light); border: 1px solid var(--border); border-radius: 8px; font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; color: var(--text-muted); font-weight: bold; transition: all 0.3s ease; position: relative; overflow: hidden; user-select: none; }
+kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
 
 .profile-history-area { margin-top: 20px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; min-height: 0; padding: 20px; transition: border-color 0.3s; }
 .profile-history-area:hover { border-color: color-mix(in srgb, var(--p) 20%, transparent); }
