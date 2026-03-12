@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    x
+    Capitán del Código: Ángel
 */
 
 // 1. CONFIGURACIÓN DE ENTORNO E IDENTIFICACIÓN
@@ -9,7 +9,6 @@ const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!pr
 let currentApiKey = "AIzaSyDWtm9wGj5mOYT1CIz2jugteKrJoMDUhiw"; 
 let ipcRenderer = null;
 
-// Conectar el intercomunicador si estamos en Windows
 if (isDesktopEnv) {
     try {
         ipcRenderer = require('electron').ipcRenderer;
@@ -59,7 +58,6 @@ const CT = {
 
         UI.updateUnitVisuals(this.currentUnit);
         
-        // MANEJO DE ENTORNO WEB (Botón Descarga Directa)
         if (!isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
             if (dlBtn) dlBtn.classList.remove('hidden');
@@ -108,40 +106,39 @@ const CT = {
                 't_prof_races': { l: 'P. Carreras', v: 'CARRERAS' }, 't_tab_ann': { l: 'A. Anu', v: 'Anuncios' }, 't_tab_lex': { l: 'A. Lex', v: 'Léxico' },
                 't_tab_srv': { l: 'A. Srv', v: 'Servidor' }, 't_tab_usr': { l: 'A. Usr', v: 'Usuarios' }, 't_tab_rac': { l: 'A. Rac', v: 'Carreras' },
                 't_tab_txt': { l: 'A. Txt', v: 'Textos' }, 't_tab_cre': { l: 'A. Cre', v: 'Crear' },
-                't_admin_title': { l: 'Admin. Título', v: 'CananTyper' },
-                't_admin_sub': { l: 'Admin. Subtítulo', v: 'Panel de administración' },
-                't_st_tab_pe': { l: 'Tab. Personales', v: 'Personales' },
-                't_st_tab_ge': { l: 'Tab. Servidor', v: 'Servidor' },
-                't_st_tab_el': { l: 'Tab. Élite', v: 'Élite' },
-                't_lbl_st_avg': { l: 'Lbl Prom.', v: 'PROM.' },
-                't_lbl_st_last': { l: 'Lbl Ult 10', v: 'ÚLT. 10' },
-                't_lbl_st_best': { l: 'Lbl Récord', v: 'RÉCORD' },
-                't_st_g_users': { l: 'Est. Usu. Regis.', v: 'USUARIOS REGISTRADOS' },
-                't_st_g_races': { l: 'Est. Carr. Global', v: 'CARRERAS GLOBALES' },
-                't_st_e_most': { l: 'Est. Más Carr.', v: 'MÁS CARRERAS' },
-                't_st_e_top1': { l: 'Est. Más Top 1', v: 'MÁS VECES TOP 1' },
-                't_adm_ann_send': { l: 'Anun. Título', v: 'Enviar Anuncio' },
-                't_adm_ann_sub': { l: 'Anun. Sub', v: 'Pop-Up de vista única' },
-                't_adm_ann_btn': { l: 'Anun. Botón', v: 'PUBLICAR ANUNCIO' },
-                't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' },
-                // --- NUEVA TANDA LÉXICO PRO (FASE 2) ---
-                't_adm_srv_title': { l: 'Srv. Título', v: 'Estado del Servidor' },
-                't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Activa el Kill Switch para bloquear el acceso a usuarios comunes.' },
-                't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel de Bloqueo' },
-                't_adm_srv_btn': { l: 'Srv. Guardar', v: 'GUARDAR CARTEL' },
-                't_adm_cre_btn_t': { l: 'Crear. Btn Texto', v: 'TEXTO' },
-                't_adm_cre_btn_c': { l: 'Crear. Btn Cat', v: 'CATEGORÍA' },
-                't_adm_cre_btn_s': { l: 'Crear. Btn Guardar', v: 'GUARDAR TEXTO' },
-                't_adm_cre_cat_t1': { l: 'Crear. Cat Titulo', v: 'Crear Categoría' },
-                't_adm_cre_cat_b1': { l: 'Crear. Cat Btn', v: 'CREAR CATEGORÍA' },
-                't_adm_cre_cat_t2': { l: 'Crear. Elim Titulo', v: 'Eliminar Categoría' },
-                't_adm_cre_cat_b2': { l: 'Crear. Elim Btn', v: 'ELIMINAR' },
-                't_game_time': { l: 'Juego. Tiempo', v: 'TIEMPO' },
-                't_game_pb': { l: 'Juego. Record', v: '👑 ¡NUEVO RÉCORD PERSONAL!' },
-                't_crop_title': { l: 'Recorte. Título', v: 'Ajusta tu foto' },
-                't_crop_sub': { l: 'Recorte. Sub', v: 'Arrastra y usa el zoom.' },
-                't_crop_btn_s': { l: 'Recorte. Guardar', v: 'Guardar' },
-                't_crop_btn_c': { l: 'Recorte. Cancelar', v: 'Cancelar' }
+                't_admin_title': { l: 'Admin. Título', v: 'CananTyper' }, 't_admin_sub': { l: 'Admin. Subtítulo', v: 'Panel de administración' },
+                't_st_tab_pe': { l: 'Tab. Personales', v: 'Personales' }, 't_st_tab_ge': { l: 'Tab. Servidor', v: 'Servidor' }, 't_st_tab_el': { l: 'Tab. Élite', v: 'Élite' },
+                't_lbl_st_avg': { l: 'Lbl Prom.', v: 'PROM.' }, 't_lbl_st_last': { l: 'Lbl Ult 10', v: 'ÚLT. 10' }, 't_lbl_st_best': { l: 'Lbl Récord', v: 'RÉCORD' },
+                't_st_g_users': { l: 'Est. Usu. Regis.', v: 'USUARIOS REGISTRADOS' }, 't_st_g_races': { l: 'Est. Carr. Global', v: 'CARRERAS GLOBALES' },
+                't_st_e_most': { l: 'Est. Más Carr.', v: 'MÁS CARRERAS' }, 't_st_e_top1': { l: 'Est. Más Top 1', v: 'MÁS VECES TOP 1' },
+                't_adm_ann_send': { l: 'Anun. Título', v: 'Enviar Anuncio' }, 't_adm_ann_sub': { l: 'Anun. Sub', v: 'Pop-Up de vista única' },
+                't_adm_ann_btn': { l: 'Anun. Botón', v: 'PUBLICAR ANUNCIO' }, 't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' },
+                't_adm_srv_title': { l: 'Srv. Título', v: 'Estado del Servidor' }, 't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Activa el Kill Switch para bloquear el acceso a usuarios comunes.' },
+                't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel de Bloqueo' }, 't_adm_srv_btn': { l: 'Srv. Guardar', v: 'GUARDAR CARTEL' },
+                't_adm_cre_btn_t': { l: 'Crear. Btn Texto', v: 'TEXTO' }, 't_adm_cre_btn_c': { l: 'Crear. Btn Cat', v: 'CATEGORÍA' },
+                't_adm_cre_btn_s': { l: 'Crear. Btn Guardar', v: 'GUARDAR TEXTO' }, 't_adm_cre_cat_t1': { l: 'Crear. Cat Titulo', v: 'Crear Categoría' },
+                't_adm_cre_cat_b1': { l: 'Crear. Cat Btn', v: 'CREAR CATEGORÍA' }, 't_adm_cre_cat_t2': { l: 'Crear. Elim Titulo', v: 'Eliminar Categoría' },
+                't_adm_cre_cat_b2': { l: 'Crear. Elim Btn', v: 'ELIMINAR' }, 't_game_time': { l: 'Juego. Tiempo', v: 'TIEMPO' },
+                't_game_pb': { l: 'Juego. Record', v: '👑 ¡NUEVO RÉCORD PERSONAL!' }, 't_crop_title': { l: 'Recorte. Título', v: 'Ajusta tu foto' },
+                't_crop_sub': { l: 'Recorte. Sub', v: 'Arrastra y usa el zoom.' }, 't_crop_btn_s': { l: 'Recorte. Guardar', v: 'Guardar' },
+                't_crop_btn_c': { l: 'Recorte. Cancelar', v: 'Cancelar' },
+                // --- NUEVA TANDA LÉXICO (FASE 3 - REMODELACIÓN ESTADÍSTICAS) ---
+                't_st_p_heat': { l: 'Est P. Teclado', v: 'MAPA DE CALOR: TECLAS CRÍTICAS' },
+                't_st_p_worst_txt': { l: 'Est P. Peor Txt', v: 'Textos a Mejorar (Bottom 5)' },
+                't_st_p_worst_wrd': { l: 'Est P. Peor Pal', v: 'Palabras Críticas (Top 30)' },
+                'th_st_p_avg': { l: 'Est P. TH Prom', v: 'PROM.' },
+                'th_st_p_err': { l: 'Est P. TH Err', v: 'ERRORES' },
+                't_sett_full': { l: 'Aj. Pantalla', v: '⛶ Pantalla Completa' },
+                't_sett_down': { l: 'Aj. Descarga', v: '⬇️ Descargar App (PC)' },
+                't_sett_clear': { l: 'Aj. Cache', v: '🧹 Limpiar Caché Local' },
+                't_prof_edit_n': { l: 'Prof. Edit Nom', v: 'Nombre' },
+                't_prof_edit_i': { l: 'Prof. Edit Img', v: 'Imagen' },
+                't_trk_search': { l: 'Pista Buscar', v: 'Buscar texto por ID o palabras...' },
+                't_trk_back': { l: 'Pista Volver', v: '← Categorías' },
+                't_lbl_st_p_best_avg': { l: 'Est P. Prom G.', v: 'PROM. GENERAL' },
+                't_lbl_st_p_last10_avg': { l: 'Est P. Prom 10', v: 'PROM. ÚLT. 10' },
+                't_lbl_st_p_best_cat': { l: 'Est P. Mejor Cat', v: 'MEJOR CATEGORÍA' },
+                't_lbl_st_p_tot': { l: 'Est P. Totales', v: 'CARRERAS TOTALES' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -213,24 +210,58 @@ const UI = {
 
     renderPersonalStats() {
         const u = CT.ses(); if(!u) return;
+        const userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
         const userScores = CT.dbLocal('s').filter(s => s.h === u.h);
-        document.querySelectorAll('.st-p-owner').forEach(el => el.innerText = u.n);
+        document.querySelectorAll('.st-p-owner').forEach(el => el.innerText = userDoc.n);
         document.getElementById('st-p-total-races').innerText = userScores.length;
-        const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr><td>${i+1}</td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.d}</td></tr>`).join('');
+        
+        // Tarjetas Top
         const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
         document.getElementById('st-p-best-avg').innerText = UI.formatValue(avgGen);
         const last10Arr = [...userScores].sort((a,b)=>b.id - a.id).slice(0, 10);
         const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
         document.getElementById('st-p-last10-avg').innerText = UI.formatValue(avgLast10);
-        let textMaxes = {}; userScores.forEach(s => { if(!textMaxes[s.track] || s.c > textMaxes[s.track]) textMaxes[s.track] = s.c; });
-        const topTexts = Object.keys(textMaxes).map(k => ({ t: k, max: textMaxes[k] })).sort((a,b) => b.max - a.max).slice(0, 10);
-        document.getElementById('st-p-top10-texts').innerHTML = topTexts.map((tr, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tr.t}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(tr.max)}</b></td></tr>`).join('');
+        
         const phrases = CT.dbLocal('p'); let catAvgs = {};
         userScores.forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
         let bestCat = "-"; let maxCatAvg = -1;
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
+
+        // MAPA DE CALOR (Teclado Virtual)
+        const bk = userDoc.bad_keys || {};
+        const maxErr = Math.max(...Object.values(bk), 1); 
+        document.querySelectorAll('kbd[data-key]').forEach(el => {
+            const key = el.getAttribute('data-key');
+            const errs = bk[key] || 0;
+            if(errs > 0) {
+                const pct = (errs / maxErr) * 100;
+                el.style.background = `color-mix(in srgb, var(--error) ${pct}%, var(--surface-light))`;
+                el.style.borderColor = 'var(--error)';
+                el.style.color = '#fff';
+                el.title = `${errs} errores históricos`;
+            } else {
+                el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; el.title = '0 errores';
+            }
+        });
+
+        // Top 10 Mejores
+        const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td></tr>`).join('');
+
+        // Bottom 5 Pistas (Malditas)
+        let trackAvgs = {};
+        userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
+        let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
+        // Filtramos para asegurar que al menos la haya jugado 2 veces para que sea válido
+        let bottom5 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 5);
+        if(bottom5.length === 0) bottom5 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 5);
+        document.getElementById('st-p-worst-tracks').innerHTML = bottom5.map((tr, i) => `<tr><td><b style="color:var(--error)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tr.t}</div></td><td><b style="color:var(--error)" class="val-blurrable">${UI.formatValue(Math.round(tr.avg))}</b></td></tr>`).join('');
+
+        // Top 30 Palabras Erróneas (Desde DB)
+        const bw = userDoc.bad_words || {};
+        let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 30);
+        document.getElementById('st-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<tr><td><b style="color:var(--error)">#${i+1}</b></td><td>${bwItem.w}</td><td><b style="color:var(--error)">${bwItem.errs}</b></td></tr>`).join('');
     },
 
     renderGlobalStats() {
@@ -506,7 +537,6 @@ const App = {
     handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
     toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } UI.toggleSettings(); },
     
-    // --- FUNCIÓN DE DESCARGA DIRECTA WEB (AJUSTE QUIRÚRGICO URL) ---
     downloadSetup: () => {
         const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
         const link = document.createElement('a');
@@ -541,7 +571,7 @@ const App = {
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     login: async () => { const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists && docRef.data().p === p) { localStorage.setItem('ct_ses', JSON.stringify({h: handle})); if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); UI.initLobby(); } else { alert("Usuario o contraseña incorrectos"); } } catch(e) { console.error("Error en login:", e); alert("Fallo de conexión a la base de datos"); } },
-    register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
+    register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], bad_keys: {}, bad_words: {} }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
     savePhrase: () => { const catInp = document.getElementById('phrase-category'); const textInp = document.getElementById('phrase-input'); if(!textInp.value) return alert("Faltan datos"); if(CT.editIdx !== null) { const pList = CT.dbLocal('p'); const idxStr = pList[CT.editIdx].id.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idxStr).update({ c: catValue, text: textInp.value }); UI.cancelEditP(); } },
     logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
 
@@ -551,7 +581,14 @@ const App = {
 class Engine {
     constructor(trackObj) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
-        this.i = 0; this.c = 0; this.s = null; this.timer = null; this.init(); 
+        this.i = 0; this.c = 0; this.s = null; this.timer = null; 
+        
+        // Keyloggers Quirúrgicos
+        this.errKeys = {};
+        this.errWords = {};
+        this.lastV = '';
+        
+        this.init(); 
     }
     stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); }
     
@@ -587,7 +624,6 @@ class Engine {
         if(!this.s) { 
             this.s = new Date(); 
             if(CT.currentUnit === 'zen' && !document.body.classList.contains('zen-focus')) { document.body.classList.add('zen-focus'); }
-            
             this.timer = setInterval(() => { 
                 const sec = (new Date()-this.s)/1000; 
                 if(document.getElementById('game-timer')) document.getElementById('game-timer').innerText = Math.floor(sec)+'s'; 
@@ -605,6 +641,22 @@ class Engine {
         if (!last && typed.endsWith(' ')) { isSubmitting = true; typed = typed.slice(0, -1); }
 
         let isPrefixValid = cur.startsWith(typed);
+        let addedChar = v.length > this.lastV.length;
+        
+        // INTERVENCIÓN QUIRÚRGICA: KEYLOGGER DE ERRORES
+        if (!isPrefixValid && addedChar) {
+            let matchLen = 0; 
+            while(matchLen < typed.length && matchLen < cur.length && typed[matchLen] === cur[matchLen]) matchLen++;
+            let expectedChar = cur[matchLen] ? cur[matchLen].toLowerCase() : null;
+            if (expectedChar && /[a-z0-9ñáéíóú]/.test(expectedChar)) {
+                 let key = expectedChar.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+                 this.errKeys[key] = (this.errKeys[key] || 0) + 1;
+            }
+            let cleanWord = cur.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ0-9]/g, '').toLowerCase();
+            if(cleanWord) this.errWords[cleanWord] = (this.errWords[cleanWord] || 0) + 1;
+        }
+        this.lastV = v;
+
         if (isPrefixValid) {
             el.classList.remove('input-error'); activeSpan.innerHTML = `<span class="char-ok">${typed}</span>${cur.slice(typed.length)}`;
         } else {
@@ -618,7 +670,7 @@ class Engine {
             if (typed === cur && isPrefixValid) {
                 this.c += cur.length + (last ? 0 : 1);
                 activeSpan.className = 'word correct'; activeSpan.innerHTML = cur; 
-                this.i++; el.value = ''; el.classList.remove('input-error');
+                this.i++; el.value = ''; el.classList.remove('input-error'); this.lastV = '';
                 
                 const progress = (this.i / this.w.length) * 100;
                 document.getElementById('race-progress').style.width = progress + '%';
@@ -641,23 +693,40 @@ class Engine {
         const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
         
         updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
-
         document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
         
         const u = CT.ses(); 
         if(u) {
-            const previousBest = u.hi.length > 0 ? Math.max(...u.hi) : 0;
-            if(finalCPM > previousBest && u.hi.length > 0) {
+            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+            const previousBest = userDoc.hi && userDoc.hi.length > 0 ? Math.max(...userDoc.hi) : 0;
+            if(finalCPM > previousBest && userDoc.hi && userDoc.hi.length > 0) {
                 document.getElementById('pb-alert').classList.remove('hidden');
             }
 
+            // EMPAQUETADO DE ERRORES (PRUNING QUIRÚRGICO)
+            let bk = userDoc.bad_keys || {};
+            let bw = userDoc.bad_words || {};
+            for(let k in this.errKeys) bk[k] = (bk[k] || 0) + this.errKeys[k];
+            for(let w in this.errWords) bw[w] = (bw[w] || 0) + this.errWords[w];
+            
+            let sortedWords = Object.keys(bw).sort((a,b) => bw[b] - bw[a]);
+            let prunedBw = {};
+            sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
+
             const dateStr = CT.getARDate(); const scoreId = Date.now().toString();
-            u.hi.push(finalCPM);
+            if(userDoc.hi) userDoc.hi.push(finalCPM);
+            userDoc.bad_keys = bk; userDoc.bad_words = prunedBw;
+            
             let sList = CT.dbLocal('s');
             const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title };
             sList.unshift(newScore); CT.data.s = sList;
 
-            db.collection('users').doc(u.h).update({ hi: firebase.firestore.FieldValue.arrayUnion(finalCPM) }); 
+            // UN SOLO ENVÍO A FIREBASE (Ahorro de cuota)
+            db.collection('users').doc(u.h).update({ 
+                hi: firebase.firestore.FieldValue.arrayUnion(finalCPM),
+                bad_keys: bk,
+                bad_words: prunedBw
+            }); 
             db.collection('scores').doc(scoreId).set(newScore); 
         }
         document.getElementById('game-result-modal').classList.remove('hidden');
