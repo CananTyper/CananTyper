@@ -17,12 +17,20 @@
 :root[data-theme="cpm"] { --p: var(--theme-cpm); }
 :root[data-theme="wpm"] { --p: var(--theme-wpm); }
 
+/* CUSTOM THEME OVERRIDES (v1.0.8) */
+:root[data-custom-theme="true"] {
+    --p: var(--theme-custom) !important;
+    --bg: var(--bg-custom) !important;
+    --surface-light: var(--surface-custom) !important;
+    --surface: color-mix(in srgb, var(--surface-custom) 70%, #000) !important;
+}
+
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; -webkit-user-select: none; user-select: none; transition: background 0.3s; }
-input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
+input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-select: text; user-select: text; }
 ::selection { background-color: var(--p); color: var(--bg); }
 
-/* ANIMACIÓN FADE-IN GENERAL (v1.0.3) */
+/* ANIMACIÓN FADE-IN GENERAL */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .screen:not(.hidden) { animation: fadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
 
@@ -125,6 +133,10 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .edit-dropdown { position: absolute; top: 20px; left: 0; background: var(--bg); border: 1px solid var(--p); border-radius: 8px; z-index: 10; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
 .edit-dropdown button { width: 100%; padding: 10px 15px; background: none; border: none; color: var(--text-main); text-align: left; font-size: 0.8rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
 .edit-dropdown button:hover { background: var(--p); color: #000; }
+
+/* CENTRADO DE TEXTO EXCLUSIVO PARA MENU ENTRENAMIENTO */
+#train-dropdown button { text-align: center !important; font-weight: bold; font-size: 0.9rem; text-transform: uppercase; }
+
 .role-badge { background: color-mix(in srgb, var(--p) 10%, transparent); color: var(--p); border: 1px solid var(--p); padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; transition: all 0.3s; }
 
 .profile-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; flex-grow: 1; }
@@ -141,7 +153,7 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 kbd { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; background: var(--surface-light); border: 1px solid var(--border); border-radius: 8px; font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; color: var(--text-muted); font-weight: bold; transition: all 0.3s ease; position: relative; overflow: hidden; user-select: none; }
 kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
 
-/* BOTÓN FANTASMA Y ESTRELLAS */
+/* BOTÓN FANTASMA */
 .ghost-btn { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; opacity: 0.5; transition: all 0.2s; padding: 0; }
 .ghost-btn:hover { opacity: 1; transform: scale(1.2); filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
 
@@ -176,7 +188,7 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .admin-content-area:hover { border-color: color-mix(in srgb, var(--p) 20%, transparent); }
 .pane { display: flex; flex-direction: column; height: 100%; }
 .admin-form { display: flex; flex-direction: column; gap: 15px; background: var(--bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; flex-shrink: 0; }
-.form-row { display: flex; gap: 15px; }
+.form-row { display: flex; gap: 15px; width: 100%; box-sizing: border-box; }
 .admin-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; min-height: 0; padding-right: 10px; }
 .admin-list-item { background: var(--bg); padding: 15px 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; }
 .admin-list-item:hover { border-color: var(--p); box-shadow: 0 5px 15px color-mix(in srgb, var(--p) 15%, transparent); transform: translateY(-2px); }
