@@ -64,9 +64,9 @@
                         </button>
                         <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 210px; z-index: 100; cursor: default;">
                             <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
-                            <button onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
-                            <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%; border-bottom: 1px solid var(--border);">⬇️ Descargar App (PC)</button>
-                            <button onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%;">🧹 Limpiar Caché Local</button>
+                            <button id="t_sett_full" onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
+                            <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%; border-bottom: 1px solid var(--border);"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
+                            <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%;">🧹 Limpiar Caché Local</button>
                             <div class="version-seal">
                                 CananTyper v1.0.5 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
@@ -131,25 +131,41 @@
                 <button id="t-st-ge" class="tab-btn" onclick="UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
                 <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
             </div>
-            <div class="admin-content-area" style="padding: 15px;">
-                <div id="pane-stats-personal" class="pane">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0; flex-grow: 0;">
-                        <div class="stat-card"><small id="lbl-st-p-best-avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="lbl-st-p-last10-avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small>MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card stat-highlight"><small>CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+            
+            <div class="admin-content-area" style="padding: 15px; display: flex; flex-direction: column;">
+                <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
+                    
+                    <div class="table-box" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="table-header" style="justify-content: center; margin-bottom: 0;"><h3 id="t_st_p_heat">MAPA DE CALOR: TECLAS CRÍTICAS</h3></div>
+                        <div class="keyboard-container">
+                            <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
+                            <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
+                            <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 250px;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper"><table class="data-table"><tbody id="st-p-top10-races"></tbody></table></div>
                         </div>
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_box_texts">Mejores Textos (Top 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><tbody id="st-p-top10-texts"></tbody></table></div>
+                        <div class="table-box" style="margin: 0; padding: 15px; border-color: color-mix(in srgb, var(--error) 30%, transparent);">
+                            <div class="table-header"><h3 id="t_st_p_worst_txt" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
+                        </div>
+                        <div class="table-box" style="margin: 0; padding: 15px; border-color: color-mix(in srgb, var(--error) 30%, transparent);">
+                            <div class="table-header"><h3 id="t_st_p_worst_wrd" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Palabras Críticas (Top 30)</h3></div>
+                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
                     </div>
                 </div>
+
                 <div id="pane-stats-general" class="pane hidden">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card"><small id="t_st_g_users">USUARIOS REGISTRADOS</small><b id="st-g-users-val">0</b></div>
@@ -162,6 +178,7 @@
                         <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_st_g_top_cat">Categorías Más Jugadas (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Categoría</th><th>Veces Jugada</th></tr></thead><tbody id="st-g-top-cats"></tbody></table></div></div>
                     </div>
                 </div>
+
                 <div id="pane-stats-elite" class="pane hidden">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;"><div class="stat-card"><small id="t_st_e_most">MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="t_st_e_top1">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div></div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
@@ -175,7 +192,7 @@
         <section id="profile-screen" class="screen hidden">
             <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
             <div class="profile-top-area">
-                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button onclick="App.editDisplayName()">Nombre</button><button onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
                 <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
             </div>
             <div class="profile-history-area">
@@ -190,7 +207,7 @@
                 <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="UI.renderTrackList()" style="margin-bottom: 15px;">
                 <div id="track-category-view" class="category-grid custom-scroll"></div>
                 <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; flex-grow: 1; min-height: 0;">
-                    <button id="btn-back-cat-track" onclick="UI.showTrackCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
+                    <button id="btn-back-cat-track" onclick="UI.showTrackCategorySelect()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;"><span id="t_trk_back">← Categorías</span></button>
                     <div id="track-list-full" class="custom-scroll track-list"></div>
                     <div class="pagination-bar" style="margin-top: 15px;"><button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button><span id="track-page-num" class="page-indicator">Página 1</span><button id="track-next" class="btn-outline" onclick="UI.changeTrackPage(1)">→</button></div>
                 </div>
