@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel
+    x
 */
 
 // 1. CONFIGURACIÓN DE ENTORNO E IDENTIFICACIÓN
@@ -18,7 +18,6 @@ if (isDesktopEnv) {
     } catch(e) { console.warn("Aviso: Ejecutando en entorno sin variables nativas completas."); }
 }
 
-// Función maestra para ordenar al Backend que actualice Discord
 function updateDiscordStatus(details, state, showTimer = true) {
     if (ipcRenderer) {
         ipcRenderer.send('update-discord', { details, state, showTimer });
@@ -109,7 +108,6 @@ const CT = {
                 't_prof_races': { l: 'P. Carreras', v: 'CARRERAS' }, 't_tab_ann': { l: 'A. Anu', v: 'Anuncios' }, 't_tab_lex': { l: 'A. Lex', v: 'Léxico' },
                 't_tab_srv': { l: 'A. Srv', v: 'Servidor' }, 't_tab_usr': { l: 'A. Usr', v: 'Usuarios' }, 't_tab_rac': { l: 'A. Rac', v: 'Carreras' },
                 't_tab_txt': { l: 'A. Txt', v: 'Textos' }, 't_tab_cre': { l: 'A. Cre', v: 'Crear' },
-                // --- NUEVA TANDA LÉXICO PRO ---
                 't_admin_title': { l: 'Admin. Título', v: 'CananTyper' },
                 't_admin_sub': { l: 'Admin. Subtítulo', v: 'Panel de administración' },
                 't_st_tab_pe': { l: 'Tab. Personales', v: 'Personales' },
@@ -125,7 +123,25 @@ const CT = {
                 't_adm_ann_send': { l: 'Anun. Título', v: 'Enviar Anuncio' },
                 't_adm_ann_sub': { l: 'Anun. Sub', v: 'Pop-Up de vista única' },
                 't_adm_ann_btn': { l: 'Anun. Botón', v: 'PUBLICAR ANUNCIO' },
-                't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' }
+                't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' },
+                // --- NUEVA TANDA LÉXICO PRO (FASE 2) ---
+                't_adm_srv_title': { l: 'Srv. Título', v: 'Estado del Servidor' },
+                't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Activa el Kill Switch para bloquear el acceso a usuarios comunes.' },
+                't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel de Bloqueo' },
+                't_adm_srv_btn': { l: 'Srv. Guardar', v: 'GUARDAR CARTEL' },
+                't_adm_cre_btn_t': { l: 'Crear. Btn Texto', v: 'TEXTO' },
+                't_adm_cre_btn_c': { l: 'Crear. Btn Cat', v: 'CATEGORÍA' },
+                't_adm_cre_btn_s': { l: 'Crear. Btn Guardar', v: 'GUARDAR TEXTO' },
+                't_adm_cre_cat_t1': { l: 'Crear. Cat Titulo', v: 'Crear Categoría' },
+                't_adm_cre_cat_b1': { l: 'Crear. Cat Btn', v: 'CREAR CATEGORÍA' },
+                't_adm_cre_cat_t2': { l: 'Crear. Elim Titulo', v: 'Eliminar Categoría' },
+                't_adm_cre_cat_b2': { l: 'Crear. Elim Btn', v: 'ELIMINAR' },
+                't_game_time': { l: 'Juego. Tiempo', v: 'TIEMPO' },
+                't_game_pb': { l: 'Juego. Record', v: '👑 ¡NUEVO RÉCORD PERSONAL!' },
+                't_crop_title': { l: 'Recorte. Título', v: 'Ajusta tu foto' },
+                't_crop_sub': { l: 'Recorte. Sub', v: 'Arrastra y usa el zoom.' },
+                't_crop_btn_s': { l: 'Recorte. Guardar', v: 'Guardar' },
+                't_crop_btn_c': { l: 'Recorte. Cancelar', v: 'Cancelar' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -490,9 +506,9 @@ const App = {
     handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
     toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } UI.toggleSettings(); },
     
-    // --- FUNCIÓN DE DESCARGA DIRECTA WEB ---
+    // --- FUNCIÓN DE DESCARGA DIRECTA WEB (AJUSTE QUIRÚRGICO URL) ---
     downloadSetup: () => {
-        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper.Setup.exe';
+        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
         const link = document.createElement('a');
         link.href = directUrl;
         link.download = 'CananTyper_Setup.exe';

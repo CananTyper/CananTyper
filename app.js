@@ -24,7 +24,7 @@ try {
     console.log('⏳ Intentando conectar con Discord... (ID: ' + clientId + ')');
     
     discordClient.login({ clientId }).catch((err) => {
-        console.error("\n❌ Error de Login en Discord (Asegúrate de que Discord esté abierto):", err.message);
+        console.error("\n❌ Error de Login en Discord:", err.message);
     });
 } catch (e) {
     console.error("❌ Error fatal cargando la librería RPC:", e.message);
@@ -68,7 +68,7 @@ app.whenReady().then(() => {
     createWindow();
 
     // --- 4. SISTEMA DE ACTUALIZACIONES AUTOMÁTICAS ---
-    // Inicia la búsqueda de parches 3 segundos después de abrir para no congelar el arranque
+    // Inicia la búsqueda de parches 3 segundos después de abrir
     setTimeout(() => {
         try {
             autoUpdater.checkForUpdatesAndNotify();
@@ -76,7 +76,7 @@ app.whenReady().then(() => {
     }, 3000);
 });
 
-// Eventos del Auto-Updater
+// Eventos del Auto-Updater hacia la Interfaz
 autoUpdater.on('update-available', () => {
     if (mainWindow) mainWindow.webContents.send('update-status', 'downloading');
 });
@@ -85,7 +85,6 @@ autoUpdater.on('update-downloaded', () => {
     if (mainWindow) mainWindow.webContents.send('update-status', 'ready');
 });
 
-// Escuchamos cuando el usuario hace clic en "APLICAR ACTUALIZACIÓN"
 ipcMain.on('apply-update', () => {
     autoUpdater.quitAndInstall();
 });
