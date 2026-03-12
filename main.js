@@ -1,10 +1,9 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.0.6 (Paquete Competitivo)
+    Capitán del Código: Ángel | Versión 1.0.7 (Parche Quirúrgico)
 */
 
-// 1. CONFIGURACIÓN DE ENTORNO E IDENTIFICACIÓN
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
 let currentApiKey = "AIzaSyDWtm9wGj5mOYT1CIz2jugteKrJoMDUhiw"; 
 let ipcRenderer = null;
@@ -18,30 +17,23 @@ if (isDesktopEnv) {
 }
 
 function updateDiscordStatus(details, state, showTimer = true) {
-    if (ipcRenderer) {
-        ipcRenderer.send('update-discord', { details, state, showTimer });
-    }
+    if (ipcRenderer) ipcRenderer.send('update-discord', { details, state, showTimer });
 }
 
-// 2. CONFIGURACIÓN FIREBASE
 const firebaseConfig = {
-    apiKey: currentApiKey,
-    authDomain: "canantyper.firebaseapp.com",
-    projectId: "canantyper",
-    storageBucket: "canantyper.firebasestorage.app",
-    messagingSenderId: "55384940628",
-    appId: "1:55384940628:web:6211a5e6c8bc36694e8dc1"
+    apiKey: currentApiKey, authDomain: "canantyper.firebaseapp.com",
+    projectId: "canantyper", storageBucket: "canantyper.firebasestorage.app",
+    messagingSenderId: "55384940628", appId: "1:55384940628:web:6211a5e6c8bc36694e8dc1"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
-// 3. CORE DE DATOS (CT)
 const CT = {
     data: { u: [], s: [], p: [], c: [], a: [], ui: null, maint: null }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-    currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null,
+    currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
     dbLocal: (k) => CT.data[k] || [], 
     
@@ -51,12 +43,15 @@ const CT = {
         this.currentUnit = storedUnit;
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
+        this.fastMode = localStorage.getItem('ct_fast_mode') === 'true';
+
         const cU = localStorage.getItem('ct_cache_u'); const cS = localStorage.getItem('ct_cache_s');
         const cP = localStorage.getItem('ct_cache_p'); const cC = localStorage.getItem('ct_cache_c');
         if(cU) this.data.u = JSON.parse(cU); if(cS) this.data.s = JSON.parse(cS);
         if(cP) this.data.p = JSON.parse(cP); if(cC) this.data.c = JSON.parse(cC);
 
         UI.updateUnitVisuals(this.currentUnit);
+        UI.updateFastModeVisuals();
         
         if (!isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
@@ -71,12 +66,8 @@ const CT = {
             UI.checkMaintenance();
         });
 
-        if(this.ses()) { 
-            UI.initLobby(); 
-        } else { 
-            UI.show('auth-screen'); 
-            updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false);
-        }
+        if(this.ses()) { UI.initLobby(); } 
+        else { UI.show('auth-screen'); updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
 
         db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); UI.refreshActiveViews(); });
         db.collection('scores').onSnapshot(snap => { this.data.s = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_s', JSON.stringify(this.data.s)); UI.refreshActiveViews(); });
@@ -90,13 +81,7 @@ const CT = {
             if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General"}); }
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.refreshActiveViews(); 
         });
-        
-        // REPARACIÓN QUIRÚRGICA: SISTEMA DE ANUNCIOS
-        db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { 
-            this.data.a = snap.docs.map(d => d.data()); 
-            UI.checkAnnouncements(); 
-            UI.refreshActiveViews(); 
-        });
+        db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
 
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
@@ -137,22 +122,23 @@ const CT = {
                 't_trk_back': { l: 'Pista Volver', v: '← Categorías' }, 't_lbl_st_p_best_avg': { l: 'Est P. Prom G.', v: 'PROM. GENERAL' },
                 't_lbl_st_p_last10_avg': { l: 'Est P. Prom 10', v: 'PROM. ÚLT. 10' }, 't_lbl_st_p_best_cat': { l: 'Est P. Mejor Cat', v: 'MEJOR CATEGORÍA' },
                 't_lbl_st_p_tot': { l: 'Est P. Totales', v: 'CARRERAS TOTALES' },
-                
-                // --- NUEVA TANDA LÉXICO (FASE COMPETITIVA v1.0.6) ---
-                't_btn_hardcore': { l: 'Btn Hardcore', v: 'HARDCORE 💀' },
-                't_btn_train_menu': { l: 'Btn Entrenar', v: 'ENTRENAR 🏋️' },
-                't_btn_tr_purge': { l: 'Btn Purgar', v: '🔥 Purgar Errores' },
-                't_btn_tr_ext': { l: 'Btn Extremo', v: '⚡ Pistas Extremas' },
-                't_st_tab_hc': { l: 'Tab. Hardcore', v: 'Hardcore 💀' },
-                't_lbl_hc_rec': { l: 'HC. Récord', v: 'RÉCORD HARDCORE' },
-                't_lbl_hc_surv': { l: 'HC. Supervivencia', v: 'CARRERAS SUPERVIVIDAS' },
-                't_lbl_hc_death': { l: 'HC. Muertes', v: 'MUERTES SÚBITAS' },
-                't_lbl_hc_rate': { l: 'HC. Tasa', v: 'TASA DE MORTALIDAD' },
-                't_hc_title_1': { l: 'HC. Titulo Tabla 1', v: 'Mejores Sobrevividas (Top 10)' },
-                't_hc_title_2': { l: 'HC. Titulo Tabla 2', v: 'Pistas más Mortales' },
-                't_trk_fav_filter': { l: 'Pista Favoritos', v: '⭐ Ver Favoritos' },
-                't_game_dead_title': { l: 'Juego. Muerte', v: 'HAS MUERTO' },
-                't_game_dead_sub': { l: 'Juego. Muerte Sub', v: 'Un error es letal en Hardcore.' }
+                't_btn_hardcore': { l: 'Btn Hardcore', v: 'HARDCORE 💀' }, 't_btn_train_menu': { l: 'Btn Entrenar', v: 'ENTRENAR 🏋️' },
+                't_btn_tr_purge': { l: 'Btn Purgar', v: '🔥 Purgar Errores' }, 't_btn_tr_ext': { l: 'Btn Extremo', v: '⚡ Pistas Extremas' },
+                't_st_tab_hc': { l: 'Tab. Hardcore', v: 'Hardcore 💀' }, 't_lbl_hc_rec': { l: 'HC. Récord', v: 'RÉCORD HARDCORE' },
+                't_lbl_hc_surv': { l: 'HC. Supervivencia', v: 'CARRERAS SUPERVIVIDAS' }, 't_lbl_hc_death': { l: 'HC. Muertes', v: 'MUERTES SÚBITAS' },
+                't_lbl_hc_rate': { l: 'HC. Tasa', v: 'TASA DE MORTALIDAD' }, 't_hc_title_1': { l: 'HC. Tit Tabla 1', v: 'Mejores Sobrevividas (Top 10)' },
+                't_hc_title_2': { l: 'HC. Tit Tabla 2', v: 'Pistas más Mortales (Top 10)' }, 't_trk_fav_filter': { l: 'Pista Favoritos', v: '⭐ Ver Favoritos' },
+                't_game_dead_title': { l: 'Juego. Muerte', v: 'HAS MUERTO' }, 't_game_dead_sub': { l: 'Juego. Muerte Sub', v: 'Un error es letal en Hardcore.' },
+                // --- NUEVA TANDA LÉXICO (FASE 1.0.7) ---
+                't_sett_fast': { l: 'Aj. Modo Rápido', v: '⚡ Modo Rápido:' },
+                't_sett_fast_on': { l: 'Aj. Modo Ráp. SI', v: 'SI' },
+                't_sett_fast_off': { l: 'Aj. Modo Ráp. NO', v: 'NO' },
+                't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' },
+                't_adm_trn_title': { l: 'Admin Trn Titulo', v: 'Laboratorio de Entrenamiento' },
+                't_adm_trn_sub': { l: 'Admin Trn Sub', v: 'Añade textos extremos y trabalenguas' },
+                't_adm_trn_btn': { l: 'Admin Trn Btn', v: 'GUARDAR TEXTO EXTREMO' },
+                't_btn_pin_on': { l: 'Pista Fijado', v: '📌 FIJADO' },
+                't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -161,7 +147,6 @@ const CT = {
     ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (CT.data.u || []).find(x => x.h === s.h) : null; }
 };
 
-// 4. INTERFAZ DE USUARIO (UI)
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null, lexiconPage: 0, filterFavs: false,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, 
@@ -236,6 +221,7 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
+                else if(k === 't_sett_fast' || k === 't_sett_fast_on' || k === 't_sett_fast_off' || k === 't_btn_pin_on' || k === 't_btn_pin_off') { /* handled via code */ }
                 else { el.innerText = CT.data.ui[k].v; }
             }
         });
@@ -244,7 +230,7 @@ const UI = {
     renderPersonalStats() {
         const u = CT.ses(); if(!u) return;
         const userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
-        const userScores = CT.dbLocal('s').filter(s => s.h === u.h && !s.hc); // No incluir hardcore aquí
+        const userScores = CT.dbLocal('s').filter(s => s.h === u.h && !s.hc); 
         document.querySelectorAll('.st-p-owner').forEach(el => el.innerText = userDoc.n);
         document.getElementById('st-p-total-races').innerText = userScores.length;
         
@@ -260,7 +246,6 @@ const UI = {
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
 
-        // MAPA DE CALOR
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
         document.querySelectorAll('kbd[data-key]').forEach(el => {
@@ -373,9 +358,11 @@ const UI = {
         document.documentElement.setAttribute('data-theme', unit);
         document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
         const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
-        const label = unit === 'zen' ? 'CPM (ZEN)' : unit.toUpperCase();
+        
+        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
         const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel'];
         thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; document.getElementById(id).classList.add('active-unit'); } });
+        
         if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
@@ -385,6 +372,20 @@ const UI = {
         if(document.getElementById('lbl-st-g-avg')) document.getElementById('lbl-st-g-avg').innerText = 'PROMEDIO SERVIDOR ' + label;
         if(document.getElementById('lbl-st-g-record')) document.getElementById('lbl-st-g-record').innerText = 'RÉCORD ABSOLUTO ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
+    },
+
+    updateFastModeVisuals: () => {
+        const textLabel = CT.data.ui && CT.data.ui['t_sett_fast'] ? CT.data.ui['t_sett_fast'].v : '⚡ Modo Rápido:';
+        const onVal = CT.data.ui && CT.data.ui['t_sett_fast_on'] ? CT.data.ui['t_sett_fast_on'].v : 'SI';
+        const offVal = CT.data.ui && CT.data.ui['t_sett_fast_off'] ? CT.data.ui['t_sett_fast_off'].v : 'NO';
+        const btn = document.getElementById('btn-fast-mode');
+        if(btn) btn.innerText = `${textLabel} ${CT.fastMode ? onVal : offVal}`;
+    },
+
+    toggleFastMode: () => {
+        CT.fastMode = !CT.fastMode;
+        localStorage.setItem('ct_fast_mode', CT.fastMode);
+        UI.updateFastModeVisuals();
     },
 
     updateCategorySelects() {
@@ -467,9 +468,9 @@ const UI = {
 
     switchTab(tab) {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`pane-${tab}`).classList.remove('hidden');
-        let btnId = 't-' + tab.substring(0,2); if (tab === 'create') btnId = 't-cr'; if (tab === 'announcements') btnId = 't_tab_ann'; if (tab === 'lexicon') btnId = 't_tab_lex'; if (tab === 'server') btnId = 't_tab_srv'; if (tab === 'users') btnId = 't_tab_usr'; if (tab === 'races') btnId = 't_tab_rac'; if (tab === 'phrases') btnId = 't_tab_txt'; if (tab === 'create') btnId = 't_tab_cre';
+        let btnId = 't-' + tab.substring(0,2); if (tab === 'create') btnId = 't-cr'; if (tab === 'announcements') btnId = 't_tab_ann'; if (tab === 'lexicon') btnId = 't_tab_lex'; if (tab === 'server') btnId = 't_tab_srv'; if (tab === 'users') btnId = 't_tab_usr'; if (tab === 'races') btnId = 't_tab_rac'; if (tab === 'phrases') btnId = 't_tab_txt'; if (tab === 'create') btnId = 't_tab_cre'; if (tab === 'training') btnId = 't_tab_trn';
         const activeTabBtn = document.getElementById(btnId); if(activeTabBtn) activeTabBtn.classList.add('active');
-        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); }
+        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { this.renderAdminTrn(); }
     },
 
     renderAdminAnn() {
@@ -501,16 +502,16 @@ const UI = {
         if (query) {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.add('hidden');
             let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 400px;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
-            let cats = CT.dbLocal('c'); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
+            let cats = CT.dbLocal('c').filter(c => c.name !== '[ENTRENAMIENTO]'); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
             document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat); const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><span><b style="color:var(--p)">#${t.title}</b></span><div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline" style="margin-right:10px;">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 400px;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         }
     },
@@ -518,6 +519,11 @@ const UI = {
     prepEdit(idStr) { const pList = CT.dbLocal('p'); const idx = pList.findIndex(t => t.id.toString() === idStr.toString()); if(idx === -1) return; UI.updateCategorySelects(); document.getElementById('phrase-title').value = pList[idx].title; document.getElementById('phrase-category').value = pList[idx].c || 'General'; document.getElementById('phrase-input').value = pList[idx].text; CT.editIdx = idx; document.getElementById('admin-phrase-form').classList.remove('hidden'); },
     cancelEditP() { CT.editIdx = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('phrase-title').value = ''; document.getElementById('phrase-input').value = ''; },
     delP: (idStr) => { if(confirm("¿Eliminar texto?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
+
+    renderAdminTrn() {
+        let tracks = CT.dbLocal('p').filter(t => t.c === '[ENTRENAMIENTO]');
+        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item" style="border-color:#ffd700;"><div style="display:flex; flex-direction:column; gap:4px;"><span><b style="color:#ffd700">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 400px;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+    },
 
     renderAdminR() {
         const scores = CT.dbLocal('s'); const query = (document.getElementById('race-search').value || "").toLowerCase(); let filtered = scores.filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query)); filtered.sort((a,b) => b.id - a.id);
@@ -542,7 +548,9 @@ const UI = {
         document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
         const tracks = CT.dbLocal('p'); const cats = CT.dbLocal('c'); let catCounts = {}; 
         tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
-        let html = `<div class="cat-card" onclick="UI.toggleFavFilter()" style="border-color: #ffd700;"><h3 style="color:#ffd700"><span id="t_trk_fav_filter">⭐ Ver Favoritos</span></h3><span>Pistas Guardadas</span></div>`;
+        
+        let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
+        let html = `<div class="cat-card" onclick="UI.toggleFavFilter()" style="border-color: #ffd700;"><h3 style="color:#ffd700"><span>${t_fav}</span></h3><span style="color:var(--text-main)">Pistas Guardadas</span></div>`;
         html += cats.filter(c => c.name !== '[ENTRENAMIENTO]').map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         document.getElementById('track-category-view').innerHTML = html;
     },
@@ -566,13 +574,16 @@ const UI = {
             filtered = tracks.filter(t => (t.c || 'General') === UI.activeTrackCat); 
         }
         
+        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '📌 FIJADO';
+        let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '📌 FIJAR';
+
         const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
         document.getElementById('track-list-full').innerHTML = pageData.map(t => {
             let isFav = favs.includes(t.id.toString());
             return `<div class="track-card" onclick="App.startRaceWithTrack('${t.id}')">
-                <div class="track-card-id" style="display:flex; flex-direction:column; gap:5px;">
+                <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px;">
                     #${t.title}
-                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="ghost-btn" style="font-size:1.2rem; align-self:center;">${isFav ? '⭐' : '☆'}</button>
+                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="btn-outline" style="align-self:center; font-size:0.6rem; padding:4px 8px; ${isFav ? 'border-color:#ffd700; color:#ffd700;' : ''}">${isFav ? textPinOn : textPinOff}</button>
                 </div>
                 <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${t.c || 'General'}]</span></div>
             </div>`;
@@ -649,7 +660,7 @@ const App = {
 
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
     retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
-    nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else App.startRandomRace(); } },
+    nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else if (m === 'training') App.startPurge(); else App.startRandomRace(); } },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
     toggleFav: (idStr) => {
@@ -658,7 +669,7 @@ const App = {
         if (favs.includes(idStr.toString())) { favs = favs.filter(f => f !== idStr.toString()); } 
         else { favs.push(idStr.toString()); }
         db.collection('users').doc(u.h).update({ favs: favs });
-        UI.renderTrackList(); // Rerender instantaneo
+        UI.renderTrackList(); 
     },
 
     handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
@@ -692,6 +703,8 @@ const App = {
     deleteCategory: () => { const sel = document.getElementById('delete-cat-select'); const catName = sel.value; if(!catName) return; if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { db.collection('categories').doc(catName).delete(); let pList = CT.dbLocal('p'); let updated = false; pList.forEach(p => { if (p.c === catName) { p.c = 'General'; updated = true; db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); } }); if (updated) CT.save('p', pList); alert("Categoría eliminada con éxito."); } },
     createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto."); const idStr = titleInp.value.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito."); },
 
+    createTrnPhrase: () => { const titleInp = document.getElementById('trn-title'); const textInp = document.getElementById('trn-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: '[ENTRENAMIENTO]', text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto Extremo Guardado."); },
+
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     login: async () => { const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists && docRef.data().p === p) { localStorage.setItem('ct_ses', JSON.stringify({h: handle})); if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); UI.initLobby(); } else { alert("Usuario o contraseña incorrectos"); } } catch(e) { console.error("Error en login:", e); alert("Fallo de conexión a la base de datos"); } },
     register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
@@ -706,7 +719,7 @@ class Engine {
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
         this.i = 0; this.c = 0; this.s = null; this.timer = null; 
         
-        this.mode = mode; // normal, hardcore, training
+        this.mode = mode; 
         this.ghostCPM = ghostCPM;
         
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
@@ -726,6 +739,9 @@ class Engine {
         document.getElementById('target-text').innerHTML = this.w.map((w,idx) => `<span class="word ${idx===0?'active':''}">${w}</span>`).join(' '); 
         document.getElementById('game-timer').innerText = '0s';
         document.getElementById('game-speed-display').innerText = '0';
+        
+        // LIMPIEZA DE BLUR AL INICIAR
+        document.getElementById('final-speed-display').classList.remove('val-blurrable');
         
         document.getElementById('race-progress').style.width = '0%';
         document.getElementById('ghost-progress').style.width = '0%';
@@ -759,7 +775,6 @@ class Engine {
                     const currentCPM = Math.round(this.c/(sec/60));
                     document.getElementById('game-speed-display').innerText = UI.formatValue(currentCPM);
                 }
-                // Ghost Progress
                 if (this.ghostCPM > 0) {
                     const totalChars = this.t.length;
                     const ghostCharsExpected = (this.ghostCPM / 60) * sec;
@@ -780,6 +795,11 @@ class Engine {
         let addedChar = v.length > this.lastV.length;
         
         if (!isPrefixValid && addedChar) {
+            // MODO RÁPIDO (AUTO-NEXT)
+            if (CT.fastMode && this.mode !== 'hardcore') {
+                App.nextRace(); return;
+            }
+
             // HARDCORE KILL SWITCH
             if (this.mode === 'hardcore') {
                 this.die(); return;
@@ -842,7 +862,7 @@ class Engine {
         }
         
         document.getElementById('game-result-modal').classList.remove('hidden');
-        setTimeout(() => { document.body.style.backgroundColor = ''; }, 1500); // Fadeout del rojo
+        setTimeout(() => { document.body.style.backgroundColor = ''; }, 1500); 
     }
 
     end() { 
@@ -854,22 +874,28 @@ class Engine {
         document.getElementById('game-input').classList.add('hidden');
         document.getElementById('in-game-controls').classList.add('hidden');
         
-        const finalUnitLabel = CT.currentUnit === 'zen' ? 'CPM (ZEN)' : CT.currentUnit.toUpperCase();
+        const finalUnitLabel = CT.currentUnit === 'zen' ? 'ZEN' : CT.currentUnit.toUpperCase();
         const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
         
         updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
-        document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
+        
+        const speedDisplayEl = document.getElementById('final-speed-display');
+        speedDisplayEl.innerText = finalSpeedValue + " " + finalUnitLabel;
+        
+        // EFECTO BLUR MODO ZEN
+        if (CT.currentUnit === 'zen') {
+            speedDisplayEl.classList.add('val-blurrable');
+        }
         
         if (this.mode === 'training') {
             document.getElementById('game-result-modal').classList.remove('hidden');
-            return; // CORTAMOS EL CABLE A FIREBASE EN MODO ENTRENAMIENTO
+            return; 
         }
 
         const u = CT.ses(); 
         if(u) {
             let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
             
-            // PB check (separa normal de hardcore)
             let arrRef = this.mode === 'hardcore' ? (userDoc.hi_hc || []) : (userDoc.hi || []);
             const previousBest = arrRef.length > 0 ? Math.max(...arrRef) : 0;
             if(finalCPM > previousBest && arrRef.length > 0) { document.getElementById('pb-alert').classList.remove('hidden'); }
