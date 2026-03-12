@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.0.7 (Parche Quirúrgico)
+    Capitán del Código: Ángel | Versión 1.0.8 (Modularidad & UI)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -52,6 +52,7 @@ const CT = {
 
         UI.updateUnitVisuals(this.currentUnit);
         UI.updateFastModeVisuals();
+        UI.applySavedTheme();
         
         if (!isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
@@ -79,7 +80,7 @@ const CT = {
         db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
             if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General"}); }
-            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.refreshActiveViews(); 
+            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.renderTrainDropdown(); UI.refreshActiveViews(); 
         });
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
 
@@ -105,40 +106,45 @@ const CT = {
                 't_st_e_top1': { l: 'Est. Más Top 1', v: 'MÁS VECES TOP 1' }, 't_adm_ann_send': { l: 'Anun. Título', v: 'Enviar Anuncio' }, 
                 't_adm_ann_sub': { l: 'Anun. Sub', v: 'Pop-Up de vista única' }, 't_adm_ann_btn': { l: 'Anun. Botón', v: 'PUBLICAR ANUNCIO' }, 
                 't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' }, 't_adm_srv_title': { l: 'Srv. Título', v: 'Estado del Servidor' }, 
-                't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Activa el Kill Switch para bloquear el acceso a usuarios comunes.' },
-                't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel de Bloqueo' }, 't_adm_srv_btn': { l: 'Srv. Guardar', v: 'GUARDAR CARTEL' },
-                't_adm_cre_btn_t': { l: 'Crear. Btn Texto', v: 'TEXTO' }, 't_adm_cre_btn_c': { l: 'Crear. Btn Cat', v: 'CATEGORÍA' },
-                't_adm_cre_btn_s': { l: 'Crear. Btn Guardar', v: 'GUARDAR TEXTO' }, 't_adm_cre_cat_t1': { l: 'Crear. Cat Titulo', v: 'Crear Categoría' },
-                't_adm_cre_cat_b1': { l: 'Crear. Cat Btn', v: 'CREAR CATEGORÍA' }, 't_adm_cre_cat_t2': { l: 'Crear. Elim Titulo', v: 'Eliminar Categoría' },
-                't_adm_cre_cat_b2': { l: 'Crear. Elim Btn', v: 'ELIMINAR' }, 't_game_time': { l: 'Juego. Tiempo', v: 'TIEMPO' },
-                't_game_pb': { l: 'Juego. Record', v: '👑 ¡NUEVO RÉCORD PERSONAL!' }, 't_crop_title': { l: 'Recorte. Título', v: 'Ajusta tu foto' },
-                't_crop_sub': { l: 'Recorte. Sub', v: 'Arrastra y usa el zoom.' }, 't_crop_btn_s': { l: 'Recorte. Guardar', v: 'Guardar' },
-                't_crop_btn_c': { l: 'Recorte. Cancelar', v: 'Cancelar' }, 't_st_p_heat': { l: 'Est P. Teclado', v: 'MAPA DE CALOR: TECLAS CRÍTICAS' },
-                't_st_p_worst_txt': { l: 'Est P. Peor Txt', v: 'Textos a Mejorar (Bottom 5)' }, 't_st_p_worst_wrd': { l: 'Est P. Peor Pal', v: 'Palabras Críticas (Top 30)' },
-                'th_st_p_avg': { l: 'Est P. TH Prom', v: 'PROM.' }, 'th_st_p_err': { l: 'Est P. TH Err', v: 'ERRORES' },
-                't_sett_full': { l: 'Aj. Pantalla', v: '⛶ Pantalla Completa' }, 't_sett_down': { l: 'Aj. Descarga', v: '⬇️ Descargar App (PC)' },
-                't_sett_clear': { l: 'Aj. Cache', v: '🧹 Limpiar Caché Local' }, 't_prof_edit_n': { l: 'Prof. Edit Nom', v: 'Nombre' },
-                't_prof_edit_i': { l: 'Prof. Edit Img', v: 'Imagen' }, 't_trk_search': { l: 'Pista Buscar', v: 'Buscar texto por ID o palabras...' },
-                't_trk_back': { l: 'Pista Volver', v: '← Categorías' }, 't_lbl_st_p_best_avg': { l: 'Est P. Prom G.', v: 'PROM. GENERAL' },
-                't_lbl_st_p_last10_avg': { l: 'Est P. Prom 10', v: 'PROM. ÚLT. 10' }, 't_lbl_st_p_best_cat': { l: 'Est P. Mejor Cat', v: 'MEJOR CATEGORÍA' },
-                't_lbl_st_p_tot': { l: 'Est P. Totales', v: 'CARRERAS TOTALES' },
+                't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Bloqueo maestro' }, 't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel' }, 
+                't_adm_srv_btn': { l: 'Srv. Guardar', v: 'GUARDAR CARTEL' }, 't_adm_cre_btn_t': { l: 'Crear. Btn Texto', v: 'TEXTO' }, 
+                't_adm_cre_btn_c': { l: 'Crear. Btn Cat', v: 'CATEGORÍA' }, 't_adm_cre_btn_s': { l: 'Crear. Btn Guardar', v: 'GUARDAR TEXTO' }, 
+                't_adm_cre_cat_t1': { l: 'Crear. Cat Titulo', v: 'Crear Categoría' }, 't_adm_cre_cat_b1': { l: 'Crear. Cat Btn', v: 'CREAR CATEGORÍA' }, 
+                't_adm_cre_cat_t2': { l: 'Crear. Elim Titulo', v: 'Eliminar Categoría' }, 't_adm_cre_cat_b2': { l: 'Crear. Elim Btn', v: 'ELIMINAR' }, 
+                't_game_time': { l: 'Juego. Tiempo', v: 'TIEMPO' }, 't_game_pb': { l: 'Juego. Record', v: '👑 ¡NUEVO RÉCORD PERSONAL!' }, 
+                't_crop_title': { l: 'Recorte. Título', v: 'Ajusta tu foto' }, 't_crop_sub': { l: 'Recorte. Sub', v: 'Arrastra y usa el zoom.' }, 
+                't_crop_btn_s': { l: 'Recorte. Guardar', v: 'Guardar' }, 't_crop_btn_c': { l: 'Recorte. Cancelar', v: 'Cancelar' }, 
+                't_st_p_heat': { l: 'Est P. Teclado', v: 'MAPA DE CALOR: TECLAS CRÍTICAS' }, 't_st_p_worst_txt': { l: 'Est P. Peor Txt', v: 'Textos a Mejorar (Bottom 5)' }, 
+                't_st_p_worst_wrd': { l: 'Est P. Peor Pal', v: 'Palabras Críticas (Top 30)' }, 'th_st_p_avg': { l: 'Est P. TH Prom', v: 'PROM.' }, 
+                'th_st_p_err': { l: 'Est P. TH Err', v: 'ERRORES' }, 't_sett_full': { l: 'Aj. Pantalla', v: '⛶ Pantalla Completa' }, 
+                't_sett_down': { l: 'Aj. Descarga', v: '⬇️ Descargar App (PC)' }, 't_sett_clear': { l: 'Aj. Cache', v: '🧹 Limpiar Caché Local' }, 
+                't_prof_edit_n': { l: 'Prof. Edit Nom', v: 'Nombre' }, 't_prof_edit_i': { l: 'Prof. Edit Img', v: 'Imagen' }, 
+                't_trk_search': { l: 'Pista Buscar', v: 'Buscar texto por ID o palabras...' }, 't_trk_back': { l: 'Pista Volver', v: '← Categorías' }, 
+                't_lbl_st_p_best_avg': { l: 'Est P. Prom G.', v: 'PROM. GENERAL' }, 't_lbl_st_p_last10_avg': { l: 'Est P. Prom 10', v: 'PROM. ÚLT. 10' }, 
+                't_lbl_st_p_best_cat': { l: 'Est P. Mejor Cat', v: 'MEJOR CATEGORÍA' }, 't_lbl_st_p_tot': { l: 'Est P. Totales', v: 'CARRERAS TOTALES' },
                 't_btn_hardcore': { l: 'Btn Hardcore', v: 'HARDCORE 💀' }, 't_btn_train_menu': { l: 'Btn Entrenar', v: 'ENTRENAR 🏋️' },
-                't_btn_tr_purge': { l: 'Btn Purgar', v: '🔥 Purgar Errores' }, 't_btn_tr_ext': { l: 'Btn Extremo', v: '⚡ Pistas Extremas' },
-                't_st_tab_hc': { l: 'Tab. Hardcore', v: 'Hardcore 💀' }, 't_lbl_hc_rec': { l: 'HC. Récord', v: 'RÉCORD HARDCORE' },
-                't_lbl_hc_surv': { l: 'HC. Supervivencia', v: 'CARRERAS SUPERVIVIDAS' }, 't_lbl_hc_death': { l: 'HC. Muertes', v: 'MUERTES SÚBITAS' },
-                't_lbl_hc_rate': { l: 'HC. Tasa', v: 'TASA DE MORTALIDAD' }, 't_hc_title_1': { l: 'HC. Tit Tabla 1', v: 'Mejores Sobrevividas (Top 10)' },
-                't_hc_title_2': { l: 'HC. Tit Tabla 2', v: 'Pistas más Mortales (Top 10)' }, 't_trk_fav_filter': { l: 'Pista Favoritos', v: '⭐ Ver Favoritos' },
-                't_game_dead_title': { l: 'Juego. Muerte', v: 'HAS MUERTO' }, 't_game_dead_sub': { l: 'Juego. Muerte Sub', v: 'Un error es letal en Hardcore.' },
-                // --- NUEVA TANDA LÉXICO (FASE 1.0.7) ---
-                't_sett_fast': { l: 'Aj. Modo Rápido', v: '⚡ Modo Rápido:' },
-                't_sett_fast_on': { l: 'Aj. Modo Ráp. SI', v: 'SI' },
-                't_sett_fast_off': { l: 'Aj. Modo Ráp. NO', v: 'NO' },
-                't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' },
-                't_adm_trn_title': { l: 'Admin Trn Titulo', v: 'Laboratorio de Entrenamiento' },
-                't_adm_trn_sub': { l: 'Admin Trn Sub', v: 'Añade textos extremos y trabalenguas' },
-                't_adm_trn_btn': { l: 'Admin Trn Btn', v: 'GUARDAR TEXTO EXTREMO' },
-                't_btn_pin_on': { l: 'Pista Fijado', v: '📌 FIJADO' },
-                't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' }
+                't_btn_tr_purge': { l: 'Btn Purgar', v: '🔥 Purgar Errores' }, 't_st_tab_hc': { l: 'Tab. Hardcore', v: 'Hardcore 💀' }, 
+                't_lbl_hc_rec': { l: 'HC. Récord', v: 'RÉCORD HARDCORE' }, 't_lbl_hc_surv': { l: 'HC. Supervivencia', v: 'CARRERAS SUPERVIVIDAS' }, 
+                't_lbl_hc_death': { l: 'HC. Muertes', v: 'MUERTES SÚBITAS' }, 't_lbl_hc_rate': { l: 'HC. Tasa', v: 'TASA DE MORTALIDAD' }, 
+                't_hc_title_1': { l: 'HC. Tit Tabla 1', v: 'Mejores Sobrevividas (Top 10)' }, 't_hc_title_2': { l: 'HC. Tit Tabla 2', v: 'Pistas más Mortales (Top 10)' }, 
+                't_trk_fav_filter': { l: 'Pista Favoritos', v: '⭐ Ver Favoritos' }, 't_game_dead_title': { l: 'Juego. Muerte', v: 'HAS MUERTO' }, 
+                't_game_dead_sub': { l: 'Juego. Muerte Sub', v: 'Un error es letal en Hardcore.' }, 't_sett_fast': { l: 'Aj. Modo Rápido', v: '⚡ Modo Rápido:' },
+                't_sett_fast_on': { l: 'Aj. Modo Ráp. SI', v: 'SI' }, 't_sett_fast_off': { l: 'Aj. Modo Ráp. NO', v: 'NO' },
+                't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' }, 't_btn_pin_on': { l: 'Pista Fijado', v: '📌 FIJADO' },
+                't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' },
+                // --- NUEVA TANDA LÉXICO (FASE 1.0.8) ---
+                't_theme_btn': { l: 'Aj. Tema Btn', v: '🎨 Personalizar' },
+                't_theme_title': { l: 'Tema Título', v: 'Personalizar Tema' },
+                't_theme_save': { l: 'Tema Guardar', v: 'Guardar' },
+                't_theme_reset': { l: 'Tema Reset', v: 'Restaurar' },
+                't_trn_tab_cre': { l: 'Trn Tab Crear', v: 'CREAR' },
+                't_trn_tab_ed': { l: 'Trn Tab Edit', v: 'EDITAR' },
+                't_trn_tab_cat': { l: 'Trn Tab Mods', v: 'MODALIDADES' },
+                't_trn_cre_btn': { l: 'Trn Crear Btn', v: 'GUARDAR PISTA DE ENTRENAMIENTO' },
+                't_trn_mod_cre': { l: 'Trn Mod Crear', v: 'CREAR MODALIDAD' },
+                't_trn_mod_del': { l: 'Trn Mod Elim', v: 'ELIMINAR' },
+                't_trn_mod_t1': { l: 'Trn Titulo C1', v: 'Nueva Modalidad' },
+                't_trn_mod_t2': { l: 'Trn Titulo C2', v: 'Eliminar Modalidad' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -184,6 +190,7 @@ const UI = {
         const adminBtn = document.getElementById('btn-nav-admin'); if(adminBtn) adminBtn.classList.toggle('hidden', u.r !== 'admin');
         UI.updateUnitVisuals(CT.currentUnit); 
         this.renderGlobal(); 
+        UI.renderTrainDropdown();
         this.show('home-screen');
         this.checkAnnouncements();
     },
@@ -221,7 +228,7 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(k === 't_sett_fast' || k === 't_sett_fast_on' || k === 't_sett_fast_off' || k === 't_btn_pin_on' || k === 't_btn_pin_off') { /* handled via code */ }
+                else if(k === 't_sett_fast' || k === 't_sett_fast_on' || k === 't_sett_fast_off' || k === 't_btn_pin_on' || k === 't_btn_pin_off') { /* dinámico via JS */ }
                 else { el.innerText = CT.data.ui[k].v; }
             }
         });
@@ -344,7 +351,7 @@ const UI = {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
-        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminAnn(); UI.renderAdminLexicon(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); UI.renderAdminServerConfig(); }
+        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminAnn(); UI.renderAdminLexicon(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); UI.renderAdminServerConfig(); UI.renderAdminTrn(); }
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(UI.activeTrackCat || UI.filterFavs) UI.renderTrackList(); else UI.showTrackCategorySelect(); }
         if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-general').classList.contains('hidden')) UI.renderGlobalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) UI.renderEliteStats(); else UI.renderHardcoreStats(); }
     },
@@ -390,10 +397,29 @@ const UI = {
 
     updateCategorySelects() {
         const cats = CT.dbLocal('c'); const options = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        
         const createSel = document.getElementById('new-phrase-category'); const editSel = document.getElementById('phrase-category'); const deleteSel = document.getElementById('delete-cat-select');
         if(createSel) createSel.innerHTML = options;
         if(editSel) { const currentVal = editSel.value; editSel.innerHTML = options; editSel.value = currentVal || (cats[0] ? cats[0].name : ''); }
-        if(deleteSel) { deleteSel.innerHTML = cats.filter(c => c.name !== 'General' && c.name !== '[ENTRENAMIENTO]').map(c => `<option value="${c.name}">${c.name}</option>`).join(''); }
+        if(deleteSel) { deleteSel.innerHTML = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).map(c => `<option value="${c.name}">${c.name}</option>`).join(''); }
+
+        // Training Specific Selects
+        const trnCats = cats.filter(c => c.name.startsWith('[TRN]'));
+        const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
+        const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
+        const trnDelCatSel = document.getElementById('trn-delete-cat-select'); if(trnDelCatSel) trnDelCatSel.innerHTML = trnOptions;
+    },
+
+    renderTrainDropdown() {
+        const tPurge = CT.data.ui && CT.data.ui['t_btn_tr_purge'] ? CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
+        let html = `<button onclick="App.startPurge()">${tPurge}</button>`;
+        const trnCats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
+        trnCats.forEach(c => {
+            const cleanName = c.name.replace('[TRN] ', '');
+            html += `<button onclick="App.startTrnCategory('${c.name}')">⚡ ${cleanName}</button>`;
+        });
+        const drp = document.getElementById('train-dropdown');
+        if(drp) drp.innerHTML = html;
     },
 
     renderGlobal() {
@@ -457,6 +483,25 @@ const UI = {
     toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
     toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
     toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
+    
+    openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); UI.toggleSettings(); },
+    closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
+
+    applySavedTheme: () => {
+        const customTheme = localStorage.getItem('ct_custom_theme');
+        if (customTheme) {
+            const t = JSON.parse(customTheme);
+            document.documentElement.setAttribute('data-custom-theme', 'true');
+            document.documentElement.style.setProperty('--theme-custom', t.p);
+            document.documentElement.style.setProperty('--bg-custom', t.bg);
+            document.documentElement.style.setProperty('--surface-custom', t.surface);
+            document.getElementById('theme-p').value = t.p;
+            document.getElementById('theme-bg').value = t.bg;
+            document.getElementById('theme-surface').value = t.surface;
+        } else {
+            document.documentElement.removeAttribute('data-custom-theme');
+        }
+    },
 
     renderProfileHistory() {
         const scores = CT.dbLocal('s'); const userScores = scores.filter(s => s.h === CT.activeProfHandle && !s.hc).sort((a,b) => b.id - a.id);
@@ -467,10 +512,18 @@ const UI = {
     changeProfPage(delta) { const userScores = CT.dbLocal('s').filter(s => s.h === CT.activeProfHandle && !s.hc); const nextStart = (CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); } },
 
     switchTab(tab) {
-        document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`pane-${tab}`).classList.remove('hidden');
+        document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden')); document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`pane-${tab}`).classList.remove('hidden');
         let btnId = 't-' + tab.substring(0,2); if (tab === 'create') btnId = 't-cr'; if (tab === 'announcements') btnId = 't_tab_ann'; if (tab === 'lexicon') btnId = 't_tab_lex'; if (tab === 'server') btnId = 't_tab_srv'; if (tab === 'users') btnId = 't_tab_usr'; if (tab === 'races') btnId = 't_tab_rac'; if (tab === 'phrases') btnId = 't_tab_txt'; if (tab === 'create') btnId = 't_tab_cre'; if (tab === 'training') btnId = 't_tab_trn';
         const activeTabBtn = document.getElementById(btnId); if(activeTabBtn) activeTabBtn.classList.add('active');
-        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { this.renderAdminTrn(); }
+        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { UI.switchTrnTab('crear'); }
+    },
+
+    switchTrnTab(tab) {
+        document.getElementById('pane-trn-crear').classList.add('hidden'); document.getElementById('pane-trn-editar').classList.add('hidden'); document.getElementById('pane-trn-cat').classList.add('hidden');
+        document.querySelectorAll('#pane-training .tab-btn').forEach(b => b.classList.remove('active'));
+        if(tab==='crear') { document.getElementById('pane-trn-crear').classList.remove('hidden'); document.getElementById('t_trn_tab_cre').classList.add('active'); }
+        if(tab==='editar') { document.getElementById('pane-trn-editar').classList.remove('hidden'); document.getElementById('t_trn_tab_ed').classList.add('active'); UI.renderAdminTrn(); }
+        if(tab==='categorias') { document.getElementById('pane-trn-cat').classList.remove('hidden'); document.getElementById('t_trn_tab_cat').classList.add('active'); }
     },
 
     renderAdminAnn() {
@@ -502,16 +555,16 @@ const UI = {
         if (query) {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.add('hidden');
             let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 400px;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:70%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${t.c || 'General'}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
-            let cats = CT.dbLocal('c').filter(c => c.name !== '[ENTRENAMIENTO]'); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
+            let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
             document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat); const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 400px;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            document.getElementById('admin-phrases-list').innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:70%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         }
     },
@@ -521,8 +574,8 @@ const UI = {
     delP: (idStr) => { if(confirm("¿Eliminar texto?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
 
     renderAdminTrn() {
-        let tracks = CT.dbLocal('p').filter(t => t.c === '[ENTRENAMIENTO]');
-        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item" style="border-color:#ffd700;"><div style="display:flex; flex-direction:column; gap:4px;"><span><b style="color:#ffd700">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 400px;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+        let tracks = CT.dbLocal('p').filter(t => t.c && t.c.startsWith('[TRN]'));
+        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item" style="border-color:#ffd700;"><div style="display:flex; flex-direction:column; gap:4px; max-width:70%;"><span><b style="color:#ffd700">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px;"><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
     },
 
     renderAdminR() {
@@ -551,7 +604,7 @@ const UI = {
         
         let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
         let html = `<div class="cat-card" onclick="UI.toggleFavFilter()" style="border-color: #ffd700;"><h3 style="color:#ffd700"><span>${t_fav}</span></h3><span style="color:var(--text-main)">Pistas Guardadas</span></div>`;
-        html += cats.filter(c => c.name !== '[ENTRENAMIENTO]').map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        html += cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         document.getElementById('track-category-view').innerHTML = html;
     },
     toggleFavFilter() { UI.filterFavs = true; UI.activeTrackCat = null; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
@@ -616,7 +669,7 @@ const App = {
     currentTrack: null, activeEngine: null,
     
     startRandomRace: () => { 
-        let tracks = CT.dbLocal('p').filter(t => t.c !== '[ENTRENAMIENTO]'); 
+        let tracks = CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]')); 
         if(!tracks || tracks.length === 0) return alert("No hay textos disponibles."); 
         App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; 
         if(App.activeEngine) App.activeEngine.stop(); 
@@ -624,7 +677,7 @@ const App = {
     },
     
     startHardcoreRace: () => { 
-        let tracks = CT.dbLocal('p').filter(t => t.c !== '[ENTRENAMIENTO]'); 
+        let tracks = CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]')); 
         if(!tracks || tracks.length === 0) return alert("No hay textos disponibles."); 
         App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; 
         if(App.activeEngine) App.activeEngine.stop(); 
@@ -650,9 +703,9 @@ const App = {
         UI.toggleTrainMenu();
     },
 
-    startExtreme: () => {
-        let extTracks = CT.dbLocal('p').filter(t => t.c === '[ENTRENAMIENTO]');
-        if(extTracks.length === 0) return alert("El Administrador aún no ha creado Pistas Extremas en el servidor.");
+    startTrnCategory: (catName) => {
+        let extTracks = CT.dbLocal('p').filter(t => t.c === catName);
+        if(extTracks.length === 0) return alert("No hay textos en esta modalidad.");
         App.currentTrack = extTracks[Math.floor(Math.random() * extTracks.length)];
         if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack, 'training');
         UI.toggleTrainMenu();
@@ -672,13 +725,28 @@ const App = {
         UI.renderTrackList(); 
     },
 
+    saveTheme: () => {
+        const p = document.getElementById('theme-p').value;
+        const bg = document.getElementById('theme-bg').value;
+        const surface = document.getElementById('theme-surface').value;
+        const themeObj = { p, bg, surface };
+        localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
+        const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: themeObj }); }
+        UI.applySavedTheme(); UI.closeThemeModal();
+    },
+
+    resetTheme: () => {
+        localStorage.removeItem('ct_custom_theme');
+        const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        UI.applySavedTheme(); UI.closeThemeModal();
+    },
+
     handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
     toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } UI.toggleSettings(); },
     
     downloadSetup: () => {
         const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
-        const link = document.createElement('a');
-        link.href = directUrl; link.download = 'CananTyper_Setup.exe';
+        const link = document.createElement('a'); link.href = directUrl; link.download = 'CananTyper_Setup.exe';
         document.body.appendChild(link); link.click(); document.body.removeChild(link); UI.toggleSettings();
     },
 
@@ -703,7 +771,9 @@ const App = {
     deleteCategory: () => { const sel = document.getElementById('delete-cat-select'); const catName = sel.value; if(!catName) return; if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { db.collection('categories').doc(catName).delete(); let pList = CT.dbLocal('p'); let updated = false; pList.forEach(p => { if (p.c === catName) { p.c = 'General'; updated = true; db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); } }); if (updated) CT.save('p', pList); alert("Categoría eliminada con éxito."); } },
     createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto."); const idStr = titleInp.value.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito."); },
 
-    createTrnPhrase: () => { const titleInp = document.getElementById('trn-title'); const textInp = document.getElementById('trn-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: '[ENTRENAMIENTO]', text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto Extremo Guardado."); },
+    createTrnCategory: () => { const nameInp = document.getElementById('trn-new-cat-name'); const baseName = nameInp.value.trim(); if(!baseName) return alert("Falta el nombre."); const catName = `[TRN] ${baseName}`; db.collection('categories').doc(catName).set({ name: catName }); nameInp.value = ''; alert("Modalidad Creada."); },
+    deleteTrnCategory: () => { const sel = document.getElementById('trn-delete-cat-select'); const catName = sel.value; if(!catName) return; if(confirm(`¿Eliminar modalidad "${catName}"?`)) { db.collection('categories').doc(catName).delete(); alert("Eliminada con éxito."); } },
+    createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); const catValue = catInp.value || '[TRN] Pistas Extremas'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value }); titleInp.value = ''; textInp.value = ''; alert("Texto de Entrenamiento Guardado."); },
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     login: async () => { const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists && docRef.data().p === p) { localStorage.setItem('ct_ses', JSON.stringify({h: handle})); if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); UI.initLobby(); } else { alert("Usuario o contraseña incorrectos"); } } catch(e) { console.error("Error en login:", e); alert("Fallo de conexión a la base de datos"); } },
@@ -718,12 +788,9 @@ class Engine {
     constructor(trackObj, mode = 'normal', ghostCPM = 0) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
         this.i = 0; this.c = 0; this.s = null; this.timer = null; 
-        
         this.mode = mode; 
         this.ghostCPM = ghostCPM;
-        
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
-        
         this.init(); 
     }
     stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; }
@@ -740,7 +807,6 @@ class Engine {
         document.getElementById('game-timer').innerText = '0s';
         document.getElementById('game-speed-display').innerText = '0';
         
-        // LIMPIEZA DE BLUR AL INICIAR
         document.getElementById('final-speed-display').classList.remove('val-blurrable');
         
         document.getElementById('race-progress').style.width = '0%';
@@ -795,15 +861,8 @@ class Engine {
         let addedChar = v.length > this.lastV.length;
         
         if (!isPrefixValid && addedChar) {
-            // MODO RÁPIDO (AUTO-NEXT)
-            if (CT.fastMode && this.mode !== 'hardcore') {
-                App.nextRace(); return;
-            }
-
-            // HARDCORE KILL SWITCH
-            if (this.mode === 'hardcore') {
-                this.die(); return;
-            }
+            if (CT.fastMode && this.mode !== 'hardcore') { App.nextRace(); return; }
+            if (this.mode === 'hardcore') { this.die(); return; }
 
             let matchLen = 0; 
             while(matchLen < typed.length && matchLen < cur.length && typed[matchLen] === cur[matchLen]) matchLen++;
@@ -841,14 +900,8 @@ class Engine {
     }
 
     die() {
-        this.stop();
-        document.body.style.backgroundColor = '#4a0000'; // Flash Rojo
-        updateDiscordStatus("Muerto en Hardcore 💀", "F", false);
-        
-        document.getElementById('game-input').disabled = true; 
-        document.getElementById('game-input').classList.add('hidden');
-        document.getElementById('in-game-controls').classList.add('hidden');
-        
+        this.stop(); document.body.style.backgroundColor = '#4a0000'; updateDiscordStatus("Muerto en Hardcore 💀", "F", false);
+        document.getElementById('game-input').disabled = true; document.getElementById('game-input').classList.add('hidden'); document.getElementById('in-game-controls').classList.add('hidden');
         const uiTextDeath = CT.data.ui && CT.data.ui['t_game_dead_title'] ? CT.data.ui['t_game_dead_title'].v : "HAS MUERTO";
         document.getElementById('final-speed-display').innerText = `💀 ${uiTextDeath}`;
         
@@ -860,42 +913,29 @@ class Engine {
             track_deaths[this.track.title] = (track_deaths[this.track.title] || 0) + 1;
             db.collection('users').doc(u.h).update({ hc_deaths: hc_deaths, hc_track_deaths: track_deaths });
         }
-        
         document.getElementById('game-result-modal').classList.remove('hidden');
         setTimeout(() => { document.body.style.backgroundColor = ''; }, 1500); 
     }
 
     end() { 
         this.stop(); 
-        const sec = (new Date()-this.s)/1000;
-        const finalCPM = Math.round(this.c/(sec/60)) || 0; 
+        const sec = (new Date()-this.s)/1000; const finalCPM = Math.round(this.c/(sec/60)) || 0; 
         
-        document.getElementById('game-input').disabled = true; 
-        document.getElementById('game-input').classList.add('hidden');
-        document.getElementById('in-game-controls').classList.add('hidden');
+        document.getElementById('game-input').disabled = true; document.getElementById('game-input').classList.add('hidden'); document.getElementById('in-game-controls').classList.add('hidden');
         
         const finalUnitLabel = CT.currentUnit === 'zen' ? 'ZEN' : CT.currentUnit.toUpperCase();
         const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
         
         updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
-        
         const speedDisplayEl = document.getElementById('final-speed-display');
         speedDisplayEl.innerText = finalSpeedValue + " " + finalUnitLabel;
         
-        // EFECTO BLUR MODO ZEN
-        if (CT.currentUnit === 'zen') {
-            speedDisplayEl.classList.add('val-blurrable');
-        }
-        
-        if (this.mode === 'training') {
-            document.getElementById('game-result-modal').classList.remove('hidden');
-            return; 
-        }
+        if (CT.currentUnit === 'zen') { speedDisplayEl.classList.add('val-blurrable'); }
+        if (this.mode === 'training') { document.getElementById('game-result-modal').classList.remove('hidden'); return; }
 
         const u = CT.ses(); 
         if(u) {
             let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
-            
             let arrRef = this.mode === 'hardcore' ? (userDoc.hi_hc || []) : (userDoc.hi || []);
             const previousBest = arrRef.length > 0 ? Math.max(...arrRef) : 0;
             if(finalCPM > previousBest && arrRef.length > 0) { document.getElementById('pb-alert').classList.remove('hidden'); }
@@ -908,20 +948,13 @@ class Engine {
             sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
 
             const dateStr = CT.getARDate(); const scoreId = Date.now().toString();
-            
-            let sList = CT.dbLocal('s');
-            const isHC = this.mode === 'hardcore';
+            let sList = CT.dbLocal('s'); const isHC = this.mode === 'hardcore';
             const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title, hc: isHC };
             sList.unshift(newScore); CT.data.s = sList;
 
             let updatePayload = { bad_keys: bk, bad_words: prunedBw };
-            if (isHC) {
-                updatePayload.hi_hc = firebase.firestore.FieldValue.arrayUnion(finalCPM);
-                if (!userDoc.hi_hc) userDoc.hi_hc = []; userDoc.hi_hc.push(finalCPM);
-            } else {
-                updatePayload.hi = firebase.firestore.FieldValue.arrayUnion(finalCPM);
-                if (!userDoc.hi) userDoc.hi = []; userDoc.hi.push(finalCPM);
-            }
+            if (isHC) { updatePayload.hi_hc = firebase.firestore.FieldValue.arrayUnion(finalCPM); if (!userDoc.hi_hc) userDoc.hi_hc = []; userDoc.hi_hc.push(finalCPM); } 
+            else { updatePayload.hi = firebase.firestore.FieldValue.arrayUnion(finalCPM); if (!userDoc.hi) userDoc.hi = []; userDoc.hi.push(finalCPM); }
             
             userDoc.bad_keys = bk; userDoc.bad_words = prunedBw;
             db.collection('users').doc(u.h).update(updatePayload); 
