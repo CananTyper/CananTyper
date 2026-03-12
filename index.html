@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.4">
+    <link rel="stylesheet" href="style.css?v=1.1.5">
 </head>
 <body>
 
@@ -71,7 +71,7 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.4 
+                                CananTyper v1.1.5 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -84,7 +84,7 @@
             <div class="mode-selectors" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
                 <button id="t_btn_random" onclick="App.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
                 <button id="t_btn_hardcore" onclick="App.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
-                <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PISTAS</button>
+                <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PERSONALIZADO</button>
                 
                 <div style="position: relative;">
                     <button id="t_btn_train_menu" onclick="UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);">ENTRENAR 🏋️</button>
@@ -243,7 +243,7 @@
         <section id="profile-screen" class="screen hidden">
             <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
             <div class="profile-top-area">
-                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span><small id="t_prof_joined" style="color:var(--text-muted); font-size:0.7rem; margin-top:5px;">Miembro desde: Beta</small></div></div>
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
                 <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
             </div>
             <div class="profile-history-area">
@@ -458,6 +458,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.1.4"></script>
+    <script src="main.js?v=1.1.5"></script>
 </body>
 </html>
