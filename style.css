@@ -107,7 +107,7 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .podium-2 { color: #c0c0c0 !important; font-weight: bold !important; font-size: 1rem !important; text-shadow: 0 0 8px rgba(192,192,192,0.4); }
 .podium-3 { color: #cd7f32 !important; font-weight: bold !important; font-size: 0.9rem !important; text-shadow: 0 0 8px rgba(205,127,50,0.4); }
 
-.action-buttons { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.action-buttons { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; align-items: center; }
 .action-buttons button { flex: 1 1 auto; min-width: max-content; padding: 6px 10px; font-size: 0.65rem; }
 .data-table td:last-child { white-space: normal; overflow: visible; }
 
@@ -160,11 +160,11 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 
 .track-selection-area { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-top: 15px; }
 .track-list { flex-grow: 1; min-height: 0; list-style: none; margin: 0; padding-right: 10px; }
-.track-card { display: flex; gap: 20px; background: var(--bg); padding: 20px 25px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease; align-items: center; }
+.track-card { display: flex; gap: 20px; background: var(--bg); padding: 20px 25px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease; align-items: center; justify-content: space-between; }
 .track-card:hover { border-color: var(--p); transform: translateX(8px); box-shadow: -8px 8px 20px color-mix(in srgb, var(--p) 15%, transparent); }
-.track-card-id { font-size: 1.8rem; font-weight: 900; color: var(--p); min-width: 60px; text-align: center; border-right: 1px solid var(--border); padding-right: 20px; transition: color 0.3s, text-shadow 0.3s; }
+.track-card-id { font-size: 1.8rem; font-weight: 900; color: var(--p); min-width: 60px; text-align: center; border-right: 1px solid var(--border); padding-right: 20px; transition: color 0.3s, text-shadow 0.3s; display: flex; flex-direction: column; gap: 10px; }
 .track-card:hover .track-card-id { text-shadow: 0 0 15px color-mix(in srgb, var(--p) 50%, transparent); }
-.track-card-content { display: flex; flex-direction: column; gap: 8px; }
+.track-card-content { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
 .track-card-text { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; text-align: justify; }
 .track-card-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; }
 
@@ -187,7 +187,7 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .game-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; max-width: 850px; margin: 0 auto; width: 100%; }
 .game-hud { display: flex; gap: 30px; margin-bottom: 30px; transition: opacity 0.5s ease; }
 .hud-box { background: var(--surface-light); border: 1px solid var(--p); padding: 15px 40px; border-radius: 15px; text-align: center; box-shadow: 0 0 25px color-mix(in srgb, var(--p) 15%, transparent); transition: border-color 0.3s, box-shadow 0.3s; }
-.hud-box small { display: block; color: var(--text-muted); font-weight: bold; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 5px; transition: color 0.3s; }
+.hud-box small { display: block; color: var(--text-muted); font-weight: bold; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 5px; transition: color 0.3s; text-transform: uppercase; }
 .hud-box span { color: var(--text-main); font-size: 2.5rem; font-weight: 900; }
 
 /* PROGRESS BAR & GHOST */
@@ -207,7 +207,7 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 
 .game-controls { display: flex; gap: 15px; margin-top: 20px; transition: opacity 0.5s ease; }
 .game-result { text-align: center; background: var(--surface-light); padding: 40px; border-radius: 20px; border: 1px solid var(--p); box-shadow: 0 15px 50px color-mix(in srgb, var(--p) 20%, transparent); margin-top: 20px; width: 100%; transition: border-color 0.3s, box-shadow 0.3s; }
-.result-score { font-size: 4.5rem; color: var(--p); margin: 0 0 30px 0; transition: color 0.3s, text-shadow 0.3s; text-shadow: 0 0 20px color-mix(in srgb, var(--p) 40%, transparent); }
+.result-score { font-size: 4.5rem; color: var(--p); margin: 0 0 30px 0; transition: color 0.3s, text-shadow 0.3s, filter 0.3s, opacity 0.3s; text-shadow: 0 0 20px color-mix(in srgb, var(--p) 40%, transparent); }
 
 /* SELLO DE RÉCORD PERSONAL */
 @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
@@ -224,7 +224,8 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 /* REGLAS MODO ZEN */
 :root[data-theme="zen"] { --p: #b388ff; } 
 #btn-zen.active { background: var(--theme-zen, #b388ff); color: #000; box-shadow: 0 0 15px color-mix(in srgb, #b388ff 40%, transparent); }
-:root[data-theme="zen"] .val-blurrable { filter: blur(6px); opacity: 0.5; user-select: none; pointer-events: none; transition: filter 0.3s, opacity 0.3s; }
+:root[data-theme="zen"] .val-blurrable { filter: blur(12px); opacity: 0.3; transition: filter 0.4s ease, opacity 0.4s ease; cursor: crosshair; }
+:root[data-theme="zen"] .val-blurrable:hover { filter: blur(0); opacity: 1; }
 
 body.zen-focus .top-nav { opacity: 0.05; pointer-events: none; }
 body.zen-focus .mode-selectors { opacity: 0.05; pointer-events: none; }
