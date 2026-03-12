@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.3 (Parche de Urgencia)
+    Capitán del Código: Ángel | Versión 1.1.4 (Parche Quirúrgico)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -149,8 +149,8 @@ const CT = {
                 't_trk_fav_filter': { l: 'Pista Favoritos', v: '⭐ Ver Favoritos' }, 't_game_dead_title': { l: 'Juego. Muerte', v: 'HAS MUERTO' }, 
                 't_game_dead_sub': { l: 'Juego. Muerte Sub', v: 'Un error es letal en Hardcore.' }, 't_sett_fast': { l: 'Aj. Modo Rápido', v: '⚡ Modo Rápido:' },
                 't_sett_fast_on': { l: 'Aj. Modo Ráp. SI', v: 'SI' }, 't_sett_fast_off': { l: 'Aj. Modo Ráp. NO', v: 'NO' },
-                't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' }, 't_btn_pin_on': { l: 'Pista Fijado', v: '📌 FIJADO' },
-                't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' }, 't_theme_btn': { l: 'Aj. Tema Btn', v: '🎨 Personalizar' },
+                't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' }, 't_btn_pin_on': { l: 'Pista Fijado', v: '⭐' },
+                't_btn_pin_off': { l: 'Pista Fijar', v: '☆' }, 't_theme_btn': { l: 'Aj. Tema Btn', v: '🎨 Personalizar' },
                 't_theme_title': { l: 'Tema Título', v: 'Elegir Plantilla' }, 't_theme_save': { l: 'Tema Guardar', v: 'Aplicar' },
                 't_theme_reset': { l: 'Tema Reset', v: 'Por Defecto' }, 't_trn_tab_cre': { l: 'Trn Tab Crear', v: 'CREAR' },
                 't_trn_tab_ed': { l: 'Trn Tab Edit', v: 'EDITAR' }, 't_trn_tab_cat': { l: 'Trn Tab Mods', v: 'MODALIDADES' },
@@ -167,18 +167,21 @@ const CT = {
                 't_hd_rank_avg_sub': { l: 'Rank Promedios Sub', v: 'Constancia y disciplina' }, 't_admin_users_title': { l: 'Admin Usu Título', v: 'Gestión de Usuarios' },
                 't_admin_races_title': { l: 'Admin Carr Título', v: 'Auditoría de Carreras' }, 't_admin_text_title': { l: 'Admin Txt Título', v: 'Laboratorio de Textos' },
                 't_admin_ann_title': { l: 'Admin Anu Título', v: 'Centro de Comunicaciones' }, 't_sett_menu': { l: 'Ajustes Titulo', v: 'MENÚ DE AJUSTES' },
-                
-                // --- NUEVA TANDA LÉXICO (FASE 1.1.3) ---
-                't_nav_lobby': { l: 'Nav Lobby', v: 'Lobby' },
-                't_nav_stats': { l: 'Nav Estadísticas', v: 'Estadísticas' },
-                't_nav_info': { l: 'Nav Info', v: 'Info' },
-                't_nav_admin': { l: 'Nav Admin', v: 'Admin' },
-                't_nav_settings': { l: 'Nav Ajustes', v: 'Ajustes' },
-                't_lbl_empty_hist': { l: 'Historial Vacío', v: 'Historial vacío' },
-                't_lbl_ghost_run': { l: 'Estado Fantasma', v: 'Compitiendo contra Fantasma 👻' },
-                't_lbl_game_over': { l: 'Estado Terminado', v: 'Carrera Terminada' },
-                't_lbl_acc_del': { l: 'Cuenta Eliminar', v: 'Eliminar Cuenta' },
-                't_lbl_cat_all': { l: 'Categoría Todas', v: 'Todas las Categorías' }
+                't_nav_lobby': { l: 'Nav Lobby', v: 'Lobby' }, 't_nav_stats': { l: 'Nav Estadísticas', v: 'Estadísticas' },
+                't_nav_info': { l: 'Nav Info', v: 'Info' }, 't_nav_admin': { l: 'Nav Admin', v: 'Admin' },
+                't_nav_settings': { l: 'Nav Ajustes', v: 'Ajustes' }, 't_lbl_empty_hist': { l: 'Historial Vacío', v: 'Historial vacío' },
+                't_lbl_ghost_run': { l: 'Estado Fantasma', v: 'Compitiendo contra Fantasma 👻' }, 't_lbl_game_over': { l: 'Estado Terminado', v: 'Carrera Terminada' },
+                't_lbl_acc_del': { l: 'Cuenta Eliminar', v: 'Eliminar Cuenta' }, 't_lbl_cat_all': { l: 'Categoría Todas', v: 'Todas las Categorías' },
+                // --- NUEVA TANDA LÉXICO (FASE 1.1.4) ---
+                't_adm_srv_feat_info': { l: 'Srv Feat Info', v: 'ℹ️ INFO' },
+                't_adm_srv_feat_theme': { l: 'Srv Feat Theme', v: '🎨 TEMAS' },
+                't_adm_btn_maint_on': { l: 'Srv Maint ON', v: '⛔ MANTENIMIENTO: ACTIVADO' },
+                't_adm_btn_maint_off': { l: 'Srv Maint OFF', v: '✅ MANTENIMIENTO: DESACTIVADO' },
+                't_st_box_w_trk': { l: 'Est Box Peor Txt', v: 'Textos a Mejorar (Bottom 5)' },
+                't_st_box_w_wrd': { l: 'Est Box Peor Pal', v: 'Palabras Críticas (Top 30)' },
+                't_hc_box_surv': { l: 'HC Box Sobrev', v: 'Mejores Sobrevividas (Top 10)' },
+                't_hc_box_dead': { l: 'HC Box Muertes', v: 'Pistas más Mortales (Top 10)' },
+                't_lbl_exit': { l: 'Btn Salir', v: 'SALIR' }
             };
             
             CT.data.ui = {};
@@ -219,8 +222,10 @@ const UI = {
         
         const toggleBtn = document.getElementById('btn-maint-toggle');
         if(toggleBtn) {
-            if(m.active) { toggleBtn.innerText = "⛔ MANTENIMIENTO: ACTIVADO"; toggleBtn.style.borderColor = "var(--error)"; toggleBtn.style.color = "var(--error)"; } 
-            else { toggleBtn.innerText = "✅ MANTENIMIENTO: DESACTIVADO"; toggleBtn.style.borderColor = "var(--success)"; toggleBtn.style.color = "var(--success)"; }
+            const txtOn = CT.data.ui && CT.data.ui['t_adm_btn_maint_on'] ? CT.data.ui['t_adm_btn_maint_on'].v : "⛔ MANTENIMIENTO: ACTIVADO";
+            const txtOff = CT.data.ui && CT.data.ui['t_adm_btn_maint_off'] ? CT.data.ui['t_adm_btn_maint_off'].v : "✅ MANTENIMIENTO: DESACTIVADO";
+            if(m.active) { toggleBtn.innerText = txtOn; toggleBtn.style.borderColor = "var(--error)"; toggleBtn.style.color = "var(--error)"; } 
+            else { toggleBtn.innerText = txtOff; toggleBtn.style.borderColor = "var(--success)"; toggleBtn.style.color = "var(--success)"; }
         }
 
         const infoEnabled = m.info !== false;
@@ -240,13 +245,15 @@ const UI = {
 
         const fInfoBtn = document.getElementById('btn-feat-info');
         if(fInfoBtn) {
-            fInfoBtn.innerText = `ℹ️ INFO: ${infoEnabled ? 'ON' : 'OFF'}`;
+            const lblInfo = CT.data.ui && CT.data.ui['t_adm_srv_feat_info'] ? CT.data.ui['t_adm_srv_feat_info'].v : "ℹ️ INFO";
+            fInfoBtn.innerText = `${lblInfo}: ${infoEnabled ? 'ON' : 'OFF'}`;
             fInfoBtn.style.borderColor = infoEnabled ? 'var(--success)' : 'var(--error)';
             fInfoBtn.style.color = infoEnabled ? 'var(--success)' : 'var(--error)';
         }
         const fThemeBtn = document.getElementById('btn-feat-theme');
         if(fThemeBtn) {
-            fThemeBtn.innerText = `🎨 TEMAS: ${themeEnabled ? 'ON' : 'OFF'}`;
+            const lblTheme = CT.data.ui && CT.data.ui['t_adm_srv_feat_theme'] ? CT.data.ui['t_adm_srv_feat_theme'].v : "🎨 TEMAS";
+            fThemeBtn.innerText = `${lblTheme}: ${themeEnabled ? 'ON' : 'OFF'}`;
             fThemeBtn.style.borderColor = themeEnabled ? 'var(--success)' : 'var(--error)';
             fThemeBtn.style.color = themeEnabled ? 'var(--success)' : 'var(--error)';
         }
@@ -299,7 +306,7 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off'].includes(k)) { /* js dynamic */ }
+                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off', 't_adm_btn_maint_on', 't_adm_btn_maint_off', 't_adm_srv_feat_info', 't_adm_srv_feat_theme'].includes(k)) { /* js dynamic */ }
                 else if(el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = CT.data.ui[k].v; }
                 else { el.innerText = CT.data.ui[k].v; }
             }
@@ -657,7 +664,7 @@ const UI = {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
             cats.sort((a,b) => (a.order || 0) - (b.order || 0));
-            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
@@ -730,8 +737,8 @@ const UI = {
         
         filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
 
-        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '📌 FIJADO';
-        let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '📌 FIJAR';
+        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐';
+        let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
 
         const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
         document.getElementById('track-list-full').innerHTML = pageData.map(t => {
@@ -739,7 +746,7 @@ const UI = {
             return `<div class="track-card" onclick="App.startRaceWithTrack('${t.id}')">
                 <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px;">
                     #${t.title}
-                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="btn-outline" style="align-self:center; font-size:0.6rem; padding:4px 8px; ${isFav ? 'border-color:#ffd700; color:#ffd700;' : ''}">${isFav ? textPinOn : textPinOff}</button>
+                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="btn-outline" style="align-self:center; font-size:1.2rem; padding:0; border:none; background:transparent; ${isFav ? 'color:#ffd700; text-shadow:0 0 10px #ffd700;' : 'color:var(--text-muted);'}">${isFav ? textPinOn : textPinOff}</button>
                 </div>
                 <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${t.c || 'General'}]</span></div>
             </div>`;
@@ -815,6 +822,8 @@ const App = {
     },
 
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
+    
+    // FIX v1.1.4: App.activeEngine no se borra aquí. Se borra solo en quitRace().
     retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
     nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else if (m === 'training') App.startPurge(); else App.startRandomRace(); } },
     quitRace: () => { if(App.activeEngine) { App.activeEngine.stop(); App.activeEngine = null; } UI.showLobby(); },
@@ -961,7 +970,27 @@ const App = {
     createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); const catValue = catInp.value || '[TRN] Pistas Extremas'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value, order: Date.now() }); titleInp.value = ''; textInp.value = ''; alert("Texto de Entrenamiento Guardado."); },
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
-    login: async () => { const hInp = document.getElementById('login-user').value.toLowerCase(); const p = document.getElementById('login-pass').value; const handle = hInp.startsWith('@') ? hInp : '@' + hInp; try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists && docRef.data().p === p) { localStorage.setItem('ct_ses', JSON.stringify({h: handle})); if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); UI.initLobby(); } else { alert("Usuario o contraseña incorrectos"); } } catch(e) { console.error("Error en login:", e); alert("Fallo de conexión a la base de datos"); } },
+    
+    // FIX v1.1.4: Tolerancia en Login
+    login: async () => { 
+        const hInp = document.getElementById('login-user').value.toLowerCase(); 
+        const p = document.getElementById('login-pass').value; 
+        const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
+        try { 
+            const docRef = await db.collection('users').doc(handle).get(); 
+            if(docRef.exists && docRef.data().p === p) { 
+                localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+                if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); 
+                UI.initLobby(); 
+            } else { 
+                alert("Usuario o contraseña incorrectos"); 
+            } 
+        } catch(e) { 
+            console.error("Error en login:", e); 
+            alert("Fallo de conexión. Por favor, verifica tu internet o intenta nuevamente en unos segundos."); 
+        } 
+    },
+
     register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
     savePhrase: () => { const catInp = document.getElementById('phrase-category'); const textInp = document.getElementById('phrase-input'); if(!textInp.value) return alert("Faltan datos"); if(CT.editIdx !== null) { const pList = CT.dbLocal('p'); const idxStr = pList[CT.editIdx].id.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idxStr).update({ c: catValue, text: textInp.value }); UI.cancelEditP(); } },
     logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
@@ -979,7 +1008,14 @@ class Engine {
         App.activeEngine = this;
         this.init(); 
     }
-    stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; }
+    
+    stop() { 
+        if(this.timer) clearInterval(this.timer); 
+        this.timer = null; 
+        document.body.classList.remove('zen-focus'); 
+        document.body.style.backgroundColor = ''; 
+        // FIX v1.1.4: NO BORRAMOS App.activeEngine AQUÍ.
+    }
     
     init() { 
         UI.show('game-screen'); 
