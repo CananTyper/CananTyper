@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.4 (Parche Quirúrgico)
+    Capitán del Código: Ángel | Versión 1.1.5 (Blindaje y UX)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -108,7 +108,7 @@ const CT = {
                 't_auth_title': { l: 'Título', v: 'CananTyper' }, 't_auth_sub': { l: 'Subtítulo', v: 'Mecanografía' },
                 't_btn_login': { l: 'Login', v: 'Iniciar sesión' }, 't_btn_register': { l: 'Registro', v: 'CREAR CUENTA' },
                 't_txt_new': { l: 'Nuevo', v: '¿Nuevo? Registrarse' }, 't_txt_haveacc': { l: 'Ya tengo', v: '¿Tenés cuenta? Inicia sesión' },
-                't_btn_random': { l: 'Aleatorio', v: 'MODO ALEATORIO' }, 't_btn_custom': { l: 'Personalizado', v: 'PISTAS' },
+                't_btn_random': { l: 'Aleatorio', v: 'MODO ALEATORIO' }, 't_btn_custom': { l: 'Personalizado', v: 'PERSONALIZADO' },
                 't_hd_rank_races': { l: 'R. Carreras', v: 'Ranking | Carreras' }, 't_hd_rank_avg': { l: 'R. Promedios', v: 'Ranking | Promedios' },
                 't_hd_stats': { l: 'Estadísticas', v: 'Estadísticas' }, 't_hd_stats_sub': { l: 'Sub Est', v: 'Análisis de rendimiento' },
                 't_hd_track': { l: 'Pista', v: 'Modo Personalizado' }, 't_hd_track_sub': { l: 'Sub Pista', v: 'Selecciona una categoría o texto' },
@@ -172,16 +172,22 @@ const CT = {
                 't_nav_settings': { l: 'Nav Ajustes', v: 'Ajustes' }, 't_lbl_empty_hist': { l: 'Historial Vacío', v: 'Historial vacío' },
                 't_lbl_ghost_run': { l: 'Estado Fantasma', v: 'Compitiendo contra Fantasma 👻' }, 't_lbl_game_over': { l: 'Estado Terminado', v: 'Carrera Terminada' },
                 't_lbl_acc_del': { l: 'Cuenta Eliminar', v: 'Eliminar Cuenta' }, 't_lbl_cat_all': { l: 'Categoría Todas', v: 'Todas las Categorías' },
-                // --- NUEVA TANDA LÉXICO (FASE 1.1.4) ---
-                't_adm_srv_feat_info': { l: 'Srv Feat Info', v: 'ℹ️ INFO' },
-                't_adm_srv_feat_theme': { l: 'Srv Feat Theme', v: '🎨 TEMAS' },
-                't_adm_btn_maint_on': { l: 'Srv Maint ON', v: '⛔ MANTENIMIENTO: ACTIVADO' },
-                't_adm_btn_maint_off': { l: 'Srv Maint OFF', v: '✅ MANTENIMIENTO: DESACTIVADO' },
-                't_st_box_w_trk': { l: 'Est Box Peor Txt', v: 'Textos a Mejorar (Bottom 5)' },
-                't_st_box_w_wrd': { l: 'Est Box Peor Pal', v: 'Palabras Críticas (Top 30)' },
-                't_hc_box_surv': { l: 'HC Box Sobrev', v: 'Mejores Sobrevividas (Top 10)' },
-                't_hc_box_dead': { l: 'HC Box Muertes', v: 'Pistas más Mortales (Top 10)' },
-                't_lbl_exit': { l: 'Btn Salir', v: 'SALIR' }
+                't_adm_srv_feat_info': { l: 'Srv Feat Info', v: 'ℹ️ INFO' }, 't_adm_srv_feat_theme': { l: 'Srv Feat Theme', v: '🎨 TEMAS' },
+                't_adm_btn_maint_on': { l: 'Srv Maint ON', v: '⛔ MANTENIMIENTO: ACTIVADO' }, 't_adm_btn_maint_off': { l: 'Srv Maint OFF', v: '✅ MANTENIMIENTO: DESACTIVADO' },
+                't_st_box_w_trk': { l: 'Est Box Peor Txt', v: 'Textos a Mejorar (Bottom 5)' }, 't_st_box_w_wrd': { l: 'Est Box Peor Pal', v: 'Palabras Críticas (Top 30)' },
+                't_hc_box_surv': { l: 'HC Box Sobrev', v: 'Mejores Sobrevividas (Top 10)' }, 't_hc_box_dead': { l: 'HC Box Muertes', v: 'Pistas más Mortales (Top 10)' },
+                't_lbl_exit': { l: 'Btn Salir', v: 'SALIR' },
+                // --- NUEVA TANDA LÉXICO (FASE 1.1.5) ---
+                't_phr_search': { l: 'Phrases Buscar', v: 'Buscar texto...' },
+                't_phr_btn_update': { l: 'Phrases Btn Update', v: 'ACTUALIZAR' },
+                't_phr_btn_cancel': { l: 'Phrases Btn Cancel', v: 'CANCELAR' },
+                't_phr_btn_edit': { l: 'Phrases Btn Edit', v: 'EDITAR' },
+                't_phr_btn_delete': { l: 'Phrases Btn Delete', v: 'BORRAR' },
+                't_usr_btn_img': { l: 'Users Btn Img', v: 'IMAGEN' },
+                't_lbl_theme_classic_g': { l: 'Tema Clasico Verde', v: 'Clásico (Verde)' },
+                't_lbl_theme_classic_o': { l: 'Tema Clasico Naranja', v: 'Clásico (Naranja)' },
+                't_lbl_theme_galactic': { l: 'Tema Galactico', v: 'Galáctico (Snoopy)' },
+                't_lbl_theme_hacker': { l: 'Tema Hacker', v: 'Hacker Terminal' }
             };
             
             CT.data.ui = {};
@@ -746,7 +752,7 @@ const UI = {
             return `<div class="track-card" onclick="App.startRaceWithTrack('${t.id}')">
                 <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px;">
                     #${t.title}
-                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="btn-outline" style="align-self:center; font-size:1.2rem; padding:0; border:none; background:transparent; ${isFav ? 'color:#ffd700; text-shadow:0 0 10px #ffd700;' : 'color:var(--text-muted);'}">${isFav ? textPinOn : textPinOff}</button>
+                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="btn-outline" style="align-self:center; font-size:1.4rem; padding:0; border:none; background:transparent; color:var(--text-main);">${isFav ? textPinOn : textPinOff}</button>
                 </div>
                 <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${t.c || 'General'}]</span></div>
             </div>`;
@@ -823,7 +829,7 @@ const App = {
 
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
     
-    // FIX v1.1.4: App.activeEngine no se borra aquí. Se borra solo en quitRace().
+    // FIX v1.1.5: App.activeEngine no se borra aquí. Se borra solo en quitRace().
     retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
     nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else if (m === 'training') App.startPurge(); else App.startRandomRace(); } },
     quitRace: () => { if(App.activeEngine) { App.activeEngine.stop(); App.activeEngine = null; } UI.showLobby(); },
@@ -936,6 +942,7 @@ const App = {
     cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
     deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
     
+    // FIX v1.1.5: REESCRITURA QUIRÚRGICA DEL LÉXICO
     editUIText: async (key) => { 
         if(!CT.data.ui || !CT.data.ui[key]) return; 
         const currentVal = CT.data.ui[key].v; 
@@ -971,24 +978,32 @@ const App = {
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     
-    // FIX v1.1.4: Tolerancia en Login
+    // FIX v1.1.5: LOGIN TOLERANTE
     login: async () => { 
         const hInp = document.getElementById('login-user').value.toLowerCase(); 
         const p = document.getElementById('login-pass').value; 
         const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
+        let valid = false;
+        let userData = null;
+
         try { 
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists && docRef.data().p === p) { 
-                localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
-                if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); 
-                UI.initLobby(); 
-            } else { 
-                alert("Usuario o contraseña incorrectos"); 
+                valid = true;
+                userData = docRef.data();
             } 
         } catch(e) { 
-            console.error("Error en login:", e); 
-            alert("Fallo de conexión. Por favor, verifica tu internet o intenta nuevamente en unos segundos."); 
+            console.error("Error en DB:", e); 
+            return alert("Fallo de conexión. Por favor, verifica tu internet o intenta nuevamente."); 
         } 
+
+        if (valid) {
+            localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+            if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(userData); 
+            UI.initLobby(); 
+        } else {
+            alert("Usuario o contraseña incorrectos"); 
+        }
     },
 
     register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
@@ -1014,7 +1029,7 @@ class Engine {
         this.timer = null; 
         document.body.classList.remove('zen-focus'); 
         document.body.style.backgroundColor = ''; 
-        // FIX v1.1.4: NO BORRAMOS App.activeEngine AQUÍ.
+        // FIX v1.1.5: NO BORRAMOS App.activeEngine AQUÍ para permitir reiniciar.
     }
     
     init() { 
