@@ -1,19 +1,31 @@
-// 1. CONFIGURACIÓN FIREBASE
-// 1. CONFIGURACIÓN FIREBASE (HÍBRIDA PRO)
+/* ================================================================
+    CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
+    ================================================================
+    Capitán del Código: Ángel
+*/
 
-// A) Llave para la WEB (Restringida por dominio). Esta SÍ va aquí en texto plano.
-let currentApiKey = "AIzaSyDWtm9wGj5mOYT1CIz2jugteKrJoMDUhiw"; 
-
-// B) Detectamos si el código está corriendo en tu programa de Windows (Electron)
+// 1. CONFIGURACIÓN DE ENTORNO E IDENTIFICACIÓN
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
+let currentApiKey = "AIzaSyDWtm9wGj5mOYT1CIz2jugteKrJoMDUhiw"; 
+let ipcRenderer = null;
 
+// Conectar el intercomunicador si estamos en Windows
 if (isDesktopEnv) {
-    // C) Si estamos en Windows, ignoramos la llave de arriba y usamos la bóveda secreta
-    require('dotenv').config();
-    currentApiKey = process.env.FIREBASE_API_KEY_DESKTOP;
+    try {
+        ipcRenderer = require('electron').ipcRenderer;
+        require('dotenv').config();
+        currentApiKey = process.env.FIREBASE_API_KEY_DESKTOP || currentApiKey;
+    } catch(e) { console.warn("Aviso: Ejecutando en entorno sin variables nativas completas."); }
 }
 
-// Inicializamos Firebase con la llave correcta según dónde se abrió la app
+// Función maestra para ordenar al Backend que actualice Discord
+function updateDiscordStatus(details, state, showTimer = true) {
+    if (ipcRenderer) {
+        ipcRenderer.send('update-discord', { details, state, showTimer });
+    }
+}
+
+// 2. CONFIGURACIÓN FIREBASE
 const firebaseConfig = {
     apiKey: currentApiKey,
     authDomain: "canantyper.firebaseapp.com",
@@ -25,11 +37,9 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
-// ESCUDO DE CUOTA (Persistencia Offline)
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
-// 2. CORE DE DATOS
+// 3. CORE DE DATOS (CT)
 const CT = {
     data: { u: [], s: [], p: [], c: [], a: [], ui: null, maint: null }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
@@ -50,6 +60,12 @@ const CT = {
 
         UI.updateUnitVisuals(this.currentUnit);
         
+        // MANEJO DE ENTORNO WEB (Botón Descarga Directa)
+        if (!isDesktopEnv) {
+            const dlBtn = document.getElementById('btn-direct-download');
+            if (dlBtn) dlBtn.classList.remove('hidden');
+        }
+        
         db.collection('config').doc('maintenance').onSnapshot(snap => {
             if(snap.exists) { this.data.maint = snap.data(); } else {
                 this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Actualizando.' };
@@ -58,7 +74,12 @@ const CT = {
             UI.checkMaintenance();
         });
 
-        if(this.ses()) { UI.initLobby(); } else { UI.show('auth-screen'); }
+        if(this.ses()) { 
+            UI.initLobby(); 
+        } else { 
+            UI.show('auth-screen'); 
+            updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false);
+        }
 
         db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); UI.refreshActiveViews(); });
         db.collection('scores').onSnapshot(snap => { this.data.s = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_s', JSON.stringify(this.data.s)); UI.refreshActiveViews(); });
@@ -73,11 +94,6 @@ const CT = {
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.refreshActiveViews(); 
         });
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.refreshActiveViews(); });
-        db.collection('config').doc('announcement').onSnapshot(snap => {
-            if(snap.exists && this.ses()) { const data = snap.data(); const lastSeen = localStorage.getItem('ct_last_announcement');
-                if(data.id && data.id.toString() !== lastSeen) { UI.showAnnouncement(data); }
-            }
-        });
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título', v: 'CananTyper' }, 't_auth_sub': { l: 'Subtítulo', v: 'Mecanografía' },
@@ -92,7 +108,24 @@ const CT = {
                 't_btn_cont': { l: 'J. Cont', v: 'Continuar' }, 't_btn_retry2': { l: 'R. Repetir', v: 'Repetir' }, 't_btn_back2': { l: 'R. Volver', v: 'Volver' },
                 't_prof_races': { l: 'P. Carreras', v: 'CARRERAS' }, 't_tab_ann': { l: 'A. Anu', v: 'Anuncios' }, 't_tab_lex': { l: 'A. Lex', v: 'Léxico' },
                 't_tab_srv': { l: 'A. Srv', v: 'Servidor' }, 't_tab_usr': { l: 'A. Usr', v: 'Usuarios' }, 't_tab_rac': { l: 'A. Rac', v: 'Carreras' },
-                't_tab_txt': { l: 'A. Txt', v: 'Textos' }, 't_tab_cre': { l: 'A. Cre', v: 'Crear' }
+                't_tab_txt': { l: 'A. Txt', v: 'Textos' }, 't_tab_cre': { l: 'A. Cre', v: 'Crear' },
+                // --- NUEVA TANDA LÉXICO PRO ---
+                't_admin_title': { l: 'Admin. Título', v: 'CananTyper' },
+                't_admin_sub': { l: 'Admin. Subtítulo', v: 'Panel de administración' },
+                't_st_tab_pe': { l: 'Tab. Personales', v: 'Personales' },
+                't_st_tab_ge': { l: 'Tab. Servidor', v: 'Servidor' },
+                't_st_tab_el': { l: 'Tab. Élite', v: 'Élite' },
+                't_lbl_st_avg': { l: 'Lbl Prom.', v: 'PROM.' },
+                't_lbl_st_last': { l: 'Lbl Ult 10', v: 'ÚLT. 10' },
+                't_lbl_st_best': { l: 'Lbl Récord', v: 'RÉCORD' },
+                't_st_g_users': { l: 'Est. Usu. Regis.', v: 'USUARIOS REGISTRADOS' },
+                't_st_g_races': { l: 'Est. Carr. Global', v: 'CARRERAS GLOBALES' },
+                't_st_e_most': { l: 'Est. Más Carr.', v: 'MÁS CARRERAS' },
+                't_st_e_top1': { l: 'Est. Más Top 1', v: 'MÁS VECES TOP 1' },
+                't_adm_ann_send': { l: 'Anun. Título', v: 'Enviar Anuncio' },
+                't_adm_ann_sub': { l: 'Anun. Sub', v: 'Pop-Up de vista única' },
+                't_adm_ann_btn': { l: 'Anun. Botón', v: 'PUBLICAR ANUNCIO' },
+                't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -101,6 +134,7 @@ const CT = {
     ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (CT.data.u || []).find(x => x.h === s.h) : null; }
 };
 
+// 4. INTERFAZ DE USUARIO (UI)
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null, lexiconPage: 0, 
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, 
@@ -125,15 +159,20 @@ const UI = {
     },
     show: (id) => { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); },
     toggleAuth: (login) => { document.getElementById('login-form').classList.toggle('hidden', !login); document.getElementById('register-form').classList.toggle('hidden', login); },
+    
     initLobby() {
         if(CT.data.maint && CT.data.maint.active) { const u = CT.ses(); if(!u || u.r !== 'admin') { UI.checkMaintenance(); return; } }
         const u = CT.ses(); if(!u) return this.show('auth-screen');
+
+        updateDiscordStatus("En el menú principal", `Piloto: ${u.n}`, false);
+
         document.getElementById('val-display-name').innerText = u.n;
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         const adminBtn = document.getElementById('btn-nav-admin'); if(adminBtn) adminBtn.classList.toggle('hidden', u.r !== 'admin');
         UI.updateUnitVisuals(CT.currentUnit); this.renderGlobal(); this.show('home-screen');
     },
+
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
     showStats() { this.switchStatsTab('personal'); UI.updateUnitVisuals(CT.currentUnit); this.show('stats-screen'); },
@@ -180,7 +219,7 @@ const UI = {
 
     renderGlobalStats() {
         const scores = CT.dbLocal('s'); const users = CT.dbLocal('u'); const phrases = CT.dbLocal('p');
-        document.getElementById('st-g-users').innerText = users.length; document.getElementById('st-g-races').innerText = scores.length;
+        document.getElementById('st-g-users-val').innerText = users.length; document.getElementById('st-g-races-val').innerText = scores.length;
         const avgGlobal = scores.length ? Math.round(scores.reduce((a,b)=>a+b.c, 0) / scores.length) : 0;
         document.getElementById('st-g-avg').innerText = UI.formatValue(avgGlobal);
         let bestRace = { c: 0, n: "Nadie", track: "Ninguno" }; if(scores.length > 0) bestRace = scores.reduce((prev, current) => (current.c > prev.c) ? current : prev);
@@ -266,7 +305,6 @@ const UI = {
         let limitTimes = typeEl.value === 'today' ? 10 : 20; 
         filteredScores.sort((a,b) => b.c - a.c);
         
-        // PODIO VISUAL (Top 1, 2, 3)
         document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => {
             const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
             return `<tr>
@@ -283,7 +321,6 @@ const UI = {
             return { n: u.n, a: u.a, h: u.h, avgCPM: averageCPM, total: history.length };
         }).filter(u => u.total > 0).sort((a,b) => b.avgCPM - a.avgCPM);
 
-        // PODIO VISUAL (Top 1, 2, 3)
         document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => {
             const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
             return `<tr>
@@ -349,7 +386,7 @@ const UI = {
         document.getElementById('create-text-form').classList.add('hidden'); document.getElementById('create-cat-form').classList.add('hidden');
         const btnText = document.getElementById('btn-create-text'); const btnCat = document.getElementById('btn-create-cat');
         if(type === 'text') { UI.updateCategorySelects(); document.getElementById('create-text-form').classList.remove('hidden'); btnText.className = 'btn-primary btn-admin-mode active'; btnCat.className = 'btn-primary btn-alt btn-admin-mode'; } 
-        else { UI.updateCategorySelects(); document.getElementById('create-cat-form').classList.remove('hidden'); btnCat.className = 'btn-primary btn-admin-mode active'; btnText.className = 'btn-primary btn-alt btn-admin-mode'; }
+        else { UI.updateCategorySelects(); document.getElementById('create-cat-form').classList.remove('hidden'); btnCat.className = 'btn-primary btn-alt btn-admin-mode active'; btnText.className = 'btn-primary btn-alt btn-admin-mode'; }
     },
 
     showAdminPhraseCategories() { UI.activeAdminCat = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden'); document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-search').value = ''; UI.renderAdminP(); },
@@ -432,12 +469,14 @@ const UI = {
 };
 
 if (typeof require !== 'undefined') {
-    const { ipcRenderer } = require('electron');
-    ipcRenderer.on('update-status', (event, status) => {
-        const dot = document.getElementById('update-dot'); const btn = document.getElementById('btn-update-status');
-        if (status === 'downloading') { dot.className = 'update-dot dot-yellow'; dot.classList.remove('hidden'); btn.innerText = "⏳ DESCARGANDO PARCHE..."; btn.classList.remove('hidden'); } 
-        else if (status === 'ready') { dot.className = 'update-dot dot-theme'; dot.classList.remove('hidden'); btn.innerText = "🚀 APLICAR ACTUALIZACIÓN"; btn.classList.remove('hidden'); }
-    });
+    try {
+        const { ipcRenderer: electronIpc } = require('electron');
+        electronIpc.on('update-status', (event, status) => {
+            const dot = document.getElementById('update-dot'); const btn = document.getElementById('btn-update-status');
+            if (status === 'downloading') { dot.className = 'update-dot dot-yellow'; dot.classList.remove('hidden'); btn.innerText = "⏳ DESCARGANDO PARCHE..."; btn.classList.remove('hidden'); } 
+            else if (status === 'ready') { dot.className = 'update-dot dot-theme'; dot.classList.remove('hidden'); btn.innerText = "🚀 APLICAR ACTUALIZACIÓN"; btn.classList.remove('hidden'); }
+        });
+    } catch(e) {}
 }
 
 const App = {
@@ -448,10 +487,21 @@ const App = {
     nextRace: () => { if(App.activeEngine) App.activeEngine.stop(); App.startRandomRace(); },
     quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
     
-    handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { const { ipcRenderer } = require('electron'); ipcRenderer.send('apply-update'); } },
+    handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
     toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } UI.toggleSettings(); },
     
-    // NUEVO: Limpiar Caché Local
+    // --- FUNCIÓN DE DESCARGA DIRECTA WEB ---
+    downloadSetup: () => {
+        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper.Setup.exe';
+        const link = document.createElement('a');
+        link.href = directUrl;
+        link.download = 'CananTyper_Setup.exe';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        UI.toggleSettings();
+    },
+
     clearCache: () => {
         if(confirm("¿Seguro que deseas limpiar la caché local? Se volverán a descargar los textos y usuarios de la nube.")) {
             localStorage.removeItem('ct_cache_u'); localStorage.removeItem('ct_cache_s');
@@ -487,12 +537,12 @@ class Engine {
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
         this.i = 0; this.c = 0; this.s = null; this.timer = null; this.init(); 
     }
-    stop() { 
-        if(this.timer) clearInterval(this.timer); this.timer = null; 
-        document.body.classList.remove('zen-focus'); // Limpiar modo Focus si sale
-    }
+    stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); }
+    
     init() { 
         UI.show('game-screen'); 
+        updateDiscordStatus(`Corriendo: #${this.track.title}`, "En plena carrera 🏎️");
+
         document.getElementById('game-result-modal').classList.add('hidden');
         document.getElementById('game-input').classList.remove('hidden');
         document.getElementById('in-game-controls').classList.remove('hidden');
@@ -500,7 +550,6 @@ class Engine {
         document.getElementById('game-timer').innerText = '0s';
         document.getElementById('game-speed-display').innerText = '0';
         
-        // Reset Progress bar y PB
         document.getElementById('race-progress').style.width = '0%';
         document.getElementById('pb-alert').classList.add('hidden');
         document.body.classList.remove('zen-focus');
@@ -517,10 +566,10 @@ class Engine {
         display.style.fontSize = '1.6rem';
         setTimeout(() => { let size = 1.6; while (display.scrollHeight > display.clientHeight && size > 0.8) { size -= 0.05; display.style.fontSize = size + 'rem'; } }, 10);
     }
+
     check(v, el) { 
         if(!this.s) { 
             this.s = new Date(); 
-            // Iniciar Focus Dimming si es Modo Zen
             if(CT.currentUnit === 'zen' && !document.body.classList.contains('zen-focus')) { document.body.classList.add('zen-focus'); }
             
             this.timer = setInterval(() => { 
@@ -555,7 +604,6 @@ class Engine {
                 activeSpan.className = 'word correct'; activeSpan.innerHTML = cur; 
                 this.i++; el.value = ''; el.classList.remove('input-error');
                 
-                // Actualizar Progress Bar
                 const progress = (this.i / this.w.length) * 100;
                 document.getElementById('race-progress').style.width = progress + '%';
 
@@ -563,6 +611,7 @@ class Engine {
             } else { el.value = v; el.classList.add('input-error'); }
         }
     }
+
     end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000;
@@ -575,11 +624,12 @@ class Engine {
         const finalUnitLabel = CT.currentUnit === 'zen' ? 'CPM (ZEN)' : CT.currentUnit.toUpperCase();
         const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
         
+        updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
+
         document.getElementById('final-speed-display').innerText = finalSpeedValue + " " + finalUnitLabel;
         
         const u = CT.ses(); 
         if(u) {
-            // Lógica de NUEVO RÉCORD PERSONAL
             const previousBest = u.hi.length > 0 ? Math.max(...u.hi) : 0;
             if(finalCPM > previousBest && u.hi.length > 0) {
                 document.getElementById('pb-alert').classList.remove('hidden');
@@ -599,12 +649,3 @@ class Engine {
 }
 
 document.addEventListener('DOMContentLoaded', () => { CT.init(); });
-
-document.getElementById('img-input').onchange = (e) => {
-    const file = e.target.files[0]; if(!file) return;
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if(!validTypes.includes(file.type)) { alert("Formato no válido."); e.target.value = ''; return; }
-    if(file.size > 5 * 1024 * 1024) { alert("Máximo 5MB."); e.target.value = ''; return; }
-    const r = new FileReader(); r.onload = (ev) => { UI.openCropModal(ev.target.result); }; r.readAsDataURL(file);
-};
-
