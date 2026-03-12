@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.0.9 (Cirugía UI/UX Élite)
+    Capitán del Código: Ángel | Versión 1.1.0 (Arquitectura Élite)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -31,7 +31,7 @@ const db = firebase.firestore();
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
 const CT = {
-    data: { u: [], s: [], p: [], c: [], a: [], ui: null, maint: null }, 
+    data: { u: [], s: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
@@ -58,6 +58,16 @@ const CT = {
             const dlBtn = document.getElementById('btn-direct-download');
             if (dlBtn) dlBtn.classList.remove('hidden');
         }
+
+        // KEYLOGGER GLOBAL PARA ATAJOS
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+            if (!App.activeEngine) return;
+            const sc = CT.data.shortcuts || { restart: 'Tab', next: 'Enter', quit: 'Escape' };
+            if (e.key === sc.restart) { e.preventDefault(); App.retryRace(); }
+            else if (e.key === sc.next) { e.preventDefault(); App.nextRace(); }
+            else if (e.key === sc.quit) { e.preventDefault(); App.quitRace(); }
+        });
         
         db.collection('config').doc('maintenance').onSnapshot(snap => {
             if(snap.exists) { this.data.maint = snap.data(); } else {
@@ -65,6 +75,16 @@ const CT = {
                 if(this.ses() && this.ses().r === 'admin') db.collection('config').doc('maintenance').set(this.data.maint);
             }
             UI.checkMaintenance();
+        });
+
+        db.collection('config').doc('info_page').onSnapshot(snap => {
+            if(snap.exists) { this.data.info = snap.data(); } else { this.data.info = { title: "Información", content: "Bienvenido a CananTyper." }; }
+            UI.renderInfoPage();
+        });
+
+        db.collection('config').doc('shortcuts').onSnapshot(snap => {
+            if(snap.exists) { this.data.shortcuts = snap.data(); } else { this.data.shortcuts = { restart: 'Tab', next: 'Enter', quit: 'Escape' }; }
+            UI.renderAdminShortcuts();
         });
 
         if(this.ses()) { UI.initLobby(); } 
@@ -79,7 +99,7 @@ const CT = {
         });
         db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
-            if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General"}); }
+            if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General", order: 0}); }
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.renderTrainDropdown(); UI.refreshActiveViews(); 
         });
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
@@ -132,13 +152,25 @@ const CT = {
                 't_sett_fast_on': { l: 'Aj. Modo Ráp. SI', v: 'SI' }, 't_sett_fast_off': { l: 'Aj. Modo Ráp. NO', v: 'NO' },
                 't_tab_trn': { l: 'A. Entrenar', v: 'Entrenar' }, 't_btn_pin_on': { l: 'Pista Fijado', v: '📌 FIJADO' },
                 't_btn_pin_off': { l: 'Pista Fijar', v: '📌 FIJAR' }, 't_theme_btn': { l: 'Aj. Tema Btn', v: '🎨 Personalizar' },
-                't_theme_title': { l: 'Tema Título', v: 'Personalizar Tema' }, 't_theme_save': { l: 'Tema Guardar', v: 'Guardar' },
-                't_theme_reset': { l: 'Tema Reset', v: 'Restaurar' }, 't_trn_tab_cre': { l: 'Trn Tab Crear', v: 'CREAR' },
+                't_theme_title': { l: 'Tema Título', v: 'Elegir Plantilla' }, 't_theme_save': { l: 'Tema Guardar', v: 'Aplicar' },
+                't_theme_reset': { l: 'Tema Reset', v: 'Por Defecto' }, 't_trn_tab_cre': { l: 'Trn Tab Crear', v: 'CREAR' },
                 't_trn_tab_ed': { l: 'Trn Tab Edit', v: 'EDITAR' }, 't_trn_tab_cat': { l: 'Trn Tab Mods', v: 'MODALIDADES' },
-                't_trn_cre_btn': { l: 'Trn Crear Btn', v: 'GUARDAR PISTA DE ENTRENAMIENTO' }, 't_trn_mod_cre': { l: 'Trn Mod Crear', v: 'CREAR MODALIDAD' },
+                't_trn_cre_btn': { l: 'Trn Crear Btn', v: 'GUARDAR PISTA' }, 't_trn_mod_cre': { l: 'Trn Mod Crear', v: 'CREAR MODALIDAD' },
                 't_trn_mod_del': { l: 'Trn Mod Elim', v: 'ELIMINAR' }, 't_trn_mod_t1': { l: 'Trn Titulo C1', v: 'Nueva Modalidad' },
                 't_trn_mod_t2': { l: 'Trn Titulo C2', v: 'Eliminar Modalidad' }, 't_lbl_st_top10_txt': { l: 'Est. TH Texto', v: 'Texto' },
-                't_lbl_st_top10_num': { l: 'Est. TH Nro', v: 'N°' }
+                't_lbl_st_top10_num': { l: 'Est. TH Nro', v: 'N°' }, 
+                // --- NUEVA TANDA LÉXICO (FASE 1.1.0) ---
+                't_tab_info': { l: 'A. Info Tab', v: 'Información' },
+                't_tab_sc': { l: 'A. Atajos Tab', v: 'Atajos' },
+                't_adm_sc_title': { l: 'Admin Atajos Titulo', v: 'Configuración de Atajos' },
+                't_adm_sc_sub': { l: 'Admin Atajos Sub', v: 'Define las teclas globales de acción' },
+                't_adm_sc_btn': { l: 'Admin Atajos Btn', v: 'GUARDAR ATAJOS' },
+                't_adm_info_title': { l: 'Admin Info Titulo', v: 'Página de Información' },
+                't_adm_info_sub': { l: 'Admin Info Sub', v: 'Redacta la historia y notas del parche' },
+                't_adm_info_btn': { l: 'Admin Info Btn', v: 'PUBLICAR INFORMACIÓN' },
+                't_sc_lbl_res': { l: 'Atajo Reiniciar', v: 'Reiniciar Carrera' },
+                't_sc_lbl_nxt': { l: 'Atajo Siguiente', v: 'Siguiente Pista' },
+                't_sc_lbl_qt': { l: 'Atajo Salir', v: 'Abandonar Carrera' }
             };
             if(snap.exists) { this.data.ui = { ...defaults, ...snap.data() }; } else { this.data.ui = defaults; }
             UI.applyUITexts(); UI.refreshActiveViews();
@@ -203,6 +235,8 @@ const UI = {
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
     showStats() { this.switchStatsTab('personal'); UI.updateUnitVisuals(CT.currentUnit); this.show('stats-screen'); },
+    showInfo() { this.renderInfoPage(); this.show('info-screen'); },
+
     switchStatsTab(tab) {
         document.querySelectorAll('.pane').forEach(p => { if(p.id.startsWith('pane-stats')) p.classList.add('hidden') });
         document.querySelectorAll('.tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
@@ -222,7 +256,8 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(k === 't_sett_fast' || k === 't_sett_fast_on' || k === 't_sett_fast_off' || k === 't_btn_pin_on' || k === 't_btn_pin_off') { /* dinámico via JS */ }
+                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off'].includes(k)) { /* js dynamic */ }
+                else if(el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = CT.data.ui[k].v; }
                 else { el.innerText = CT.data.ui[k].v; }
             }
         });
@@ -341,6 +376,21 @@ const UI = {
         document.getElementById('st-e-table-cats').innerHTML = top10C.map((cat, i) => { let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p); return `<tr><td><b>#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(catMax.c)}</b></td></tr>`; }).join('');
     },
 
+    renderInfoPage() {
+        if(!CT.data.info) return;
+        document.getElementById('info-display-title').innerText = CT.data.info.title || "Información";
+        document.getElementById('info-display-content').innerHTML = CT.data.info.content || "";
+        document.getElementById('info-title-input').value = CT.data.info.title || "";
+        document.getElementById('info-msg-input').innerHTML = CT.data.info.content || "";
+    },
+
+    renderAdminShortcuts() {
+        if(!CT.data.shortcuts) return;
+        document.getElementById('sc-restart').value = CT.data.shortcuts.restart || 'Tab';
+        document.getElementById('sc-next').value = CT.data.shortcuts.next || 'Enter';
+        document.getElementById('sc-quit').value = CT.data.shortcuts.quit || 'Escape';
+    },
+
     refreshActiveViews: () => {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
@@ -407,7 +457,7 @@ const UI = {
         const tPurge = CT.data.ui && CT.data.ui['t_btn_tr_purge'] ? CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
         let html = `<button onclick="App.startPurge()">${tPurge}</button>`;
         const trnCats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
-        trnCats.forEach(c => {
+        trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => {
             const cleanName = c.name.replace('[TRN] ', '');
             html += `<button onclick="App.startTrnCategory('${c.name}')">⚡ ${cleanName}</button>`;
         });
@@ -488,9 +538,6 @@ const UI = {
             document.documentElement.style.setProperty('--theme-custom', t.p);
             document.documentElement.style.setProperty('--bg-custom', t.bg);
             document.documentElement.style.setProperty('--surface-custom', t.surface);
-            document.getElementById('theme-p').value = t.p;
-            document.getElementById('theme-bg').value = t.bg;
-            document.getElementById('theme-surface').value = t.surface;
         } else {
             document.documentElement.removeAttribute('data-custom-theme');
         }
@@ -506,9 +553,9 @@ const UI = {
 
     switchTab(tab) {
         document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden')); document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`pane-${tab}`).classList.remove('hidden');
-        let btnId = 't-' + tab.substring(0,2); if (tab === 'create') btnId = 't-cr'; if (tab === 'announcements') btnId = 't_tab_ann'; if (tab === 'lexicon') btnId = 't_tab_lex'; if (tab === 'server') btnId = 't_tab_srv'; if (tab === 'users') btnId = 't_tab_usr'; if (tab === 'races') btnId = 't_tab_rac'; if (tab === 'phrases') btnId = 't_tab_txt'; if (tab === 'create') btnId = 't_tab_cre'; if (tab === 'training') btnId = 't_tab_trn';
+        let btnId = 't-' + tab.substring(0,2); if (tab === 'create') btnId = 't-cr'; if (tab === 'announcements') btnId = 't_tab_ann'; if (tab === 'lexicon') btnId = 't_tab_lex'; if (tab === 'server') btnId = 't_tab_srv'; if (tab === 'users') btnId = 't_tab_usr'; if (tab === 'races') btnId = 't_tab_rac'; if (tab === 'phrases') btnId = 't_tab_txt'; if (tab === 'create') btnId = 't_tab_cre'; if (tab === 'training') btnId = 't_tab_trn'; if (tab === 'shortcuts') btnId = 't_tab_sc'; if (tab === 'info') btnId = 't_tab_info';
         const activeTabBtn = document.getElementById(btnId); if(activeTabBtn) activeTabBtn.classList.add('active');
-        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { UI.switchTrnTab('crear'); }
+        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { UI.switchTrnTab('crear'); } if(tab === 'info') { UI.renderInfoPage(); }
     },
 
     switchTrnTab(tab) {
@@ -523,6 +570,7 @@ const UI = {
         const list = CT.dbLocal('a');
         document.getElementById('admin-ann-list').innerHTML = list.map(a => `<tr><td style="font-size: 1.5rem; text-align: center;">${a.icon}</td><td><span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold; font-size: 0.8rem;">${a.active ? 'VIGENTE' : 'FINALIZADO'}</span></td><td style="white-space: nowrap; font-size: 0.75rem; color: var(--text-muted); text-align: center;">${a.date}</td><td><div style="display: flex; gap: 5px; justify-content: center;">${a.active ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px; border-color: var(--error); color: var(--error);" title="Anular">❌</button>` : `<span style="display: inline-block; width: 30px;"></span>`}<button onclick="App.deleteAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px;" title="Eliminar del Historial">🗑️</button></div></td></tr>`).join('');
     },
+    
     renderAdminLexicon() {
         if(!CT.data.ui) return; const query = (document.getElementById('lexicon-search').value || "").toLowerCase(); const listEl = document.getElementById('admin-lexicon-list');
         let filtered = Object.keys(CT.data.ui).filter(k => { const item = CT.data.ui[k]; return item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query); });
@@ -556,7 +604,8 @@ const UI = {
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
-            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            cats.sort((a,b) => (a.order || 0) - (b.order || 0));
+            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
@@ -598,12 +647,13 @@ const UI = {
     showTrackSelect() { document.getElementById('track-search').value = ''; UI.activeTrackCat = null; UI.filterFavs = false; UI.showTrackCategorySelect(); this.show('track-screen'); },
     showTrackCategorySelect() {
         document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
-        const tracks = CT.dbLocal('p'); const cats = CT.dbLocal('c'); let catCounts = {}; 
+        const tracks = CT.dbLocal('p'); let cats = CT.dbLocal('c'); let catCounts = {}; 
         tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
-        
+        cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+
         let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
         let html = `<div class="cat-card" onclick="UI.toggleFavFilter()" style="border-color: #ffd700;"><h3 style="color:#ffd700"><span>${t_fav}</span></h3><span style="color:var(--text-main)">Pistas Guardadas</span></div>`;
-        html += cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        html += cats.map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         document.getElementById('track-category-view').innerHTML = html;
     },
     toggleFavFilter() { UI.filterFavs = true; UI.activeTrackCat = null; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
@@ -745,11 +795,30 @@ const App = {
         }
     },
 
-    saveTheme: () => {
-        const p = document.getElementById('theme-p').value;
-        const bg = document.getElementById('theme-bg').value;
-        const surface = document.getElementById('theme-surface').value;
-        const themeObj = { p, bg, surface };
+    moveCategory: async (catName, direction) => {
+        let cats = CT.dbLocal('c');
+        let filtered = cats.filter(c => !c.name.startsWith('[TRN]') && c.name !== 'General').sort((a,b) => (a.order || 0) - (b.order || 0));
+        let idx = filtered.findIndex(c => c.name === catName);
+        if(idx === -1) return;
+        let swapIdx = idx + direction;
+        if(swapIdx >= 0 && swapIdx < filtered.length) {
+            let cat2 = filtered[swapIdx];
+            let order1 = filtered[idx].order !== undefined ? filtered[idx].order : idx;
+            let order2 = cat2.order !== undefined ? cat2.order : swapIdx;
+            if(order1 === order2) { order1 = idx; order2 = swapIdx; }
+            const batch = db.batch();
+            batch.update(db.collection('categories').doc(catName), {order: order2});
+            batch.update(db.collection('categories').doc(cat2.name), {order: order1});
+            await batch.commit();
+        }
+    },
+
+    saveTheme: (themeName) => {
+        let themeObj;
+        if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
+        else if (themeName === 'hacker') { themeObj = { p: '#00ff00', bg: '#050505', surface: '#0a0a0a' }; }
+        else { themeObj = { p: '#a6ff00', bg: '#000000', surface: '#141414' }; } 
+        
         localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
         const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: themeObj }); }
         UI.applySavedTheme(); UI.closeThemeModal();
@@ -760,6 +829,22 @@ const App = {
         const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
         UI.applySavedTheme(); UI.closeThemeModal();
     },
+
+    saveInfoPage: () => {
+        const title = document.getElementById('info-title-input').value.trim();
+        const content = document.getElementById('info-msg-input').innerHTML.trim();
+        if(!title || !content) return alert("Rellena todos los campos.");
+        db.collection('config').doc('info_page').set({ title, content }).then(() => alert("Información guardada."));
+    },
+
+    saveShortcuts: () => {
+        const restart = document.getElementById('sc-restart').value;
+        const next = document.getElementById('sc-next').value;
+        const quit = document.getElementById('sc-quit').value;
+        db.collection('config').doc('shortcuts').set({ restart, next, quit }).then(() => alert("Atajos guardados."));
+    },
+    
+    listenShortcutInput: (e, id) => { e.preventDefault(); document.getElementById(id).value = e.key; },
 
     handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
     toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } UI.toggleSettings(); },
@@ -785,13 +870,23 @@ const App = {
     cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
     deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
     
-    editUIText: (key) => { if(!CT.data.ui || !CT.data.ui[key]) return; const currentVal = CT.data.ui[key].v; const newVal = prompt(`Editar [${CT.data.ui[key].l}]:`, currentVal); if(newVal && newVal.trim() !== currentVal) { db.collection('config').doc('ui_texts').update({ [`${key}.v`]: newVal.trim() }).then(() => alert("Actualizado con éxito. Los cambios son en vivo.")).catch(() => alert("Error al conectar con la base de datos.")); } },
+    // CORRECCIÓN QUIRÚRGICA LEXICÓN
+    editUIText: (key) => { 
+        if(!CT.data.ui || !CT.data.ui[key]) return; 
+        const currentVal = CT.data.ui[key].v; 
+        const newVal = prompt(`Editar [${CT.data.ui[key].l}]:`, currentVal); 
+        if(newVal && newVal.trim() !== currentVal) { 
+            db.collection('config').doc('ui_texts').set({ [key]: { l: CT.data.ui[key].l, v: newVal.trim() } }, { merge: true })
+              .then(() => alert("Actualizado con éxito."))
+              .catch((e) => alert("Error al conectar con la base de datos: " + e.message)); 
+        } 
+    },
 
-    createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName }); nameInp.value = ''; alert("Categoría Creada."); UI.toggleCreateForm('text'); },
+    createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); nameInp.value = ''; alert("Categoría Creada."); UI.toggleCreateForm('text'); },
     deleteCategory: () => { const sel = document.getElementById('delete-cat-select'); const catName = sel.value; if(!catName) return; if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { db.collection('categories').doc(catName).delete(); let pList = CT.dbLocal('p'); let updated = false; pList.forEach(p => { if (p.c === catName) { p.c = 'General'; updated = true; db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); } }); if (updated) CT.save('p', pList); alert("Categoría eliminada con éxito."); } },
     createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto."); const idStr = titleInp.value.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value, order: Date.now() }); titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito."); },
 
-    createTrnCategory: () => { const nameInp = document.getElementById('trn-new-cat-name'); const baseName = nameInp.value.trim(); if(!baseName) return alert("Falta el nombre."); const catName = `[TRN] ${baseName}`; db.collection('categories').doc(catName).set({ name: catName }); nameInp.value = ''; alert("Modalidad Creada."); },
+    createTrnCategory: () => { const nameInp = document.getElementById('trn-new-cat-name'); const baseName = nameInp.value.trim(); if(!baseName) return alert("Falta el nombre."); const catName = `[TRN] ${baseName}`; db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); nameInp.value = ''; alert("Modalidad Creada."); },
     deleteTrnCategory: () => { const sel = document.getElementById('trn-delete-cat-select'); const catName = sel.value; if(!catName) return; if(confirm(`¿Eliminar modalidad "${catName}"?`)) { db.collection('categories').doc(catName).delete(); alert("Eliminada con éxito."); } },
     createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos."); const idStr = titleInp.value.toString(); const catValue = catInp.value || '[TRN] Pistas Extremas'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value, order: Date.now() }); titleInp.value = ''; textInp.value = ''; alert("Texto de Entrenamiento Guardado."); },
 
@@ -811,9 +906,10 @@ class Engine {
         this.mode = mode; 
         this.ghostCPM = ghostCPM;
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
+        App.activeEngine = this; // Asegurar referencia global para atajos
         this.init(); 
     }
-    stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; }
+    stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; App.activeEngine = null; }
     
     init() { 
         UI.show('game-screen'); 
