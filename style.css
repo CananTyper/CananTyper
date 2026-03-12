@@ -170,9 +170,12 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 kbd { width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; background: var(--surface-light); border: 1px solid var(--border); border-radius: 8px; font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; color: var(--text-muted); font-weight: bold; transition: all 0.3s ease; position: relative; overflow: hidden; user-select: none; }
 kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
 
-/* BOTÓN FANTASMA */
-.ghost-btn { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; opacity: 0.5; transition: all 0.2s; padding: 0; }
+/* BOTÓN FANTASMA Y REORDEN */
+.ghost-btn, .reorder-btn { background: transparent; border: none; cursor: pointer; transition: all 0.2s; padding: 0; }
+.ghost-btn { font-size: 1.2rem; opacity: 0.5; }
 .ghost-btn:hover { opacity: 1; transform: scale(1.2); filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+.reorder-btn { color: var(--p) !important; font-weight: bold; }
+.reorder-btn:hover { text-shadow: 0 0 8px color-mix(in srgb, var(--p) 40%, transparent); transform: scale(1.2); }
 
 .profile-history-area { margin-top: 20px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; min-height: 0; padding: 20px; transition: border-color 0.3s; }
 .profile-history-area:hover { border-color: color-mix(in srgb, var(--p) 20%, transparent); }
@@ -198,7 +201,7 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .track-card-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; }
 
 .admin-tabs { display: flex; gap: 10px; background: var(--surface-light); padding: 8px; border-radius: 12px; flex-shrink: 0; margin-top: 15px; border: 1px solid var(--border); }
-.tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+.tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
 .tab-btn:hover { color: var(--text-main); }
 .tab-btn.active { background: var(--p); color: #000 !important; box-shadow: 0 0 15px color-mix(in srgb, var(--p) 30%, transparent); }
 .admin-content-area { flex-grow: 1; min-height: 0; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-top: 15px; display: flex; flex-direction: column; transition: border-color 0.3s; }
@@ -252,35 +255,4 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 
 /* REGLAS MODO ZEN */
 :root[data-theme="zen"] { --p: #b388ff; } 
-#btn-zen.active { background: var(--theme-zen, #b388ff); color: #000; box-shadow: 0 0 15px color-mix(in srgb, #b388ff 40%, transparent); }
-:root[data-theme="zen"] .val-blurrable { filter: blur(12px); opacity: 0.3; transition: filter 0.4s ease, opacity 0.4s ease; cursor: crosshair; }
-:root[data-theme="zen"] .val-blurrable:hover { filter: blur(0); opacity: 1; }
-
-body.zen-focus .top-nav { opacity: 0.05; pointer-events: none; }
-body.zen-focus .mode-selectors { opacity: 0.05; pointer-events: none; }
-body.zen-focus .game-hud { opacity: 0.05; pointer-events: none; }
-body.zen-focus .progress-container { opacity: 0.2; }
-body.zen-focus .game-input-box { opacity: 0.2; }
-body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
-
-/* NAVEGACIÓN ICÓNICA Y TOOLTIPS PRO */
-.nav-icon-btn { background: transparent; border: 1px solid transparent; font-size: 1.4rem; cursor: pointer; padding: 8px; border-radius: 10px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; color: var(--text-main); }
-.nav-icon-btn:hover { background: var(--surface-light); border-color: var(--border); transform: translateY(-2px); }
-
-[data-tooltip] { position: relative; }
-[data-tooltip]::after {
-    content: attr(data-tooltip); position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);
-    background: var(--bg); color: var(--text-main); border: 1px solid var(--p);
-    padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap;
-    opacity: 0; visibility: hidden; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
-    z-index: 1000; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
-}
-[data-tooltip]:hover::after { opacity: 1; visibility: visible; bottom: -45px; }
-
-.update-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface); }
-.dot-yellow { background: #ffcc00; box-shadow: 0 0 8px #ffcc00; }
-.dot-theme { background: var(--p); box-shadow: 0 0 8px var(--p); }
-
-.update-menu-item { background: color-mix(in srgb, var(--p) 15%, transparent) !important; color: var(--p) !important; font-weight: bold; border-bottom: 1px solid var(--p) !important; text-align: center; width: 100%; }
-.version-seal { padding: 12px; text-align: center; font-size: 0.7rem; color: var(--text-muted); background: var(--bg); display: flex; align-items: center; justify-content: center; gap: 6px; text-transform: uppercase; letter-spacing: 1px; }
-.online-dot { width: 7px; height: 7px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 8px #00ff00; }
+#btn-zen.active { background: var(--theme-zen, #b388ff);
