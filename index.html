@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.8">
+    <link rel="stylesheet" href="style.css?v=1.0.9">
 </head>
 <body>
 
@@ -70,7 +70,7 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.0.8 
+                                CananTyper v1.0.9 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                 <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PISTAS</button>
                 
                 <div style="position: relative;">
-                    <button id="t_btn_train_menu" onclick="UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700;">ENTRENAR 🏋️</button>
+                    <button id="t_btn_train_menu" onclick="UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);">ENTRENAR 🏋️</button>
                     <div id="train-dropdown" class="edit-dropdown hidden" style="top:110%; right:0; width:100%;">
                         </div>
                 </div>
@@ -163,15 +163,20 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 200px;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><tbody id="st-p-top10-races"></tbody></table></div>
+                            <div class="custom-scroll table-body-wrapper">
+                                <table class="data-table">
+                                    <thead><tr><th width="15%" id="t_lbl_st_top10_num">N°</th><th id="t_lbl_st_top10_txt">Texto</th><th width="25%" id="th_st_p_top10_vel">VEL.</th></tr></thead>
+                                    <tbody id="st-p-top10-races"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="table-box" style="margin: 0; padding: 15px; border-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                            <div class="table-header"><h3 id="t_st_p_worst_txt" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Textos a Mejorar (Bottom 5)</h3></div>
-                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
+                        <div class="table-box hc-table-box" style="margin: 0; padding: 15px;">
+                            <div class="table-header"><h3 id="t_st_p_worst_txt">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
                         </div>
-                        <div class="table-box" style="margin: 0; padding: 15px; border-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                            <div class="table-header"><h3 id="t_st_p_worst_wrd" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Palabras Críticas (Top 30)</h3></div>
-                            <div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
+                        <div class="table-box hc-table-box" style="margin: 0; padding: 15px;">
+                            <div class="table-header"><h3 id="t_st_p_worst_wrd">Palabras Críticas (Top 30)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
                     </div>
                 </div>
@@ -200,13 +205,13 @@
                 <div id="pane-stats-hc" class="pane hidden">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card" style="border-color:var(--error)"><small id="t_lbl_hc_rec" style="color:var(--error)">RÉCORD HARDCORE</small><b id="st-hc-record" style="color:var(--error)">0</b></div>
-                        <div class="stat-card"><small id="t_lbl_hc_surv">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv">0</b></div>
-                        <div class="stat-card"><small id="t_lbl_hc_death">MUERTES SÚBITAS</small><b id="st-hc-deaths">0</b></div>
+                        <div class="stat-card hc-table-box"><small id="t_lbl_hc_surv">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv">0</b></div>
+                        <div class="stat-card hc-table-box"><small id="t_lbl_hc_death">MUERTES SÚBITAS</small><b id="st-hc-deaths">0</b></div>
                         <div class="stat-card stat-highlight" style="border-color:var(--error); box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate" style="color:var(--error)">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="color:var(--error)">0%</b></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_1" style="color:var(--error)">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_2" style="color:var(--error)">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
+                        <div class="table-box hc-table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_1">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
+                        <div class="table-box hc-table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_2">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
                     </div>
                 </div>
 
@@ -289,11 +294,11 @@
                     
                     <div id="pane-trn-crear" class="admin-form">
                         <div class="form-row">
-                            <input type="text" id="trn-new-title" placeholder="Número (ID)" style="width: 150px; border-color:#ffd700;">
-                            <select id="trn-new-cat" class="admin-select" style="border-color:#ffd700;"></select>
+                            <input type="text" id="trn-new-title" placeholder="Número (ID)" style="width: 150px;">
+                            <select id="trn-new-cat" class="admin-select"></select>
                         </div>
-                        <textarea id="trn-new-input" placeholder="Escribe el texto extremo o trabalenguas..." style="border-color:#ffd700;"></textarea>
-                        <button id="t_trn_cre_btn" onclick="App.createTrnPhrase()" class="btn-primary" style="align-self: center; background:#ffd700; color:#000;">GUARDAR PISTA DE ENTRENAMIENTO</button>
+                        <textarea id="trn-new-input" placeholder="Escribe el texto extremo o trabalenguas..."></textarea>
+                        <button id="t_trn_cre_btn" onclick="App.createTrnPhrase()" class="btn-primary" style="align-self: center;">GUARDAR PISTA DE ENTRENAMIENTO</button>
                     </div>
 
                     <div id="pane-trn-editar" class="hidden" style="display:flex; flex-direction:column; flex-grow:1; min-height:0;">
@@ -302,13 +307,13 @@
 
                     <div id="pane-trn-cat" class="hidden" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                         <div class="admin-form" style="margin-bottom:0; align-items:center;">
-                            <h3 id="t_trn_mod_t1" style="color:#ffd700;">Nueva Modalidad</h3>
-                            <input type="text" id="trn-new-cat-name" placeholder="Nombre (Ej: Velocidad)" style="border-color:#ffd700; text-align:center;">
-                            <button id="t_trn_mod_cre" onclick="App.createTrnCategory()" class="btn-primary" style="background:#ffd700; color:#000; width:100%;">CREAR MODALIDAD</button>
+                            <h3 id="t_trn_mod_t1" style="color:var(--p);">Nueva Modalidad</h3>
+                            <input type="text" id="trn-new-cat-name" placeholder="Nombre (Ej: Velocidad)" style="text-align:center;">
+                            <button id="t_trn_mod_cre" onclick="App.createTrnCategory()" class="btn-primary" style="width:100%;">CREAR MODALIDAD</button>
                         </div>
                         <div class="admin-form" style="margin-bottom:0; align-items:center;">
-                            <h3 id="t_trn_mod_t2" style="color:#ffd700;">Eliminar Modalidad</h3>
-                            <select id="trn-delete-cat-select" class="admin-select" style="width:100%; border-color:#ffd700;"></select>
+                            <h3 id="t_trn_mod_t2" style="color:var(--p);">Eliminar Modalidad</h3>
+                            <select id="trn-delete-cat-select" class="admin-select" style="width:100%;"></select>
                             <button id="t_trn_mod_del" onclick="App.deleteTrnCategory()" class="btn-error" style="width:100%;">ELIMINAR</button>
                         </div>
                     </div>
@@ -385,6 +390,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.8"></script>
+    <script src="main.js?v=1.0.9"></script>
 </body>
 </html>
