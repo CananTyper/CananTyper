@@ -255,4 +255,34 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 
 /* REGLAS MODO ZEN */
 :root[data-theme="zen"] { --p: #b388ff; } 
-#btn-zen.active { background: var(--theme-zen, #b388ff);
+#btn-zen.active { background: var(--theme-zen, #b388ff); color: #000; box-shadow: 0 0 15px color-mix(in srgb, #b388ff 40%, transparent); }
+:root[data-theme="zen"] .val-blurrable { filter: blur(12px); opacity: 0.3; transition: filter 0.4s ease, opacity 0.4s ease; cursor: crosshair; }
+:root[data-theme="zen"] .val-blurrable:hover { filter: blur(0); opacity: 1; }
+
+body.zen-focus .top-nav { opacity: 0.05; pointer-events: none; }
+body.zen-focus .mode-selectors { opacity: 0.05; pointer-events: none; }
+body.zen-focus .game-hud { opacity: 0.05; pointer-events: none; }
+body.zen-focus .progress-container { opacity: 0.2; }
+body.zen-focus .game-input-box { opacity: 0.2; }
+body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
+
+/* NAVEGACIÓN ICÓNICA Y TOOLTIPS PRO (RESTAURADA A FONDOS TRANSPARENTES) */
+.nav-icon-btn { background: transparent !important; border: none !important; font-size: 1.4rem; cursor: pointer; padding: 8px; border-radius: 10px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; color: var(--text-main); outline: none; }
+.nav-icon-btn:hover { background: var(--surface-light) !important; color: var(--p) !important; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+    content: attr(data-tooltip); position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);
+    background: var(--bg); color: var(--text-main); border: 1px solid var(--p);
+    padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap;
+    opacity: 0; visibility: hidden; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+    z-index: 1000; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
+}
+[data-tooltip]:hover::after { opacity: 1; visibility: visible; bottom: -45px; }
+
+.update-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface); }
+.dot-yellow { background: #ffcc00; box-shadow: 0 0 8px #ffcc00; }
+.dot-theme { background: var(--p); box-shadow: 0 0 8px var(--p); }
+
+.update-menu-item { background: color-mix(in srgb, var(--p) 15%, transparent) !important; color: var(--p) !important; font-weight: bold; border-bottom: 1px solid var(--p) !important; text-align: center; width: 100%; }
+.version-seal { padding: 12px; text-align: center; font-size:
