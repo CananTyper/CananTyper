@@ -17,7 +17,7 @@
 :root[data-theme="cpm"] { --p: var(--theme-cpm); }
 :root[data-theme="wpm"] { --p: var(--theme-wpm); }
 
-/* CUSTOM THEME OVERRIDES */
+/* CUSTOM THEME OVERRIDES (PLANTILLAS) */
 :root[data-custom-theme="true"] {
     --p: var(--theme-custom) !important;
     --bg: var(--bg-custom) !important;
@@ -102,9 +102,10 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .table-header h3 { margin: 0; font-size: 0.95rem; color: var(--p); text-transform: uppercase; transition: color 0.3s, text-shadow 0.3s; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
 
 /* TABLAS HARDCORE ESTILO ROJO */
-.hc-table-box { border-color: color-mix(in srgb, var(--error) 30%, transparent); transition: border-color 0.3s, box-shadow 0.3s; }
-.hc-table-box:hover { border-color: var(--error); box-shadow: 0 5px 25px color-mix(in srgb, var(--error) 15%, transparent); }
-.hc-table-box h3 { color: var(--error); text-shadow: 0 0 10px color-mix(in srgb, var(--error) 30%, transparent); }
+.hc-stat-card { border-color: color-mix(in srgb, var(--error) 30%, transparent) !important; transition: border-color 0.3s, box-shadow 0.3s !important; }
+.hc-stat-card:hover { border-color: var(--error) !important; box-shadow: 0 10px 25px color-mix(in srgb, var(--error) 15%, transparent) !important; }
+.hc-stat-card h3, .hc-stat-card b, .hc-stat-card small { color: var(--error) !important; transition: color 0.3s, text-shadow 0.3s !important; }
+.hc-stat-card:hover h3, .hc-stat-card:hover b { text-shadow: 0 0 10px color-mix(in srgb, var(--error) 30%, transparent) !important; }
 
 .nitro-select { background: var(--bg); color: var(--p); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.7rem; font-weight: bold; cursor: pointer; outline: none; transition: all 0.3s; }
 .nitro-select:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
@@ -142,6 +143,11 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .edit-dropdown { position: absolute; top: 20px; left: 0; background: var(--bg); border: 1px solid var(--p); border-radius: 8px; z-index: 10; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
 .edit-dropdown button { width: 100%; padding: 10px 15px; background: none; border: none; color: var(--text-main); text-align: left; font-size: 0.8rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
 .edit-dropdown button:hover { background: var(--p); color: #000; }
+
+/* THEME BUTTONS */
+.theme-btn { display: flex; align-items: center; gap: 15px; padding: 10px; background: transparent; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-main); font-weight: bold; width: 100%; }
+.theme-btn:hover { border-color: var(--t-color); background: var(--surface-light); box-shadow: 0 5px 15px color-mix(in srgb, var(--t-color) 20%, transparent); }
+.theme-preview { width: 20px; height: 20px; border-radius: 50%; background: var(--t-bg); border: 2px solid var(--t-color); box-shadow: 0 0 8px var(--t-color); }
 
 /* OVERRIDE TEMA ENTRENAMIENTO DROPDOWN */
 #train-dropdown { border-color: #ffd700; box-shadow: 0 10px 30px rgba(255, 215, 0, 0.15); }
