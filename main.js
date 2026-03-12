@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.1 (Control Maestro)
+    Capitán del Código: Ángel | Versión 1.1.3 (Parche de Urgencia)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -59,7 +59,6 @@ const CT = {
             if (dlBtn) dlBtn.classList.remove('hidden');
         }
 
-        // KEYLOGGER GLOBAL
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
             if (!App.activeEngine) return;
@@ -104,7 +103,6 @@ const CT = {
         });
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
 
-        // SISTEMA DE LEXICÓN BLINDADO (SANITIZACIÓN DE DATOS)
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título', v: 'CananTyper' }, 't_auth_sub': { l: 'Subtítulo', v: 'Mecanografía' },
@@ -127,7 +125,7 @@ const CT = {
                 't_st_e_top1': { l: 'Est. Más Top 1', v: 'MÁS VECES TOP 1' }, 't_adm_ann_send': { l: 'Anun. Título', v: 'Enviar Anuncio' }, 
                 't_adm_ann_sub': { l: 'Anun. Sub', v: 'Pop-Up de vista única' }, 't_adm_ann_btn': { l: 'Anun. Botón', v: 'PUBLICAR ANUNCIO' }, 
                 't_adm_ann_list': { l: 'Anun. Lista Tit.', v: 'Anuncios Enviados' }, 't_adm_srv_title': { l: 'Srv. Título', v: 'Estado del Servidor' }, 
-                't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Bloqueo maestro' }, 't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel' }, 
+                't_adm_srv_sub': { l: 'Srv. Subtítulo', v: 'Bloqueo maestro y Funciones Globales' }, 't_adm_srv_cfg': { l: 'Srv. Configurar', v: 'Configurar Cartel' }, 
                 't_adm_srv_btn': { l: 'Srv. Guardar', v: 'GUARDAR CARTEL' }, 't_adm_cre_btn_t': { l: 'Crear. Btn Texto', v: 'TEXTO' }, 
                 't_adm_cre_btn_c': { l: 'Crear. Btn Cat', v: 'CATEGORÍA' }, 't_adm_cre_btn_s': { l: 'Crear. Btn Guardar', v: 'GUARDAR TEXTO' }, 
                 't_adm_cre_cat_t1': { l: 'Crear. Cat Titulo', v: 'Crear Categoría' }, 't_adm_cre_cat_b1': { l: 'Crear. Cat Btn', v: 'CREAR CATEGORÍA' }, 
@@ -144,7 +142,7 @@ const CT = {
                 't_lbl_st_p_best_avg': { l: 'Est P. Prom G.', v: 'PROM. GENERAL' }, 't_lbl_st_p_last10_avg': { l: 'Est P. Prom 10', v: 'PROM. ÚLT. 10' }, 
                 't_lbl_st_p_best_cat': { l: 'Est P. Mejor Cat', v: 'MEJOR CATEGORÍA' }, 't_lbl_st_p_tot': { l: 'Est P. Totales', v: 'CARRERAS TOTALES' },
                 't_btn_hardcore': { l: 'Btn Hardcore', v: 'HARDCORE 💀' }, 't_btn_train_menu': { l: 'Btn Entrenar', v: 'ENTRENAR 🏋️' },
-                't_btn_tr_purge': { l: 'Btn Purgar', v: '🔥 Errores' }, 't_st_tab_hc': { l: 'Tab. Hardcore', v: 'Hardcore 💀' }, 
+                't_btn_tr_purge': { l: 'Btn Purgar', v: '🔥 Purgar Errores' }, 't_st_tab_hc': { l: 'Tab. Hardcore', v: 'Hardcore 💀' }, 
                 't_lbl_hc_rec': { l: 'HC. Récord', v: 'RÉCORD HARDCORE' }, 't_lbl_hc_surv': { l: 'HC. Supervivencia', v: 'CARRERAS SUPERVIVIDAS' }, 
                 't_lbl_hc_death': { l: 'HC. Muertes', v: 'MUERTES SÚBITAS' }, 't_lbl_hc_rate': { l: 'HC. Tasa', v: 'TASA DE MORTALIDAD' }, 
                 't_hc_title_1': { l: 'HC. Tit Tabla 1', v: 'Mejores Sobrevividas (Top 10)' }, 't_hc_title_2': { l: 'HC. Tit Tabla 2', v: 'Pistas más Mortales (Top 10)' }, 
@@ -159,13 +157,28 @@ const CT = {
                 't_trn_cre_btn': { l: 'Trn Crear Btn', v: 'GUARDAR PISTA' }, 't_trn_mod_cre': { l: 'Trn Mod Crear', v: 'CREAR MODALIDAD' },
                 't_trn_mod_del': { l: 'Trn Mod Elim', v: 'ELIMINAR' }, 't_trn_mod_t1': { l: 'Trn Titulo C1', v: 'Nueva Modalidad' },
                 't_trn_mod_t2': { l: 'Trn Titulo C2', v: 'Eliminar Modalidad' }, 't_lbl_st_top10_txt': { l: 'Est. TH Texto', v: 'Texto' },
-                't_lbl_st_top10_num': { l: 'Est. TH Nro', v: 'N°' }, 
-                't_tab_info': { l: 'A. Info Tab', v: 'Información' }, 't_tab_sc': { l: 'A. Atajos Tab', v: 'Atajos' },
-                't_adm_sc_title': { l: 'Admin Atajos Titulo', v: 'Configuración de Atajos' }, 't_adm_sc_sub': { l: 'Admin Atajos Sub', v: 'Define las teclas globales de acción' },
-                't_adm_sc_btn': { l: 'Admin Atajos Btn', v: 'GUARDAR ATAJOS' }, 't_adm_info_title': { l: 'Admin Info Titulo', v: 'Página de Información' },
-                't_adm_info_sub': { l: 'Admin Info Sub', v: 'Redacta la historia y notas del parche' }, 't_adm_info_btn': { l: 'Admin Info Btn', v: 'PUBLICAR INFORMACIÓN' },
-                't_sc_lbl_res': { l: 'Atajo Reiniciar', v: 'Reiniciar Carrera' }, 't_sc_lbl_nxt': { l: 'Atajo Siguiente', v: 'Siguiente Pista' },
-                't_sc_lbl_qt': { l: 'Atajo Salir', v: 'Abandonar Carrera' }
+                't_lbl_st_top10_num': { l: 'Est. TH Nro', v: 'N°' }, 't_tab_info': { l: 'A. Info Tab', v: 'Información' }, 
+                't_tab_sc': { l: 'A. Atajos Tab', v: 'Atajos' }, 't_adm_sc_title': { l: 'Admin Atajos Titulo', v: 'Configuración de Atajos' }, 
+                't_adm_sc_sub': { l: 'Admin Atajos Sub', v: 'Define las teclas globales de acción' }, 't_adm_sc_btn': { l: 'Admin Atajos Btn', v: 'GUARDAR ATAJOS' }, 
+                't_adm_info_title': { l: 'Admin Info Titulo', v: 'Página de Información' }, 't_adm_info_sub': { l: 'Admin Info Sub', v: 'Redacta la historia y notas del parche' }, 
+                't_adm_info_btn': { l: 'Admin Info Btn', v: 'PUBLICAR INFORMACIÓN' }, 't_sc_lbl_res': { l: 'Atajo Reiniciar', v: 'Reiniciar Carrera' }, 
+                't_sc_lbl_nxt': { l: 'Atajo Siguiente', v: 'Siguiente Pista' }, 't_sc_lbl_qt': { l: 'Atajo Salir', v: 'Abandonar Carrera' },
+                't_lbl_st_p_heat_sub': { l: 'Mapa Calor Sub', v: 'Visualización de debilidades' }, 't_hd_rank_races_sub': { l: 'Rank Carreras Sub', v: 'Los más veloces del día' },
+                't_hd_rank_avg_sub': { l: 'Rank Promedios Sub', v: 'Constancia y disciplina' }, 't_admin_users_title': { l: 'Admin Usu Título', v: 'Gestión de Usuarios' },
+                't_admin_races_title': { l: 'Admin Carr Título', v: 'Auditoría de Carreras' }, 't_admin_text_title': { l: 'Admin Txt Título', v: 'Laboratorio de Textos' },
+                't_admin_ann_title': { l: 'Admin Anu Título', v: 'Centro de Comunicaciones' }, 't_sett_menu': { l: 'Ajustes Titulo', v: 'MENÚ DE AJUSTES' },
+                
+                // --- NUEVA TANDA LÉXICO (FASE 1.1.3) ---
+                't_nav_lobby': { l: 'Nav Lobby', v: 'Lobby' },
+                't_nav_stats': { l: 'Nav Estadísticas', v: 'Estadísticas' },
+                't_nav_info': { l: 'Nav Info', v: 'Info' },
+                't_nav_admin': { l: 'Nav Admin', v: 'Admin' },
+                't_nav_settings': { l: 'Nav Ajustes', v: 'Ajustes' },
+                't_lbl_empty_hist': { l: 'Historial Vacío', v: 'Historial vacío' },
+                't_lbl_ghost_run': { l: 'Estado Fantasma', v: 'Compitiendo contra Fantasma 👻' },
+                't_lbl_game_over': { l: 'Estado Terminado', v: 'Carrera Terminada' },
+                't_lbl_acc_del': { l: 'Cuenta Eliminar', v: 'Eliminar Cuenta' },
+                't_lbl_cat_all': { l: 'Categoría Todas', v: 'Todas las Categorías' }
             };
             
             CT.data.ui = {};
@@ -214,10 +227,16 @@ const UI = {
         const themeEnabled = m.theme !== false;
 
         const navInfoBtn = document.getElementById('btn-nav-info');
-        if(navInfoBtn) navInfoBtn.classList.toggle('hidden', !infoEnabled && !isAdmin);
+        if(navInfoBtn) {
+            if(!infoEnabled && !isAdmin) navInfoBtn.classList.add('hidden');
+            else navInfoBtn.classList.remove('hidden');
+        }
 
         const themeBtn = document.getElementById('t_theme_btn');
-        if(themeBtn) themeBtn.classList.toggle('hidden', !themeEnabled && !isAdmin);
+        if(themeBtn) {
+            if(!themeEnabled && !isAdmin) themeBtn.classList.add('hidden');
+            else themeBtn.classList.remove('hidden');
+        }
 
         const fInfoBtn = document.getElementById('btn-feat-info');
         if(fInfoBtn) {
@@ -245,23 +264,15 @@ const UI = {
         document.getElementById('val-display-name').innerText = u.n;
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
-        const adminBtn = document.getElementById('btn-nav-admin'); if(adminBtn) adminBtn.classList.toggle('hidden', u.r !== 'admin');
+        
+        const adminBtn = document.getElementById('btn-nav-admin'); 
+        if(adminBtn) adminBtn.classList.toggle('hidden', u.r !== 'admin');
+        
         UI.updateUnitVisuals(CT.currentUnit); 
         this.renderGlobal(); 
         UI.renderTrainDropdown();
         this.show('home-screen');
         this.checkAnnouncements();
-    },
-
-    checkAnnouncements() {
-        if (!CT.data.a || CT.data.a.length === 0) return;
-        const activeAnn = CT.data.a.find(a => a.active === true);
-        if (activeAnn) {
-            const lastSeen = localStorage.getItem('ct_last_announcement');
-            if (lastSeen !== activeAnn.id.toString()) {
-                UI.showAnnouncement(activeAnn);
-            }
-        }
     },
 
     showLobby() { this.initLobby(); },
@@ -288,7 +299,7 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off'].includes(k)) { }
+                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off'].includes(k)) { /* js dynamic */ }
                 else if(el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = CT.data.ui[k].v; }
                 else { el.innerText = CT.data.ui[k].v; }
             }
@@ -434,7 +445,16 @@ const UI = {
 
     setUnit: (unit) => {
         if(CT.currentUnit === unit) return;
-        CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); UI.updateUnitVisuals(unit); UI.refreshActiveViews();
+        
+        // RUTA B: Forzado Autoritario. Destruir tema personalizado al cambiar métrica.
+        localStorage.removeItem('ct_custom_theme');
+        const u = CT.ses(); 
+        if(u && u.theme) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        document.documentElement.removeAttribute('data-custom-theme');
+
+        CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); 
+        UI.updateUnitVisuals(unit); 
+        UI.refreshActiveViews();
     },
 
     updateUnitVisuals: (unit) => {
@@ -443,7 +463,7 @@ const UI = {
         const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
         
         const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
-        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel'];
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel', 'th_st_p_top10_vel'];
         thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; document.getElementById(id).classList.add('active-unit'); } });
         
         if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
@@ -637,7 +657,7 @@ const UI = {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
             cats.sort((a,b) => (a.order || 0) - (b.order || 0));
-            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General') === UI.activeAdminCat);
@@ -684,7 +704,7 @@ const UI = {
         cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
 
         let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
-        let html = `<div class="cat-card" onclick="UI.toggleFavFilter()" style="border-color: #ffd700;"><h3 style="color:#ffd700"><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
+        let html = `<div class="cat-card" onclick="UI.toggleFavFilter()" style="border-color: #ffd700;"><h3 style="color:#ffd700"><span>${t_fav}</span></h3><span style="color:var(--text-main)">Pistas Guardadas</span></div>`;
         html += cats.map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         document.getElementById('track-category-view').innerHTML = html;
     },
@@ -797,7 +817,7 @@ const App = {
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
     retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
     nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else if (m === 'training') App.startPurge(); else App.startRandomRace(); } },
-    quitRace: () => { if(App.activeEngine) App.activeEngine.stop(); UI.showLobby(); },
+    quitRace: () => { if(App.activeEngine) { App.activeEngine.stop(); App.activeEngine = null; } UI.showLobby(); },
     
     toggleFav: (idStr) => {
         const u = CT.ses(); if(!u) return;
@@ -907,15 +927,28 @@ const App = {
     cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
     deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
     
-    // BUG LÉXICO: SOLUCIÓN QUIRÚRGICA CON MERGE:TRUE Y VERIFICACIÓN DE OBJETOS
-    editUIText: (key) => { 
+    editUIText: async (key) => { 
         if(!CT.data.ui || !CT.data.ui[key]) return; 
         const currentVal = CT.data.ui[key].v; 
         const newVal = prompt(`Editar [${CT.data.ui[key].l}]:`, currentVal); 
         if(newVal && newVal.trim() !== currentVal) { 
-            db.collection('config').doc('ui_texts').set({ [key]: { l: CT.data.ui[key].l, v: newVal.trim() } }, { merge: true })
-              .then(() => alert("Actualizado con éxito."))
-              .catch((e) => alert("Error al conectar con la base de datos: " + e.message)); 
+            try {
+                const docRef = db.collection('config').doc('ui_texts');
+                const doc = await docRef.get();
+                if(doc.exists) {
+                    const dbData = doc.data();
+                    if (typeof dbData[key] === 'string') {
+                        await docRef.update({ [key]: { l: CT.data.ui[key].l, v: newVal.trim() } });
+                    } else {
+                        await docRef.update({ [`${key}.v`]: newVal.trim() });
+                    }
+                } else {
+                    await docRef.set({ [key]: { l: CT.data.ui[key].l, v: newVal.trim() } });
+                }
+                alert("Léxico actualizado con éxito.");
+            } catch(e) {
+                alert("Error al conectar con la base de datos: " + e.message);
+            }
         } 
     },
 
@@ -943,10 +976,10 @@ class Engine {
         this.mode = mode; 
         this.ghostCPM = ghostCPM;
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
-        App.activeEngine = this; // Referencia global para atajos de teclado
+        App.activeEngine = this;
         this.init(); 
     }
-    stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; App.activeEngine = null; }
+    stop() { if(this.timer) clearInterval(this.timer); this.timer = null; document.body.classList.remove('zen-focus'); document.body.style.backgroundColor = ''; }
     
     init() { 
         UI.show('game-screen'); 
@@ -1121,4 +1154,3 @@ class Engine {
 }
 
 document.addEventListener('DOMContentLoaded', () => { CT.init(); });
-
