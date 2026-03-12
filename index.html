@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.0.5">
+    <link rel="stylesheet" href="style.css?v=1.0.6">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%; border-bottom: 1px solid var(--border);"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%;">🧹 Limpiar Caché Local</button>
                             <div class="version-seal">
-                                CananTyper v1.0.5 
+                                CananTyper v1.0.6 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -78,9 +78,18 @@
                 </div>
             </header>
 
-            <div class="mode-selectors">
-                <button id="t_btn_random" onclick="App.startRandomRace()" class="btn-primary btn-large">MODO ALEATORIO</button>
-                <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt btn-large">MODO PERSONALIZADO</button>
+            <div class="mode-selectors" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                <button id="t_btn_random" onclick="App.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
+                <button id="t_btn_hardcore" onclick="App.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
+                <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PISTAS</button>
+                
+                <div style="position: relative;">
+                    <button id="t_btn_train_menu" onclick="UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700;">ENTRENAR 🏋️</button>
+                    <div id="train-dropdown" class="edit-dropdown hidden" style="top:110%; right:0; width:200px;">
+                        <button id="t_btn_tr_purge" onclick="App.startPurge()">🔥 Purgar Errores</button>
+                        <button id="t_btn_tr_ext" onclick="App.startExtreme()">⚡ Pistas Extremas</button>
+                    </div>
+                </div>
             </div>
 
             <div class="tables-container">
@@ -130,6 +139,7 @@
                 <button id="t-st-pe" class="tab-btn active" onclick="UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Personales</span></button>
                 <button id="t-st-ge" class="tab-btn" onclick="UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
                 <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
+                <button id="t-st-hc" class="tab-btn" onclick="UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Hardcore 💀</span></button>
             </div>
             
             <div class="admin-content-area" style="padding: 15px; display: flex; flex-direction: column;">
@@ -141,8 +151,8 @@
                         <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
                     
-                    <div class="table-box" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="table-header" style="justify-content: center; margin-bottom: 0;"><h3 id="t_st_p_heat">MAPA DE CALOR: TECLAS CRÍTICAS</h3></div>
+                    <div class="table-box" style="margin-bottom: 15px; flex-shrink: 0; padding:15px;">
+                        <div class="table-header" style="justify-content: center; margin-bottom: 5px;"><h3 id="t_st_p_heat">MAPA DE CALOR: TECLAS CRÍTICAS</h3></div>
                         <div class="keyboard-container">
                             <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                             <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
@@ -150,17 +160,17 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 250px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 200px;">
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper"><table class="data-table"><tbody id="st-p-top10-races"></tbody></table></div>
                         </div>
                         <div class="table-box" style="margin: 0; padding: 15px; border-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                            <div class="table-header"><h3 id="t_st_p_worst_txt" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="table-header"><h3 id="t_st_p_worst_txt" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Textos a Mejorar</h3></div>
                             <div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
                         </div>
                         <div class="table-box" style="margin: 0; padding: 15px; border-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                            <div class="table-header"><h3 id="t_st_p_worst_wrd" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Palabras Críticas (Top 30)</h3></div>
+                            <div class="table-header"><h3 id="t_st_p_worst_wrd" style="color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3)">Palabras Críticas</h3></div>
                             <div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
                     </div>
@@ -186,6 +196,20 @@
                         <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Categorías</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead><tbody id="st-e-table-cats"></tbody></table></div></div>
                     </div>
                 </div>
+
+                <div id="pane-stats-hc" class="pane hidden">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card" style="border-color:var(--error)"><small id="t_lbl_hc_rec" style="color:var(--error)">RÉCORD HARDCORE</small><b id="st-hc-record" style="color:var(--error)">0</b></div>
+                        <div class="stat-card"><small id="t_lbl_hc_surv">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv">0</b></div>
+                        <div class="stat-card"><small id="t_lbl_hc_death">MUERTES SÚBITAS</small><b id="st-hc-deaths">0</b></div>
+                        <div class="stat-card stat-highlight" style="border-color:var(--error); box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate" style="color:var(--error)">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="color:var(--error)">0%</b></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_1" style="color:var(--error)">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_title_2" style="color:var(--error)">Pistas más Mortales</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -236,8 +260,9 @@
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
 
-                <div class="progress-container" style="margin-bottom: 25px;">
+                <div class="progress-container" style="margin-bottom: 25px; position:relative;">
                     <div id="race-progress" class="progress-bar"></div>
+                    <div id="ghost-progress" class="ghost-bar hidden"></div>
                 </div>
 
                 <div id="target-text" class="game-text-display"></div>
@@ -270,6 +295,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.0.5"></script>
+    <script src="main.js?v=1.0.6"></script>
 </body>
 </html>
