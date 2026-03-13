@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Ángel | Versión: 1.1.6 (Núcleo Asíncrono Blindado)
+    Capitán del Código: Ángel | Versión 1.1.8 (Lógica de Entrenamientos y Favoritos)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -193,7 +193,6 @@ const CT = {
                 't_nav_logout_tt': { l: 'Nav Logout Tooltip', v: 'Cerrar Sesión' }, 't_nav_settings_tt': { l: 'Nav Settings Tooltip', v: 'Ajustes' }
             };
             
-            // FIX v1.1.6: CANDADO DE SEGURIDAD. Evita sobrescribir el caché local si Firebase responde vacío temporalmente.
             if (!snap.exists && CT.data.ui && Object.keys(CT.data.ui).length > 0) return;
 
             CT.data.ui = CT.data.ui || {};
@@ -217,7 +216,7 @@ const CT = {
 
 const UI = {
     trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null, lexiconPage: 0, filterFavs: false,
-    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, 
+    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeTrnCat: null,
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     checkMaintenance: () => {
@@ -319,7 +318,7 @@ const UI = {
             if(el) {
                 if(k === 't_txt_new') { el.innerHTML = CT.data.ui[k].v.replace('Registrarse', '<span onclick="UI.toggleAuth(false)">Registrarse</span>'); }
                 else if(k === 't_txt_haveacc') { el.innerHTML = CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off', 't_adm_btn_maint_on', 't_adm_btn_maint_off', 't_adm_srv_feat_info', 't_adm_srv_feat_theme'].includes(k)) { /* js dynamic */ }
+                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off', 't_adm_btn_maint_on', 't_adm_btn_maint_off', 't_adm_srv_feat_info', 't_adm_srv_feat_theme'].includes(k)) { }
                 else if(el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = CT.data.ui[k].v; }
                 else { el.innerText = CT.data.ui[k].v; }
             }
@@ -465,7 +464,6 @@ const UI = {
 
     setUnit: (unit) => {
         if(CT.currentUnit === unit) return;
-        
         localStorage.removeItem('ct_custom_theme');
         const u = CT.ses(); 
         if(u && u.theme) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
@@ -629,12 +627,39 @@ const UI = {
         if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; this.renderAdminR(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { UI.switchTrnTab('crear'); } if(tab === 'info') { UI.renderInfoPage(); }
     },
 
+    // FIX v1.1.8: DIVISIÓN QUIRÚRGICA DE LA PESTAÑA ENTRENAR (COMO TEXTOS NORMALES)
     switchTrnTab(tab) {
-        document.getElementById('pane-trn-crear').classList.add('hidden'); document.getElementById('pane-trn-editar').classList.add('hidden'); document.getElementById('pane-trn-cat').classList.add('hidden');
+        document.getElementById('pane-trn-crear').classList.add('hidden'); 
+        document.getElementById('pane-trn-editar').classList.add('hidden'); 
+        document.getElementById('pane-trn-cat').classList.add('hidden');
         document.querySelectorAll('#pane-training .tab-btn').forEach(b => b.classList.remove('active'));
-        if(tab==='crear') { document.getElementById('pane-trn-crear').classList.remove('hidden'); document.getElementById('t_trn_tab_cre').classList.add('active'); }
-        if(tab==='editar') { document.getElementById('pane-trn-editar').classList.remove('hidden'); document.getElementById('t_trn_tab_ed').classList.add('active'); UI.renderAdminTrn(); }
-        if(tab==='categorias') { document.getElementById('pane-trn-cat').classList.remove('hidden'); document.getElementById('t_trn_tab_cat').classList.add('active'); }
+        
+        if(tab==='crear') { 
+            document.getElementById('pane-trn-crear').classList.remove('hidden'); 
+            document.getElementById('t_trn_tab_cre').classList.add('active'); 
+        }
+        if(tab==='editar') { 
+            document.getElementById('pane-trn-editar').classList.remove('hidden'); 
+            document.getElementById('t_trn_tab_ed').classList.add('active'); 
+            UI.showAdminTrnCategories(); 
+        }
+        if(tab==='categorias') { 
+            document.getElementById('pane-trn-cat').classList.remove('hidden'); 
+            document.getElementById('t_trn_tab_cat').classList.add('active'); 
+        }
+    },
+
+    showAdminTrnCategories() { 
+        UI.activeTrnCat = null; 
+        document.getElementById('admin-trn-categories').classList.remove('hidden'); 
+        document.getElementById('admin-trn-list-view').classList.add('hidden'); 
+        UI.renderAdminTrn(); 
+    },
+    selectAdminTrnCategory(cat) { 
+        UI.activeTrnCat = cat; 
+        document.getElementById('admin-trn-categories').classList.add('hidden'); 
+        document.getElementById('admin-trn-list-view').classList.remove('hidden'); 
+        UI.renderAdminTrn(); 
     },
 
     renderAdminAnn() {
@@ -691,10 +716,19 @@ const UI = {
     cancelEditP() { CT.editIdx = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('phrase-title').value = ''; document.getElementById('phrase-input').value = ''; },
     delP: (idStr) => { if(confirm("¿Eliminar texto?")) { db.collection('phrases').doc(idStr.toString()).delete(); }},
 
+    // FIX v1.1.8: Renderizado Categórico para Entrenamientos
     renderAdminTrn() {
         let tracks = CT.dbLocal('p').filter(t => t.c && t.c.startsWith('[TRN]'));
-        tracks = tracks.sort((a,b) => (a.order || 0) - (b.order || 0));
-        document.getElementById('admin-trn-list').innerHTML = tracks.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+        if (!UI.activeTrnCat) {
+            document.getElementById('admin-trn-categories').classList.remove('hidden');
+            document.getElementById('admin-trn-list-view').classList.add('hidden');
+            let cats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+            let catCounts = {}; tracks.forEach(t => { catCounts[t.c] = (catCounts[t.c] || 0) + 1; });
+            document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name.replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        } else {
+            let filtered = tracks.filter(t => t.c === UI.activeTrnCat).sort((a,b) => (a.order || 0) - (b.order || 0));
+            document.getElementById('admin-trn-list').innerHTML = filtered.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','')}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+        }
     },
 
     renderAdminR() {
@@ -741,13 +775,14 @@ const UI = {
             filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
         } else if (UI.filterFavs) {
             filtered = tracks.filter(t => favs.includes(t.id.toString()));
+            // FIX v1.1.8: Sorteo de Favoritos por Index del Array (Reordenables)
+            filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
         } else if (!UI.activeTrackCat) {
             UI.showTrackCategorySelect(); return;
         } else {
             filtered = tracks.filter(t => (t.c || 'General') === UI.activeTrackCat); 
+            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
         }
-        
-        filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
 
         let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐';
         let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
@@ -756,10 +791,14 @@ const UI = {
         document.getElementById('track-list-full').innerHTML = pageData.map(t => {
             let isFav = favs.includes(t.id.toString());
             let starClass = isFav ? 'fav-active' : 'fav-inactive';
+            // FIX v1.1.8: Flechas de Reorden para Favoritos
+            let reorderFavHtml = UI.filterFavs ? `<div style="display:flex; gap:8px; margin-top:5px; justify-content:center;"><button onclick="event.stopPropagation(); App.moveFav('${t.id}', -1)" class="ghost-btn" style="font-size:1rem; color:#ffd700;" title="Subir">▲</button><button onclick="event.stopPropagation(); App.moveFav('${t.id}', 1)" class="ghost-btn" style="font-size:1rem; color:#ffd700;" title="Bajar">▼</button></div>` : '';
+            
             return `<div class="track-card" onclick="App.startRaceWithTrack('${t.id}')">
                 <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px;">
                     #${t.title}
                     <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
+                    ${reorderFavHtml}
                 </div>
                 <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${t.c || 'General'}]</span></div>
             </div>`;
@@ -836,8 +875,26 @@ const App = {
 
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
     
+    // FIX v1.1.8: Repetir Infinito Categórico (No se destruye la memoria)
     retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
-    nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else if (m === 'training') App.startPurge(); else App.startRandomRace(); } },
+    
+    nextRace: () => { 
+        if(App.activeEngine) { 
+            const m = App.activeEngine.mode; 
+            const track = App.activeEngine.track; // Memoria de pista antes de frenar
+            App.activeEngine.stop(); 
+            if(m === 'hardcore') {
+                App.startHardcoreRace(); 
+            } else if (m === 'training') {
+                if (track && track.id === 'purge') App.startPurge();
+                else if (track && track.c && track.c.startsWith('[TRN]')) App.startTrnCategory(track.c);
+                else App.startPurge(); // Fallback de seguridad
+            } else {
+                App.startRandomRace(); 
+            }
+        } 
+    },
+    
     quitRace: () => { if(App.activeEngine) { App.activeEngine.stop(); App.activeEngine = null; } UI.showLobby(); },
     
     toggleFav: (idStr) => {
@@ -849,6 +906,24 @@ const App = {
         userDoc.favs = favs; 
         db.collection('users').doc(u.h).update({ favs: favs });
         UI.renderTrackList(); 
+    },
+    
+    // FIX v1.1.8: Acomodado manual de favoritos
+    moveFav: (idStr, direction) => {
+        const u = CT.ses(); if(!u) return;
+        let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+        let favs = userDoc.favs || [];
+        let idx = favs.indexOf(idStr.toString());
+        if (idx === -1) return;
+        let swapIdx = idx + direction;
+        if (swapIdx >= 0 && swapIdx < favs.length) {
+            let temp = favs[idx];
+            favs[idx] = favs[swapIdx];
+            favs[swapIdx] = temp;
+            userDoc.favs = favs;
+            db.collection('users').doc(u.h).update({ favs: favs });
+            UI.renderTrackList();
+        }
     },
 
     moveTrack: async (idStr, direction) => {
@@ -967,6 +1042,7 @@ const App = {
         } 
     },
 
+    // FIX v1.1.8: Inyección global de Trim() a las Categorías. Evita textos invisibles.
     createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); nameInp.value = ''; alert("Categoría Creada."); UI.toggleCreateForm('text'); },
     deleteCategory: () => { const sel = document.getElementById('delete-cat-select'); const catName = sel.value; if(!catName) return; if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { db.collection('categories').doc(catName).delete(); let pList = CT.dbLocal('p'); let updated = false; pList.forEach(p => { if (p.c === catName) { p.c = 'General'; updated = true; db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); } }); if (updated) CT.save('p', pList); alert("Categoría eliminada con éxito."); } },
     createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value || !textInp.value) return alert("Faltan datos del texto."); const idStr = titleInp.value.toString(); const catValue = catInp.value.trim() || 'General'; db.collection('phrases').doc(idStr).set({ id: Number(idStr) || Date.now(), title: titleInp.value, c: catValue, text: textInp.value, order: Date.now() }); titleInp.value = ''; textInp.value = ''; alert("Texto guardado con éxito."); },
@@ -998,22 +1074,39 @@ const App = {
             return; 
         }
 
-        try { 
-            const docRef = await db.collection('users').doc(handle).get(); 
-            if(docRef.exists && docRef.data().p === p) { 
-                localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
-                if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); 
-                UI.initLobby(); 
-            } else { 
-                alert("Usuario o contraseña incorrectos"); 
-            } 
-        } catch(e) { 
+        const attemptLogin = async (retries = 3) => {
+            for (let i = 0; i < retries; i++) {
+                try { 
+                    const docRef = await db.collection('users').doc(handle).get(); 
+                    if(docRef.exists && docRef.data().p === p) { 
+                        localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+                        if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); 
+                        UI.initLobby(); 
+                        return true;
+                    } else { 
+                        alert("Usuario o contraseña incorrectos"); 
+                        return true; 
+                    } 
+                } catch(e) { 
+                    if (i === retries - 1) throw e; 
+                    await new Promise(r => setTimeout(r, 1000)); 
+                }
+            }
+            return false;
+        };
+
+        try {
+            const success = await attemptLogin();
+            if(!success) throw new Error("Timeout");
+        } catch(e) {
             console.error("Error en DB:", e); 
-            alert("Fallo de conexión. El servidor aún está estableciendo el enlace. Intenta nuevamente en unos segundos."); 
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
+            btn.innerText = "REINTENTAR";
+            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+            return;
         }
+
+        btn.innerText = originalText;
+        btn.disabled = false;
     },
 
     register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
