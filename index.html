@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.6">
+    <link rel="stylesheet" href="style.css?v=1.1.8">
 </head>
 <body>
 
@@ -71,13 +71,13 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.6 
+                                CananTyper v1.1.8 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
                     
-                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="App.logout()" data-tooltip="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
+                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="App.logout()" data-tooltip-exit="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
                 </div>
             </header>
 
@@ -168,7 +168,7 @@
                         <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
                     
-                    <div class="table-box" style="margin-bottom: 15px; flex-shrink: 0; padding:15px;">
+                    <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px;">
                         <div class="table-header" style="justify-content: center; margin-bottom: 0px;">
                             <div style="text-align:center;">
                                 <h3 id="t_st_p_heat" style="margin-bottom:2px;">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
@@ -232,8 +232,8 @@
                         <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate">TASA DE MORTALIDAD</small><b id="st-hc-rate">0%</b></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_surv">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
-                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_dead">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_surv">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_dead">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
                     </div>
                 </div>
 
@@ -328,7 +328,11 @@
                         <button id="t_trn_cre_btn" onclick="App.createTrnPhrase()" class="btn-primary" style="align-self: center;">GUARDAR PISTA DE ENTRENAMIENTO</button>
                     </div>
                     <div id="pane-trn-editar" class="hidden" style="display:flex; flex-direction:column; flex-grow:1; min-height:0;">
-                        <ul id="admin-trn-list" class="custom-scroll admin-list"></ul>
+                        <div id="admin-trn-categories" class="category-grid custom-scroll"></div>
+                        <div id="admin-trn-list-view" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 0;">
+                            <button id="btn-back-cat-trn" onclick="UI.showAdminTrnCategories()" class="btn-outline" style="align-self: flex-start; margin-bottom: 15px;">← Categorías</button>
+                            <ul id="admin-trn-list" class="custom-scroll admin-list"></ul>
+                        </div>
                     </div>
                     <div id="pane-trn-cat" class="hidden" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                         <div class="admin-form" style="margin-bottom:0; align-items:center;">
@@ -458,6 +462,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.1.6"></script>
+    <script src="main.js?v=1.1.8"></script>
 </body>
 </html>
