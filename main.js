@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.6 (Estabilización UX)
+    Ángel | Versión: 1.1.6 (Núcleo Asíncrono Blindado)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -186,20 +186,17 @@ const CT = {
                 't_usr_btn_img': { l: 'Users Btn Img', v: 'IMAGEN' }, 't_lbl_theme_classic_g': { l: 'Tema Clasico Verde', v: 'Clásico (Verde)' },
                 't_lbl_theme_classic_o': { l: 'Tema Clasico Naranja', v: 'Clásico (Naranja)' }, 't_lbl_theme_galactic': { l: 'Tema Galactico', v: 'Galáctico (Snoopy)' },
                 't_lbl_theme_hacker': { l: 'Tema Hacker', v: 'Hacker Terminal' },
-                // --- NUEVA TANDA LÉXICO (FASE 1.1.6) ---
-                't_adm_btn_save_phr': { l: 'Admin Btn Save Phr', v: 'GUARDAR TEXTO' },
-                't_adm_btn_del_cat': { l: 'Admin Btn Del Cat', v: 'ELIMINAR' },
-                't_adm_btn_cre_cat': { l: 'Admin Btn Cre Cat', v: 'CREAR CATEGORÍA' },
-                't_st_lbl_cpm': { l: 'Stats Lbl CPM', v: 'CPM' },
-                't_st_lbl_wpm': { l: 'Stats Lbl WPM', v: 'WPM' },
-                't_game_lbl_time': { l: 'Game Lbl Tiempo', v: 'TIEMPO' },
-                't_game_lbl_speed': { l: 'Game Lbl Velocidad', v: 'VELOCIDAD' },
-                't_crop_lbl_zoom': { l: 'Crop Lbl Zoom', v: 'Zoom' },
-                't_nav_logout_tt': { l: 'Nav Logout Tooltip', v: 'Cerrar Sesión' },
-                't_nav_settings_tt': { l: 'Nav Settings Tooltip', v: 'Ajustes' }
+                't_adm_btn_save_phr': { l: 'Admin Btn Save Phr', v: 'GUARDAR TEXTO' }, 't_adm_btn_del_cat': { l: 'Admin Btn Del Cat', v: 'ELIMINAR' },
+                't_adm_btn_cre_cat': { l: 'Admin Btn Cre Cat', v: 'CREAR CATEGORÍA' }, 't_st_lbl_cpm': { l: 'Stats Lbl CPM', v: 'CPM' },
+                't_st_lbl_wpm': { l: 'Stats Lbl WPM', v: 'WPM' }, 't_game_lbl_time': { l: 'Game Lbl Tiempo', v: 'TIEMPO' },
+                't_game_lbl_speed': { l: 'Game Lbl Velocidad', v: 'VELOCIDAD' }, 't_crop_lbl_zoom': { l: 'Crop Lbl Zoom', v: 'Zoom' },
+                't_nav_logout_tt': { l: 'Nav Logout Tooltip', v: 'Cerrar Sesión' }, 't_nav_settings_tt': { l: 'Nav Settings Tooltip', v: 'Ajustes' }
             };
             
-            CT.data.ui = {};
+            // FIX v1.1.6: CANDADO DE SEGURIDAD. Evita sobrescribir el caché local si Firebase responde vacío temporalmente.
+            if (!snap.exists && CT.data.ui && Object.keys(CT.data.ui).length > 0) return;
+
+            CT.data.ui = CT.data.ui || {};
             const snapData = snap.exists ? snap.data() : {};
             
             Object.keys(defaults).forEach(k => {
@@ -839,7 +836,6 @@ const App = {
 
     startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
     
-    // FIX v1.1.6: App.activeEngine NO SE DESTRUYE para permitir repetir. Solo en quitRace().
     retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
     nextRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; App.activeEngine.stop(); if(m === 'hardcore') App.startHardcoreRace(); else if (m === 'training') App.startPurge(); else App.startRandomRace(); } },
     quitRace: () => { if(App.activeEngine) { App.activeEngine.stop(); App.activeEngine = null; } UI.showLobby(); },
@@ -850,7 +846,7 @@ const App = {
         let favs = userDoc.favs || [];
         if (favs.includes(idStr.toString())) { favs = favs.filter(f => f !== idStr.toString()); } 
         else { favs.push(idStr.toString()); }
-        userDoc.favs = favs; // Fix: actualizar caché local instantáneamente
+        userDoc.favs = favs; 
         db.collection('users').doc(u.h).update({ favs: favs });
         UI.renderTrackList(); 
     },
@@ -955,7 +951,6 @@ const App = {
     cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
     deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
     
-    // BUG LÉXICO: SOLUCIÓN QUIRÚRGICA ESTRICTA
     editUIText: async (key) => { 
         if(!CT.data.ui || !CT.data.ui[key]) return; 
         const currentVal = CT.data.ui[key].v; 
@@ -982,16 +977,26 @@ const App = {
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     
-    // FIX v1.1.6: LOGIN CACHE/LATENCY BYPASS
     login: async () => { 
         const hInp = document.getElementById('login-user').value.toLowerCase(); 
         const p = document.getElementById('login-pass').value; 
         const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
         
+        if(!hInp || !p) return alert("Por favor, ingresa usuario y contraseña.");
+
         const btn = document.getElementById('t_btn_login');
         const originalText = btn.innerText;
         btn.innerText = "CONECTANDO...";
         btn.disabled = true;
+
+        const cachedUser = CT.data.u.find(u => u.h === handle);
+        if (cachedUser && cachedUser.p === p) {
+            localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+            UI.initLobby();
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return; 
+        }
 
         try { 
             const docRef = await db.collection('users').doc(handle).get(); 
@@ -1004,7 +1009,7 @@ const App = {
             } 
         } catch(e) { 
             console.error("Error en DB:", e); 
-            alert("Fallo de conexión. Por favor, verifica tu internet o intenta nuevamente en unos segundos."); 
+            alert("Fallo de conexión. El servidor aún está estableciendo el enlace. Intenta nuevamente en unos segundos."); 
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
@@ -1034,7 +1039,6 @@ class Engine {
         this.timer = null; 
         document.body.classList.remove('zen-focus'); 
         document.body.style.backgroundColor = ''; 
-        // FIX v1.1.6: Mantiene la instancia viva para que 'Repetir' funcione perfectamente.
     }
     
     init() { 
