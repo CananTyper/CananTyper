@@ -48,7 +48,7 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 .error-scroll::-webkit-scrollbar-thumb { background: var(--error) !important; box-shadow: inset 0 0 4px rgba(0,0,0,0.6), 0 0 8px color-mix(in srgb, var(--error) 30%, transparent) !important; }
 .error-scroll::-webkit-scrollbar-thumb:hover { filter: brightness(1.3) !important; }
 
-/* SCROLLBAR DORADA ESTRICTA PARA FAVORITOS (v1.1.10+) */
+/* SCROLLBAR DORADA ESTRICTA PARA FAVORITOS */
 .fav-scroll::-webkit-scrollbar-thumb { background: #ffd700 !important; box-shadow: inset 0 0 4px rgba(0,0,0,0.6), 0 0 8px color-mix(in srgb, #ffd700 30%, transparent) !important; }
 .fav-scroll::-webkit-scrollbar-thumb:hover { filter: brightness(1.2) !important; }
 
@@ -151,8 +151,8 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .table-strict-error, .hc-stat-card { border-color: color-mix(in srgb, var(--error) 30%, transparent) !important; transition: border-color 0.3s, box-shadow 0.3s !important; }
 .table-strict-error:hover, .hc-stat-card:hover { border-color: var(--error) !important; box-shadow: 0 10px 25px color-mix(in srgb, var(--error) 15%, transparent) !important; }
 .table-strict-error h3, .hc-stat-card h3, .table-strict-error .table-header h3 { color: var(--error) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--error) 20%, transparent) !important; }
-/* Excluir KBD explícitamente para que JS pinte letras blancas y controle opacidad */
-.table-strict-error th, .table-strict-error td, .table-strict-error span, .table-strict-error b:not(.val-blurrable), .table-strict-error small { color: var(--error) !important; border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent) !important; }
+/* Excluir KBD y val-blurrable explícitamente para que JS pinte letras blancas/desenfoque y controle opacidad libremente */
+.table-strict-error th, .table-strict-error td, .table-strict-error span:not(.val-blurrable), .table-strict-error b:not(.val-blurrable), .table-strict-error small { color: var(--error) !important; border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent) !important; }
 .table-strict-error b.val-blurrable { color: var(--error) !important; }
 
 .nitro-select { background: var(--bg); color: var(--p); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.7rem; font-weight: bold; cursor: pointer; outline: none; transition: all 0.3s; }
@@ -255,7 +255,7 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .cat-card:hover h3 { text-shadow: 0 0 15px color-mix(in srgb, var(--p) 40%, transparent); }
 .cat-card span { color: var(--text-muted); font-weight: bold; font-size: 0.8rem; }
 
-/* FAVORITOS ESTRICTO AMARILLO */
+/* FAVORITOS ESTRICTO AMARILLO (Sin brillos indeseados ni herencia del theme) */
 .cat-fav-card { border-color: color-mix(in srgb, #ffd700 40%, transparent) !important; }
 .cat-fav-card:hover { border-color: #ffd700 !important; box-shadow: 0 10px 20px color-mix(in srgb, #ffd700 15%, transparent) !important; }
 .cat-fav-card h3, .cat-fav-card h3 span { color: #ffd700 !important; text-shadow: none; }
