@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.14 (Bug Squashing & Heatmap Fix)
+    Versión 1.1.14 (Bug Squashing & Heatmap Fix)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -1546,4 +1546,5 @@ class Engine {
 }
 
 document.addEventListener('DOMContentLoaded', () => { CT.init(); });
+
 
