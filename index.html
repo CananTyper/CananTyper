@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.5">
+    <link rel="stylesheet" href="style.css?v=1.1.6">
 </head>
 <body>
 
@@ -71,13 +71,13 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.5 
+                                CananTyper v1.1.6 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
                     
-                    <button id="btn-nav-logout" class="nav-icon-btn btn-exit-strict" onclick="App.logout()" data-tooltip="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
+                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="App.logout()" data-tooltip="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
                 </div>
             </header>
 
@@ -192,11 +192,11 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;">
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_w_trk">Textos a Mejorar (Bottom 5)</h3></div>
                             <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
                         </div>
-                        <div class="table-box hc-stat-card" style="margin: 0; padding: 15px;">
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_w_wrd">Palabras Críticas (Top 30)</h3></div>
                             <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
@@ -224,7 +224,7 @@
                     </div>
                 </div>
 
-                <div id="pane-stats-hc" class="pane hidden">
+                <div id="pane-stats-hc" class="pane hidden table-strict-error">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card hc-stat-card"><small id="t_lbl_hc_rec">RÉCORD HARDCORE</small><b id="st-hc-record">0</b></div>
                         <div class="stat-card hc-stat-card"><small id="t_lbl_hc_surv">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv">0</b></div>
@@ -458,6 +458,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.1.5"></script>
+    <script src="main.js?v=1.1.6"></script>
 </body>
 </html>
