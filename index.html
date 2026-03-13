@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.8">
+    <link rel="stylesheet" href="style.css?v=1.1.9">
 </head>
 <body>
 
@@ -71,7 +71,7 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.8 
+                                CananTyper v1.1.9 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -168,11 +168,11 @@
                         <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
                     
-                    <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px;">
+                    <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px; border-color: var(--error);">
                         <div class="table-header" style="justify-content: center; margin-bottom: 0px;">
                             <div style="text-align:center;">
-                                <h3 id="t_st_p_heat" style="margin-bottom:2px;">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
-                                <small id="t_lbl_st_p_heat_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold;">Visualización de debilidades</small>
+                                <h3 id="t_st_p_heat" style="margin-bottom:2px; color: var(--error);">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
+                                <small id="t_lbl_st_p_heat_sub" style="color:var(--error); font-size:0.7rem; font-weight:bold;">Visualización de debilidades</small>
                             </div>
                         </div>
                         <div class="keyboard-container">
@@ -192,13 +192,13 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_box_w_trk">Textos a Mejorar (Bottom 5)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_st_box_w_trk" style="color: var(--error);">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Texto</th><th id="th_st_p_avg" style="color: var(--error);">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
                         </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_box_w_wrd">Palabras Críticas (Top 30)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_st_box_w_wrd" style="color: var(--error);">Palabras Críticas (Top 30)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Palabra</th><th id="th_st_p_err" style="color: var(--error);">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
                     </div>
                 </div>
@@ -226,14 +226,20 @@
 
                 <div id="pane-stats-hc" class="pane hidden table-strict-error">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_rec">RÉCORD HARDCORE</small><b id="st-hc-record">0</b></div>
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_surv">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv">0</b></div>
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_death">MUERTES SÚBITAS</small><b id="st-hc-deaths">0</b></div>
-                        <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate">TASA DE MORTALIDAD</small><b id="st-hc-rate">0%</b></div>
+                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE</small><b id="st-hc-record" style="color: var(--error);">0</b></div>
+                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_surv" style="color: var(--error);">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv" style="color: var(--error);">0</b></div>
+                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_death" style="color: var(--error);">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="color: var(--error);">0</b></div>
+                        <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate" style="color: var(--error);">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="color: var(--error);">0%</b></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_surv">Mejores Sobrevividas (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div></div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_hc_box_dead">Pistas más Mortales (Top 10)</h3></div><div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_hc_box_surv" style="color: var(--error);">Mejores Sobrevividas (Top 10)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div>
+                        </div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_hc_box_dead" style="color: var(--error);">Pistas más Mortales (Top 10)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div>
+                        </div>
                     </div>
                 </div>
 
@@ -462,6 +468,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.1.8"></script>
+    <script src="main.js?v=1.1.9"></script>
 </body>
 </html>
