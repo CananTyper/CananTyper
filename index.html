@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.12">
+    <link rel="stylesheet" href="style.css?v=1.1.13">
 </head>
 <body>
 
@@ -71,7 +71,7 @@
                             <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.12 
+                                CananTyper v1.1.13 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -329,7 +329,19 @@
                 </div>
 
                 <div id="pane-users" class="pane hidden"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 id="t_admin_users_title" style="color:var(--p); margin:0;">Gestión de Usuarios</h3><input type="text" id="user-search" placeholder="Buscar" oninput="UI.renderAdminU()" style="width:300px; padding:8px;"></div><div class="custom-scroll admin-table-wrapper"><table class="data-table"><thead><tr><th>Usuario</th><th>ID</th><th>Rango</th><th>Acción</th></tr></thead><tbody id="admin-users-list"></tbody></table></div></div>
-                <div id="pane-races" class="pane hidden"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 id="t_admin_races_title" style="color:var(--p); margin:0;">Auditoría de Carreras</h3><input type="text" id="race-search" placeholder="Buscar" oninput="UI.renderAdminR()" style="width:300px; padding:8px;"></div><div class="custom-scroll admin-table-wrapper"><table class="data-table"><thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead><tbody id="admin-races-list"></tbody></table></div><div class="pagination-bar" style="margin-top: 10px;"><button id="admin-ra-prev" class="btn-outline" onclick="UI.changeAdminRacePage(-1)">←</button><span id="admin-ra-page-num" class="page-indicator">Página 1</span><button id="admin-ra-next" class="btn-outline" onclick="UI.changeAdminRacePage(1)">→</button></div></div>
+                
+                <div id="pane-races" class="pane hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 id="t_admin_races_title" style="color:var(--p); margin:0;">Auditoría de Carreras</h3>
+                        <input type="text" id="race-search" placeholder="Buscar por @usuario y presiona Enter..." onkeyup="if(event.key==='Enter') App.loadAdminRaces(this.value)" style="width:300px; padding:8px;">
+                    </div>
+                    <div class="custom-scroll admin-table-wrapper">
+                        <table class="data-table">
+                            <thead><tr><th>Usuario</th><th id="th-unit-admin">VEL.</th><th>Texto</th><th>Fecha</th><th>Acción</th></tr></thead>
+                            <tbody id="admin-races-list"></tbody>
+                        </table>
+                    </div>
+                </div>
                 
                 <div id="pane-phrases" class="pane hidden"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 id="t_admin_text_title" style="color:var(--p); margin:0;">Laboratorio de Textos</h3><input type="text" id="admin-phrase-search" placeholder="Buscar texto..." oninput="UI.renderAdminP()" style="width:300px; padding:8px;"></div><div id="admin-phrase-form" class="admin-form hidden"><div class="form-row"><input type="text" id="phrase-title" placeholder="Número" style="width: 100px;" disabled><select id="phrase-category" class="admin-select"></select><textarea id="phrase-input" placeholder="Texto"></textarea></div><div style="display:flex; justify-content:center; gap:10px;"><button id="btn-save-phrase" onclick="App.savePhrase()" class="btn-primary">ACTUALIZAR</button><button onclick="UI.cancelEditP()" class="btn-outline">CANCELAR</button></div></div><div id="admin-phrase-categories" class="category-grid custom-scroll"></div><div id="admin-phrase-list-view" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 0;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><button id="btn-back-cat-admin" onclick="UI.showAdminPhraseCategories()" class="btn-outline">← Categorías</button><div class="layout-controls" style="display:flex; gap:5px;"><button onclick="UI.setLayout('layout-list')" class="btn-outline layout-btn" data-mode="layout-list" style="padding:4px 8px;" title="Lista">☷</button><button onclick="UI.setLayout('layout-grid')" class="btn-outline layout-btn" data-mode="layout-grid" style="padding:4px 8px;" title="Cuadrícula">⊞</button><button onclick="UI.setLayout('layout-compact')" class="btn-outline layout-btn" data-mode="layout-compact" style="padding:4px 8px;" title="Compacto">⊟</button><button onclick="UI.setLayout('layout-zoom')" class="btn-outline layout-btn" data-mode="layout-zoom" style="padding:4px 8px;" title="Alejar Zoom">🔍</button></div></div><ul id="admin-phrases-list" class="custom-scroll admin-list"></ul><div class="pagination-bar" style="margin-top: 10px;"><button id="admin-ph-prev" class="btn-outline" onclick="UI.changeAdminPhrasePage(-1)">←</button><span id="admin-ph-page-num" class="page-indicator">Página 1</span><button id="admin-ph-next" class="btn-outline" onclick="UI.changeAdminPhrasePage(1)">→</button></div></div></div>
                 <div id="pane-create" class="pane hidden"><div class="mode-selectors" style="margin-bottom: 20px;"><button id="t_adm_cre_btn_t" onclick="UI.toggleCreateForm('text')" class="btn-primary btn-admin-mode active">TEXTO</button><button id="t_adm_cre_btn_c" onclick="UI.toggleCreateForm('cat')" class="btn-primary btn-alt btn-admin-mode">CATEGORÍA</button></div><div id="create-text-form" class="admin-form hidden"><div class="form-row"><input type="text" id="new-phrase-title" placeholder="Número (ID)" style="width: 150px;"><select id="new-phrase-category" class="admin-select"></select><textarea id="new-phrase-input" placeholder="Texto completo a tipear"></textarea></div><button id="t_adm_cre_btn_s" onclick="App.createNewPhrase()" class="btn-primary" style="align-self: center;">GUARDAR TEXTO</button></div><div id="create-cat-form" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div class="admin-form" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;"><h3 id="t_adm_cre_cat_t1" style="color: var(--p); margin: 0; font-size: 1.2rem; text-align: center;">Crear Categoría</h3><input type="text" id="new-cat-name" placeholder="Nombre" style="width: 100%; text-align: center;"><button id="t_adm_cre_cat_b1" onclick="App.createNewCategory()" class="btn-primary" style="width: 100%;">CREAR CATEGORÍA</button></div><div class="admin-form" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;"><h3 id="t_adm_cre_cat_t2" style="color: var(--p); margin: 0; font-size: 1.2rem; text-align: center;">Eliminar Categoría</h3><select id="delete-cat-select" class="admin-select" style="width: 100%;"></select><button id="t_adm_cre_cat_b2" onclick="App.deleteCategory()" class="btn-error" style="width: 100%; padding: 12px 20px; font-size: 0.9rem;">ELIMINAR</button></div></div></div>
@@ -491,6 +503,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="main.js?v=1.1.12"></script>
+    <script src="main.js?v=1.1.13"></script>
 </body>
 </html>
