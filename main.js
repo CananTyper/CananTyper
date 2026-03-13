@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.13 (Arquitectura Lazy Loading)
+    Capitán del Código: Ángel | Versión 1.1.14 (Bug Squashing & Heatmap Fix)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -97,7 +97,6 @@ const CT = {
 
         db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); UI.refreshActiveViews(); });
         
-        // FIX v1.1.13: Se erradica onSnapshot para scores. Entra en juego Lazy Loading
         App.loadDashboardData();
 
         db.collection('phrases').onSnapshot(snap => { 
@@ -314,13 +313,12 @@ const UI = {
         this.renderGlobal(); 
         UI.renderTrainDropdown();
         this.show('home-screen');
-        this.checkAnnouncements();
+        UI.checkAnnouncements(); // FIX v1.1.14: Reactivado. Evita que crashee el Lobby.
     },
 
     showLobby() { this.initLobby(); },
     showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
     
-    // FIX v1.1.13: Lazy Loading Disparador
     async showStats() { 
         const u = CT.ses();
         if(u) await App.getUserScores(u.h); 
@@ -386,13 +384,18 @@ const UI = {
             if(errs > 0) {
                 const pct = (errs / maxErr) * 100;
                 const bgPct = Math.max(10, Math.min(pct, 60)); 
-                el.style.background = `color-mix(in srgb, var(--error) ${bgPct}%, var(--surface-light))`;
-                el.style.borderColor = 'var(--error)';
-                el.style.color = '#ffffff';
-                el.style.textShadow = '0px 0px 4px rgba(0,0,0,0.8)';
+                // FIX v1.1.14: Forzar el color blanco mediante setProperty('...','important') para evitar bloqueos del CSS global rojo
+                el.style.setProperty('background', `color-mix(in srgb, var(--error) ${bgPct}%, var(--surface-light))`, 'important');
+                el.style.setProperty('border-color', 'var(--error)', 'important');
+                el.style.setProperty('color', '#ffffff', 'important');
+                el.style.setProperty('text-shadow', '0px 0px 4px rgba(0,0,0,0.8)', 'important');
                 el.title = `${errs} errores históricos`;
             } else {
-                el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; el.style.textShadow = ''; el.title = '0 errores';
+                el.style.removeProperty('background');
+                el.style.removeProperty('border-color');
+                el.style.removeProperty('color');
+                el.style.removeProperty('text-shadow');
+                el.title = '0 errores';
             }
         });
 
@@ -434,7 +437,6 @@ const UI = {
         document.getElementById('st-hc-worst').innerHTML = deathList.map((td, i) => `<tr><td><b>#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${td.t}</div></td><td><b>${td.d}</b></td></tr>`).join('');
     },
 
-    // FIX v1.1.13: Global Stats via Users Aggregation
     renderGlobalStats() {
         const users = CT.dbLocal('u');
         document.getElementById('st-g-users-val').innerText = users.length; 
@@ -461,7 +463,6 @@ const UI = {
         document.getElementById('st-g-top-cats').innerHTML = topCats.map((tc, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`).join('');
     },
 
-    // FIX v1.1.13: Elite Stats via Users Aggregation
     renderEliteStats() {
         const users = CT.dbLocal('u'); if (users.length === 0) return;
         
@@ -729,6 +730,18 @@ const UI = {
         UI.renderAdminTrn(); 
     },
 
+    // FIX v1.1.14: Reactivada la función faltante de comprobación de anuncios para evitar colapsos.
+    checkAnnouncements: () => {
+        const anns = CT.dbLocal('a').filter(x => x.active);
+        if (anns.length > 0) {
+            const latest = anns[0];
+            const lastSeen = localStorage.getItem('ct_last_announcement');
+            if (latest.id.toString() !== lastSeen) {
+                UI.showAnnouncement(latest);
+            }
+        }
+    },
+
     renderAdminAnn() {
         const list = CT.dbLocal('a');
         document.getElementById('admin-ann-list').innerHTML = list.map(a => `<tr><td style="font-size: 1.5rem; text-align: center;">${a.icon}</td><td><span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold; font-size: 0.8rem;">${a.active ? 'VIGENTE' : 'FINALIZADO'}</span></td><td style="white-space: nowrap; font-size: 0.75rem; color: var(--text-muted); text-align: center;">${a.date}</td><td><div style="display: flex; gap: 5px; justify-content: center;">${a.active ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px; border-color: var(--error); color: var(--error);" title="Anular">❌</button>` : `<span style="display: inline-block; width: 30px;"></span>`}<button onclick="App.deleteAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px;" title="Eliminar del Historial">🗑️</button></div></td></tr>`).join('');
@@ -810,12 +823,11 @@ const UI = {
         }
     },
 
-    // FIX v1.1.13: Panel Admin Carreras Lazy Loaded
     renderAdminR() {
         const scores = CT.data.adminScores || [];
         document.getElementById('admin-races-list').innerHTML = scores.map((s) => `<tr><td><b>${s.n}</b></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td><td><div class="action-buttons"><button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-error">ELIMINAR</button></div></td></tr>`).join('');
     },
-    changeAdminRacePage(delta) { /* Se deshabilita paginación compleja en favor del buscador en Lazy Loading */ },
+    changeAdminRacePage(delta) { },
     
     editRace: (raceId) => { 
         let scores = CT.data.adminScores || []; 
@@ -940,7 +952,6 @@ const UI = {
 const App = {
     currentTrack: null, activeEngine: null,
     
-    // FIX v1.1.13: Lazy Load Initialization Function
     loadDashboardData: async () => {
         try {
             const topReq = await db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
@@ -960,7 +971,6 @@ const App = {
         UI.refreshActiveViews();
     },
 
-    // FIX v1.1.13: Lazy Load para Historial Personal
     getUserScores: async (handle) => {
         if(!CT.data.userScores) CT.data.userScores = {};
         if(CT.data.userScores[handle]) return CT.data.userScores[handle];
@@ -973,7 +983,6 @@ const App = {
         } catch(e) { return []; }
     },
 
-    // FIX v1.1.13: Lazy Load para Auditoría Admin
     loadAdminRaces: async (queryStr = "") => {
         try {
             let req;
