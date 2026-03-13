@@ -884,7 +884,7 @@ const UI = {
         cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
 
         let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
-        let html = `<div class="cat-card cat-fav-card" onclick="UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Pistas Guardadas</span></div>`;
+        let html = `<div class="cat-card cat-fav-card" onclick="UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
         html += cats.map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         document.getElementById('track-category-view').innerHTML = html;
     },
@@ -1546,3 +1546,4 @@ class Engine {
 }
 
 document.addEventListener('DOMContentLoaded', () => { CT.init(); });
+
