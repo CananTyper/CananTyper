@@ -30,7 +30,7 @@ function setDiscordActivity(details, state, showTimer) {
         details: details,
         state: state,
         largeImageKey: 'logo_principal', 
-        largeImageText: 'CananTyper v1.1.6 - Oficial', 
+        largeImageText: 'CananTyper v1.1.8 - Oficial', 
         instance: false,
     };
     if (showTimer) activity.startTimestamp = Date.now();
