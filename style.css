@@ -65,9 +65,29 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 .btn-error { background: color-mix(in srgb, var(--error) 15%, transparent); border: 1px solid var(--error); color: var(--error); padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; transition: all 0.2s ease; }
 .btn-error:hover { background: var(--error); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--error) 40%, transparent); }
 
-/* BOTÓN SALIR PRO AISLADO */
+/* BOTÓN SALIR PRO AISLADO (v1.1.9) */
 .btn-logout-pro { background: color-mix(in srgb, var(--error) 10%, transparent) !important; color: var(--error) !important; border: 1px solid color-mix(in srgb, var(--error) 30%, transparent) !important; padding: 6px 15px; border-radius: 8px; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; outline: none; margin-left: 8px; }
 .btn-logout-pro:hover { background: var(--error) !important; color: #000 !important; box-shadow: 0 5px 15px color-mix(in srgb, var(--error) 40%, transparent) !important; border-color: var(--error) !important; transform: translateY(-2px); }
+
+/* NAVEGACIÓN ICÓNICA Y TOOLTIPS PRO (GLASSMORPHISM) */
+.nav-icon-btn { background: color-mix(in srgb, var(--surface-light) 60%, transparent) !important; border: 1px solid var(--border) !important; font-size: 1.4rem; cursor: pointer; padding: 8px 12px; border-radius: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; color: var(--text-main); outline: none; backdrop-filter: blur(4px); margin-left: 8px; }
+.nav-icon-btn:hover { background: var(--surface) !important; border-color: var(--p) !important; color: var(--p) !important; transform: translateY(-3px); box-shadow: 0 8px 20px color-mix(in srgb, var(--p) 20%, transparent); }
+
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+    content: attr(data-tooltip); position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); color: var(--text-main); border: 1px solid var(--border);
+    padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap;
+    opacity: 0; visibility: hidden; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.9);
+    z-index: 1000; font-weight: normal; letter-spacing: 0.5px; pointer-events: none;
+}
+[data-tooltip]::before {
+    content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+    border-width: 5px; border-style: solid; border-color: transparent transparent var(--surface) transparent;
+    opacity: 0; visibility: hidden; transition: all 0.2s ease; z-index: 1000; pointer-events: none;
+}
+[data-tooltip]:hover::after { opacity: 1; visibility: visible; bottom: -35px; border-color: var(--p); color: var(--p); }
+[data-tooltip]:hover::before { opacity: 1; visibility: visible; bottom: -16px; border-bottom-color: var(--p); }
 
 /* AISLAMIENTO DE TOOLTIP SALIR (ROJO PERMANENTE) */
 [data-tooltip-exit] { position: relative; }
@@ -128,7 +148,7 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .hc-stat-card h3, .table-strict-error h3, .table-strict-error .table-header h3 { color: var(--error) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--error) 20%, transparent) !important; }
 .table-strict-error th, .table-strict-error td, .table-strict-error span, .table-strict-error b, .table-strict-error small { color: var(--error) !important; border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent) !important; }
 .table-strict-error b.val-blurrable { color: var(--error) !important; }
-.table-strict-error kbd { border-color: color-mix(in srgb, var(--error) 30%, transparent) !important; color: var(--error) !important; }
+/* Se permite a las teclas .kbd conservar su color interior dictado por JS */
 
 .nitro-select { background: var(--bg); color: var(--p); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.7rem; font-weight: bold; cursor: pointer; outline: none; transition: all 0.3s; }
 .nitro-select:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
@@ -213,12 +233,12 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .cat-card:hover h3 { text-shadow: 0 0 15px color-mix(in srgb, var(--p) 40%, transparent); }
 .cat-card span { color: var(--text-muted); font-weight: bold; font-size: 0.8rem; }
 
-/* FAVORITOS ESTRICTO AMARILLO (Sin brillos indeseados) */
+/* FAVORITOS ESTRICTO AMARILLO (Sin brillos indeseados ni herencia del theme) */
 .cat-fav-card { border-color: color-mix(in srgb, #ffd700 40%, transparent) !important; }
 .cat-fav-card:hover { border-color: #ffd700 !important; box-shadow: 0 10px 20px color-mix(in srgb, #ffd700 15%, transparent) !important; }
-.cat-fav-card h3, .cat-fav-card h3 span { color: #ffd700 !important; }
+.cat-fav-card h3, .cat-fav-card h3 span { color: #ffd700 !important; text-shadow: none; }
 .cat-fav-card:hover h3 { text-shadow: 0 0 15px color-mix(in srgb, #ffd700 40%, transparent) !important; }
-.fav-star-btn { font-size: 1.4rem; padding: 0; border: none; background: transparent; transition: all 0.2s; cursor: pointer; }
+.fav-star-btn { font-size: 1.4rem; padding: 0; border: none; background: transparent; transition: all 0.2s; cursor: pointer; outline: none; }
 .fav-active { color: #ffd700 !important; text-shadow: none !important; }
 .fav-inactive { color: var(--text-muted) !important; text-shadow: none !important; }
 .fav-inactive:hover { color: #ffd700 !important; }
@@ -298,26 +318,6 @@ body.zen-focus .game-hud { opacity: 0.05; pointer-events: none; }
 body.zen-focus .progress-container { opacity: 0.2; }
 body.zen-focus .game-input-box { opacity: 0.2; }
 body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
-
-/* NAVEGACIÓN ICÓNICA Y TOOLTIPS PRO (GLASSMORPHISM v1.1.8) */
-.nav-icon-btn { background: color-mix(in srgb, var(--surface-light) 60%, transparent) !important; border: 1px solid var(--border) !important; font-size: 1.4rem; cursor: pointer; padding: 8px 12px; border-radius: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; color: var(--text-main); outline: none; backdrop-filter: blur(4px); margin-left: 8px; }
-.nav-icon-btn:hover { background: var(--surface) !important; border-color: var(--p) !important; color: var(--p) !important; transform: translateY(-3px); box-shadow: 0 8px 20px color-mix(in srgb, var(--p) 20%, transparent); }
-
-[data-tooltip] { position: relative; }
-[data-tooltip]::after {
-    content: attr(data-tooltip); position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
-    background: var(--surface); color: var(--text-main); border: 1px solid var(--border);
-    padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap;
-    opacity: 0; visibility: hidden; transition: all 0.2s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.9);
-    z-index: 1000; font-weight: normal; letter-spacing: 0.5px; pointer-events: none;
-}
-[data-tooltip]::before {
-    content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-    border-width: 5px; border-style: solid; border-color: transparent transparent var(--surface) transparent;
-    opacity: 0; visibility: hidden; transition: all 0.2s ease; z-index: 1000; pointer-events: none;
-}
-[data-tooltip]:hover::after { opacity: 1; visibility: visible; bottom: -35px; border-color: var(--p); color: var(--p); }
-[data-tooltip]:hover::before { opacity: 1; visibility: visible; bottom: -16px; border-bottom-color: var(--p); }
 
 .update-dot { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--surface); }
 .dot-yellow { background: #ffcc00; box-shadow: 0 0 8px #ffcc00; }
