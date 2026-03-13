@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Capitán del Código: Ángel | Versión 1.1.10 (Lógica y Optimización de Listas)
+    CT Up | Versión 1.1.11 (Lógica de Vistas e Interfaz)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -45,7 +45,6 @@ const CT = {
 
         this.fastMode = localStorage.getItem('ct_fast_mode') === 'true';
         
-        // FIX v1.1.10: Control de diseño/layout persistente
         UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
 
         const cU = localStorage.getItem('ct_cache_u'); const cS = localStorage.getItem('ct_cache_s');
@@ -60,6 +59,9 @@ const CT = {
         UI.updateUnitVisuals(this.currentUnit);
         UI.updateFastModeVisuals();
         UI.applySavedTheme();
+        
+        // FIX v1.1.11: Asegurar que el estado del botón Layout carga al inicio
+        setTimeout(() => { if(UI.setLayout) UI.setLayout(UI.listLayout); }, 100);
         
         if (!isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
@@ -223,10 +225,21 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeTrnCat: null,
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
-    // FIX v1.1.10: Cambio de Layouts (Lista, Cuadricula, Compacto)
+    // FIX v1.1.11: Setter Visual y Funcional de Layouts
     setLayout: (mode) => {
         UI.listLayout = mode;
         localStorage.setItem('ct_layout', mode);
+        document.querySelectorAll('.layout-btn').forEach(btn => {
+            if (btn.dataset.mode === mode) {
+                btn.style.borderColor = 'var(--p)';
+                btn.style.color = 'var(--p)';
+                btn.style.boxShadow = '0 0 10px color-mix(in srgb, var(--p) 20%, transparent)';
+            } else {
+                btn.style.borderColor = 'var(--border)';
+                btn.style.color = 'var(--text-muted)';
+                btn.style.boxShadow = 'none';
+            }
+        });
         UI.refreshActiveViews();
     },
 
@@ -362,7 +375,6 @@ const UI = {
             const errs = bk[key] || 0;
             if(errs > 0) {
                 const pct = (errs / maxErr) * 100;
-                // FIX v1.1.10: Reducción drástica de opacidad y texto en blanco puro con sombra.
                 const bgPct = Math.max(10, Math.min(pct, 60)); 
                 el.style.background = `color-mix(in srgb, var(--error) ${bgPct}%, var(--surface-light))`;
                 el.style.borderColor = 'var(--error)';
@@ -704,7 +716,6 @@ const UI = {
     renderAdminP() {
         const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let tracks = CT.dbLocal('p');
         
-        // FIX v1.1.10: Aplicando diseño dinámico a la lista
         const listContainer = document.getElementById('admin-phrases-list');
         listContainer.className = 'custom-scroll admin-list ' + UI.listLayout;
 
@@ -743,7 +754,7 @@ const UI = {
             document.getElementById('admin-trn-categories').classList.remove('hidden');
             document.getElementById('admin-trn-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
-            let catCounts = {}; tracks.forEach(t => { catCounts[t.c] = (catCounts[t.c] || 0) + 1; });
+            let catCounts = {}; tracks.forEach(t => { const c = (t.c || '').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
             document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name.replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             let filtered = tracks.filter(t => (t.c || '').trim() === UI.activeTrnCat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
@@ -759,7 +770,6 @@ const UI = {
     },
     changeAdminRacePage(delta) { const query = (document.getElementById('race-search').value || "").toLowerCase(); let filtered = CT.dbLocal('s').filter(s => s.n.toLowerCase().includes(query) || s.h.toLowerCase().includes(query)); const nextStart = (UI.adminRacePage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.adminRacePage += delta; this.renderAdminR(); } },
     
-    // FIX v1.1.10: Optimistic update sin carteles para UI inmediata.
     editRace: (raceId) => { 
         let scores = CT.dbLocal('s'); 
         const idx = scores.findIndex(s => s.id.toString() === raceId.toString()); 
@@ -811,7 +821,7 @@ const UI = {
     showTrackCategorySelect() {
         document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
         const tracks = CT.dbLocal('p'); let cats = CT.dbLocal('c'); let catCounts = {}; 
-        tracks.forEach(t => { const c = t.c || 'General'; catCounts[c] = (catCounts[c] || 0) + 1; });
+        tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
         cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
 
         let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
@@ -830,7 +840,6 @@ const UI = {
         const listContainer = document.getElementById('track-list-full');
         listContainer.className = 'custom-scroll track-list ' + UI.listLayout;
         
-        // FIX v1.1.10: Scrollbar dorado
         if (UI.filterFavs) listContainer.classList.add('fav-scroll');
 
         let filtered = tracks;
@@ -843,7 +852,7 @@ const UI = {
         } else if (!UI.activeTrackCat) {
             UI.showTrackCategorySelect(); return;
         } else {
-            filtered = tracks.filter(t => (t.c || 'General') === UI.activeTrackCat); 
+            filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); 
             filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
         }
 
@@ -865,12 +874,12 @@ const UI = {
                     <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
                     ${reorderFavHtml}
                 </div>
-                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${t.c || 'General'}]</span></div>
+                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
             </div>`;
         }).join('');
         document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
     },
-    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); const u = CT.ses(); let favs = (CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General') === UI.activeTrackCat); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); const u = CT.ses(); let favs = (CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
 
     showAnnouncement(data) { if(!data.id) return; UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
     closeAnnouncement() { if(UI.currentAnnId) { localStorage.setItem('ct_last_announcement', UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
@@ -1104,7 +1113,6 @@ const App = {
         } 
     },
 
-    // FIX v1.1.10: Creación Inmediata Optimista (Sin delay)
     createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); CT.data.c.push({name: catName, order: Date.now()}); UI.updateCategorySelects(); nameInp.value = ''; UI.toggleCreateForm('text'); },
     deleteCategory: () => { const sel = document.getElementById('delete-cat-select'); const catName = sel.value; if(!catName) return; if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { db.collection('categories').doc(catName).delete(); let pList = CT.dbLocal('p'); let updated = false; pList.forEach(p => { if (p.c === catName) { p.c = 'General'; updated = true; db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); } }); if (updated) CT.save('p', pList); } },
     createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value.trim() || !textInp.value.trim()) return alert("Faltan datos del texto."); const idStr = titleInp.value.trim(); const catValue = catInp.value.trim() || 'General'; const newPhrase = { id: Number(idStr) || Date.now(), title: idStr, c: catValue, text: textInp.value.trim(), order: Date.now() }; db.collection('phrases').doc(idStr).set(newPhrase); CT.data.p.push(newPhrase); UI.renderAdminP(); titleInp.value = ''; textInp.value = ''; },
