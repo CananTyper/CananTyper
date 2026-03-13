@@ -37,6 +37,7 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 .screen { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
 .hidden { display: none !important; }
 
+/* SCROLLBARS GLOBALES */
 .custom-scroll { overflow-y: auto; padding-right: 8px; }
 .custom-scroll::-webkit-scrollbar { width: 6px; }
 .custom-scroll::-webkit-scrollbar-track { background: var(--surface-light); border-radius: 10px; }
@@ -46,6 +47,10 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 /* SCROLLBAR ROJA ESTRICTA PARA MÉTRICAS NEGATIVAS Y HARDCORE */
 .error-scroll::-webkit-scrollbar-thumb { background: var(--error) !important; box-shadow: inset 0 0 4px rgba(0,0,0,0.6), 0 0 8px color-mix(in srgb, var(--error) 30%, transparent) !important; }
 .error-scroll::-webkit-scrollbar-thumb:hover { filter: brightness(1.3) !important; }
+
+/* SCROLLBAR DORADA ESTRICTA PARA FAVORITOS (v1.1.10) */
+.fav-scroll::-webkit-scrollbar-thumb { background: #ffd700 !important; box-shadow: inset 0 0 4px rgba(0,0,0,0.6), 0 0 8px color-mix(in srgb, #ffd700 30%, transparent) !important; }
+.fav-scroll::-webkit-scrollbar-thumb:hover { filter: brightness(1.2) !important; }
 
 .avatar-xs, .avatar-sm, .avatar-md, .avatar-lrg { border-radius: 50%; border: 2px solid var(--p); background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; flex-shrink: 0; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
 .avatar-xs { width: 26px; height: 26px; border-width: 1px; }
@@ -65,7 +70,7 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 .btn-error { background: color-mix(in srgb, var(--error) 15%, transparent); border: 1px solid var(--error); color: var(--error); padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; transition: all 0.2s ease; }
 .btn-error:hover { background: var(--error); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--error) 40%, transparent); }
 
-/* BOTÓN SALIR PRO AISLADO (v1.1.9) */
+/* BOTÓN SALIR PRO AISLADO */
 .btn-logout-pro { background: color-mix(in srgb, var(--error) 10%, transparent) !important; color: var(--error) !important; border: 1px solid color-mix(in srgb, var(--error) 30%, transparent) !important; padding: 6px 15px; border-radius: 8px; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; outline: none; margin-left: 8px; }
 .btn-logout-pro:hover { background: var(--error) !important; color: #000 !important; box-shadow: 0 5px 15px color-mix(in srgb, var(--error) 40%, transparent) !important; border-color: var(--error) !important; transform: translateY(-2px); }
 
@@ -143,12 +148,12 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .table-header h3 { margin: 0; font-size: 0.95rem; color: var(--p); text-transform: uppercase; transition: color 0.3s, text-shadow 0.3s; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
 
 /* ZONAS ROJAS ESTRICTAS BLINDADAS (HARDCORE Y NEGATIVAS) */
-.hc-stat-card, .table-strict-error { border-color: color-mix(in srgb, var(--error) 30%, transparent) !important; transition: border-color 0.3s, box-shadow 0.3s !important; }
-.hc-stat-card:hover, .table-strict-error:hover { border-color: var(--error) !important; box-shadow: 0 10px 25px color-mix(in srgb, var(--error) 15%, transparent) !important; }
-.hc-stat-card h3, .table-strict-error h3, .table-strict-error .table-header h3 { color: var(--error) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--error) 20%, transparent) !important; }
+.table-strict-error, .hc-stat-card { border-color: color-mix(in srgb, var(--error) 30%, transparent) !important; transition: border-color 0.3s, box-shadow 0.3s !important; }
+.table-strict-error:hover, .hc-stat-card:hover { border-color: var(--error) !important; box-shadow: 0 10px 25px color-mix(in srgb, var(--error) 15%, transparent) !important; }
+.table-strict-error h3, .hc-stat-card h3, .table-strict-error .table-header h3 { color: var(--error) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--error) 20%, transparent) !important; }
 .table-strict-error th, .table-strict-error td, .table-strict-error span, .table-strict-error b, .table-strict-error small { color: var(--error) !important; border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent) !important; }
 .table-strict-error b.val-blurrable { color: var(--error) !important; }
-/* Se permite a las teclas .kbd conservar su color interior dictado por JS */
+/* La etiqueta KBD para el mapa de calor mantiene sus estilos JS inline para mostrar el blanco y la opacidad dinámica */
 
 .nitro-select { background: var(--bg); color: var(--p); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.7rem; font-weight: bold; cursor: pointer; outline: none; transition: all 0.3s; }
 .nitro-select:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
@@ -226,6 +231,15 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .pagination-bar { display: flex; justify-content: center; align-items: center; gap: 20px; flex-shrink: 0; border-top: 1px solid var(--border); padding-top: 15px; }
 .page-indicator { font-size: 0.85rem; color: var(--text-muted); font-weight: bold; }
 
+/* MODIFICADORES DE LAYOUT (LISTA, CUADRÍCULA, COMPACTO) - v1.1.10 */
+.layout-grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; align-items: start; }
+.layout-grid .track-card, .layout-grid .admin-list-item { margin-bottom: 0 !important; height: 100%; }
+
+.layout-compact .track-card { padding: 12px 15px !important; margin-bottom: 8px !important; }
+.layout-compact .track-card-id { font-size: 1.3rem !important; min-width: 40px !important; padding-right: 15px !important; }
+.layout-compact .track-card-text { font-size: 0.85rem !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.layout-compact .admin-list-item { padding: 10px 15px !important; margin-bottom: 8px !important; }
+
 .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; flex-grow: 1; min-height: 0; align-content: start; }
 .cat-card { background: var(--bg); padding: 30px 20px; border-radius: 15px; border: 1px solid var(--border); text-align: center; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; justify-content: center; }
 .cat-card:hover { border-color: var(--p); transform: translateY(-5px); box-shadow: 0 10px 20px color-mix(in srgb, var(--p) 15%, transparent); }
@@ -233,7 +247,7 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .cat-card:hover h3 { text-shadow: 0 0 15px color-mix(in srgb, var(--p) 40%, transparent); }
 .cat-card span { color: var(--text-muted); font-weight: bold; font-size: 0.8rem; }
 
-/* FAVORITOS ESTRICTO AMARILLO (Sin brillos indeseados ni herencia del theme) */
+/* FAVORITOS ESTRICTO AMARILLO */
 .cat-fav-card { border-color: color-mix(in srgb, #ffd700 40%, transparent) !important; }
 .cat-fav-card:hover { border-color: #ffd700 !important; box-shadow: 0 10px 20px color-mix(in srgb, #ffd700 15%, transparent) !important; }
 .cat-fav-card h3, .cat-fav-card h3 span { color: #ffd700 !important; text-shadow: none; }
