@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Versión 1.1.14 (Bug Squashing & Heatmap Fix)
+    Versión 1.1.15 (Drag & Drop System + Fixes de Orden)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -101,12 +101,12 @@ const CT = {
 
         db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
-            if(this.data.p.length === 0) { db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: 0 }); }
+            if(this.data.p.length === 0) { db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: Date.now() }); }
             localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); UI.refreshActiveViews(); 
         });
         db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
-            if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General", order: 0}); }
+            if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General", order: Date.now()}); }
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.renderTrainDropdown(); UI.refreshActiveViews(); 
         });
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
@@ -224,6 +224,27 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeTrnCat: null,
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
+    // MOTOR DE INICIALIZACIÓN SORTABLE JS (DRAG AND DROP)
+    initSortable: (containerId, type, pageContext = 0) => {
+        if (typeof Sortable === 'undefined') return;
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
+
+        if (type === 'phrases' && document.getElementById('admin-phrase-search') && document.getElementById('admin-phrase-search').value) return;
+        if (type === 'track' && !UI.filterFavs) return;
+
+        container._sortable = Sortable.create(container, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: (evt) => {
+                if (evt.oldIndex === evt.newIndex) return;
+                App.handleDragReorder(type === 'track' ? 'favs' : type, evt.oldIndex, evt.newIndex, pageContext);
+            }
+        });
+    },
+
     setLayout: (mode) => {
         UI.listLayout = mode;
         localStorage.setItem('ct_layout', mode);
@@ -313,7 +334,7 @@ const UI = {
         this.renderGlobal(); 
         UI.renderTrainDropdown();
         this.show('home-screen');
-        UI.checkAnnouncements(); // FIX v1.1.14: Reactivado. Evita que crashee el Lobby.
+        UI.checkAnnouncements(); 
     },
 
     showLobby() { this.initLobby(); },
@@ -384,7 +405,6 @@ const UI = {
             if(errs > 0) {
                 const pct = (errs / maxErr) * 100;
                 const bgPct = Math.max(10, Math.min(pct, 60)); 
-                // FIX v1.1.14: Forzar el color blanco mediante setProperty('...','important') para evitar bloqueos del CSS global rojo
                 el.style.setProperty('background', `color-mix(in srgb, var(--error) ${bgPct}%, var(--surface-light))`, 'important');
                 el.style.setProperty('border-color', 'var(--error)', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
@@ -730,7 +750,6 @@ const UI = {
         UI.renderAdminTrn(); 
     },
 
-    // FIX v1.1.14: Reactivada la función faltante de comprobación de anuncios para evitar colapsos.
     checkAnnouncements: () => {
         const anns = CT.dbLocal('a').filter(x => x.active);
         if (anns.length > 0) {
@@ -779,21 +798,26 @@ const UI = {
             let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
             filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
             const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${(t.c || 'General').trim()}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${(t.c || 'General').trim()}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
             cats.sort((a,b) => (a.order || 0) - (b.order || 0));
-            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
             let filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeAdminCat.trim());
             filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
             const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted); margin-right:15px;" title="Arrastrar para ordenar">⠿</span><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         }
+        
+        setTimeout(() => {
+            if (!query && !UI.activeAdminCat) UI.initSortable('admin-phrase-categories', 'categories', 0);
+            else if (!query && UI.activeAdminCat) UI.initSortable('admin-phrases-list', 'phrases', UI.adminPhrasePage);
+        }, 50);
     },
     changeAdminPhrasePage(delta) { const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeAdminCat.trim()); } const nextStart = (UI.adminPhrasePage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.adminPhrasePage += delta; this.renderAdminP(); } },
     prepEdit(idStr) { const pList = CT.dbLocal('p'); const track = pList.find(t => t.id.toString() === idStr.toString()); if(!track) return; UI.updateCategorySelects(); document.getElementById('phrase-title').value = track.title; document.getElementById('phrase-category').value = track.c || 'General'; document.getElementById('phrase-input').value = track.text; CT.editIdx = track.id.toString(); document.getElementById('admin-phrase-form').classList.remove('hidden'); },
@@ -816,11 +840,16 @@ const UI = {
             document.getElementById('admin-trn-list-view').classList.add('hidden');
             let cats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
             let catCounts = {}; tracks.forEach(t => { const c = (t.c || '').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
-            document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><div style="display:flex; gap:5px;"><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', -1)" class="ghost-btn reorder-btn" style="color:var(--p);">▲</button><button onclick="event.stopPropagation(); App.moveCategory('${cat.name}', 1)" class="ghost-btn reorder-btn" style="color:var(--p);">▼</button></div></div><h3 style="margin-top:0;">${cat.name.replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${cat.name.replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             let filtered = tracks.filter(t => (t.c || '').trim() === UI.activeTrnCat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
-            listContainer.innerHTML = filtered.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','').trim()}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><div style="display:flex; flex-direction:column; gap:2px; margin-right:10px;"><button onclick="App.moveTrack('${t.id}', -1)" class="btn-outline reorder-btn" title="Subir">▲</button><button onclick="App.moveTrack('${t.id}', 1)" class="btn-outline reorder-btn" title="Bajar">▼</button></div><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            listContainer.innerHTML = filtered.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','').trim()}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted); margin-right:15px;" title="Arrastrar para ordenar">⠿</span><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
         }
+        
+        setTimeout(() => {
+            if (!UI.activeTrnCat) UI.initSortable('admin-trn-categories', 'categories_trn', 0);
+            else UI.initSortable('admin-trn-list', 'phrases_trn', 0);
+        }, 50);
     },
 
     renderAdminR() {
@@ -900,6 +929,7 @@ const UI = {
         listContainer.className = 'custom-scroll track-list ' + UI.listLayout;
         
         if (UI.filterFavs) listContainer.classList.add('fav-scroll');
+        else listContainer.classList.remove('fav-scroll');
 
         let filtered = tracks;
         if (query) {
@@ -923,7 +953,7 @@ const UI = {
             let isFav = favs.includes(t.id.toString());
             let starClass = isFav ? 'fav-active' : 'fav-inactive';
             
-            let reorderFavHtml = UI.filterFavs ? `<div style="display:flex; gap:8px; margin-top:8px; justify-content:center;"><button onclick="event.stopPropagation(); App.moveFav('${t.id}', -1)" class="btn-outline" style="padding:4px 10px; font-size:1rem; color:#ffd700; border-color:color-mix(in srgb, #ffd700 40%, transparent);">▲</button><button onclick="event.stopPropagation(); App.moveFav('${t.id}', 1)" class="btn-outline" style="padding:4px 10px; font-size:1rem; color:#ffd700; border-color:color-mix(in srgb, #ffd700 40%, transparent);">▼</button></div>` : '';
+            let reorderFavHtml = (UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
             let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
             let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
 
@@ -937,6 +967,11 @@ const UI = {
             </div>`;
         }).join('');
         document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
+        
+        setTimeout(() => {
+            if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage);
+            else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
+        }, 50);
     },
     changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); const u = CT.ses(); let favs = (CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
 
@@ -952,6 +987,85 @@ const UI = {
 const App = {
     currentTrack: null, activeEngine: null,
     
+    // LÓGICA DE REORDENAMIENTO CON DRAG AND DROP (FRACCIONES DECIMALES Y ARRAYS)
+    handleDragReorder: async (type, domOldIdx, domNewIdx, pageContext) => {
+        if (type === 'favs') {
+            const u = CT.ses(); if(!u) return;
+            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+            let favs = [...(userDoc.favs || [])];
+
+            let actualOldIdx = (pageContext * 20) + domOldIdx;
+            let actualNewIdx = (pageContext * 20) + domNewIdx;
+
+            if(actualOldIdx < 0 || actualOldIdx >= favs.length || actualNewIdx < 0 || actualNewIdx >= favs.length) return;
+
+            const [movedItem] = favs.splice(actualOldIdx, 1);
+            favs.splice(actualNewIdx, 0, movedItem);
+
+            userDoc.favs = favs;
+            db.collection('users').doc(u.h).update({ favs: favs });
+        }
+        else if (type === 'categories' || type === 'categories_trn') {
+            let isTrn = type === 'categories_trn';
+            let items = CT.data.c.filter(c => isTrn ? c.name.startsWith('[TRN]') : (!c.name.startsWith('[TRN]') && c.name !== 'General')).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+            let actualOldIdx = domOldIdx;
+            let actualNewIdx = domNewIdx;
+
+            if(actualOldIdx < 0 || actualOldIdx >= items.length || actualNewIdx < 0 || actualNewIdx >= items.length) return;
+
+            const movedData = items[actualOldIdx];
+            items.splice(actualOldIdx, 1);
+            items.splice(actualNewIdx, 0, movedData);
+
+            let prevOrder = actualNewIdx > 0 ? Number(items[actualNewIdx - 1].order || 0) : null;
+            let nextOrder = actualNewIdx < items.length - 1 ? Number(items[actualNewIdx + 1].order || 0) : null;
+
+            let newOrder;
+            if (prevOrder === null && nextOrder === null) newOrder = Date.now();
+            else if (prevOrder === null) newOrder = nextOrder - 1000;
+            else if (nextOrder === null) newOrder = prevOrder + 1000;
+            else newOrder = prevOrder + (nextOrder - prevOrder) / 2;
+
+            movedData.order = newOrder;
+            let catItem = CT.data.c.find(c => c.name === movedData.name);
+            if(catItem) catItem.order = newOrder;
+
+            db.collection('categories').doc(movedData.name).update({order: newOrder});
+        }
+        else if (type === 'phrases' || type === 'phrases_trn') {
+            let isTrn = type === 'phrases_trn';
+            let cat = isTrn ? UI.activeTrnCat : UI.activeAdminCat;
+            if(!cat) return;
+
+            let items = CT.data.p.filter(t => (t.c || 'General').trim() === cat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+            let actualOldIdx = (pageContext * 20) + domOldIdx;
+            let actualNewIdx = (pageContext * 20) + domNewIdx;
+
+            if(actualOldIdx < 0 || actualOldIdx >= items.length || actualNewIdx < 0 || actualNewIdx >= items.length) return;
+
+            const movedData = items[actualOldIdx];
+            items.splice(actualOldIdx, 1);
+            items.splice(actualNewIdx, 0, movedData);
+
+            let prevOrder = actualNewIdx > 0 ? Number(items[actualNewIdx - 1].order || 0) : null;
+            let nextOrder = actualNewIdx < items.length - 1 ? Number(items[actualNewIdx + 1].order || 0) : null;
+
+            let newOrder;
+            if (prevOrder === null && nextOrder === null) newOrder = Date.now();
+            else if (prevOrder === null) newOrder = nextOrder - 1000;
+            else if (nextOrder === null) newOrder = prevOrder + 1000;
+            else newOrder = prevOrder + (nextOrder - prevOrder) / 2;
+
+            movedData.order = newOrder;
+            let tItem = CT.data.p.find(p => p.id === movedData.id);
+            if(tItem) tItem.order = newOrder;
+
+            db.collection('phrases').doc(movedData.id.toString()).update({order: newOrder});
+        }
+    },
+
     loadDashboardData: async () => {
         try {
             const topReq = await db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
@@ -1074,76 +1188,6 @@ const App = {
         userDoc.favs = favs; 
         db.collection('users').doc(u.h).update({ favs: favs });
         UI.renderTrackList(); 
-    },
-    
-    moveFav: (idStr, direction) => {
-        const u = CT.ses(); if(!u) return;
-        let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
-        let favs = userDoc.favs || [];
-        let idx = favs.indexOf(idStr.toString());
-        if (idx === -1) return;
-        let swapIdx = idx + direction;
-        if (swapIdx >= 0 && swapIdx < favs.length) {
-            let temp = favs[idx];
-            favs[idx] = favs[swapIdx];
-            favs[swapIdx] = temp;
-            userDoc.favs = favs;
-            db.collection('users').doc(u.h).update({ favs: favs });
-            UI.renderTrackList();
-        }
-    },
-
-    moveTrack: async (idStr, direction) => {
-        let tracks = CT.data.p;
-        let track = tracks.find(t => t.id.toString() === idStr.toString());
-        if(!track) return;
-        let filtered = tracks.filter(t => t.c === track.c).sort((a,b) => (a.order || 0) - (b.order || 0));
-        let idx = filtered.findIndex(t => t.id === track.id);
-        let swapIdx = idx + direction;
-        if(swapIdx >= 0 && swapIdx < filtered.length) {
-            let track2 = filtered[swapIdx];
-            let order1 = track.order !== undefined ? track.order : idx;
-            let order2 = track2.order !== undefined ? track2.order : swapIdx;
-            if(order1 === order2) { order1 = idx; order2 = swapIdx; }
-            
-            track.order = order2;
-            track2.order = order1;
-            
-            if(track.c && track.c.startsWith('[TRN]')) UI.renderAdminTrn();
-            else UI.renderAdminP();
-
-            const batch = db.batch();
-            batch.update(db.collection('phrases').doc(track.id.toString()), {order: order2});
-            batch.update(db.collection('phrases').doc(track2.id.toString()), {order: order1});
-            await batch.commit();
-        }
-    },
-
-    moveCategory: async (catName, direction) => {
-        let cats = CT.data.c; 
-        let isTrn = catName.startsWith('[TRN]');
-        let filtered = cats.filter(c => (isTrn ? c.name.startsWith('[TRN]') : (!c.name.startsWith('[TRN]') && c.name !== 'General'))).sort((a,b) => (a.order || 0) - (b.order || 0));
-        let idx = filtered.findIndex(c => c.name === catName);
-        if(idx === -1) return;
-        let swapIdx = idx + direction;
-        if(swapIdx >= 0 && swapIdx < filtered.length) {
-            let cat1 = filtered[idx];
-            let cat2 = filtered[swapIdx];
-            let order1 = cat1.order !== undefined ? cat1.order : idx;
-            let order2 = cat2.order !== undefined ? cat2.order : swapIdx;
-            if(order1 === order2) { order1 = idx; order2 = swapIdx; }
-            
-            cat1.order = order2;
-            cat2.order = order1;
-            
-            if(isTrn) UI.showAdminTrnCategories();
-            else UI.showAdminPhraseCategories();
-
-            const batch = db.batch();
-            batch.update(db.collection('categories').doc(cat1.name), {order: order2});
-            batch.update(db.collection('categories').doc(cat2.name), {order: order1});
-            await batch.commit();
-        }
     },
 
     toggleFeature: (feat) => {
@@ -1446,105 +1490,4 @@ class Engine {
                  this.errKeys[key] = (this.errKeys[key] || 0) + 1;
             }
             let cleanWord = cur.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ0-9]/g, '').toLowerCase();
-            if(cleanWord) this.errWords[cleanWord] = (this.errWords[cleanWord] || 0) + 1;
-        }
-        this.lastV = v;
-
-        if (isPrefixValid) {
-            el.classList.remove('input-error'); activeSpan.innerHTML = `<span class="char-ok">${typed}</span>${cur.slice(typed.length)}`;
-        } else {
-            el.classList.add('input-error'); let matchLen = 0; while(matchLen < typed.length && matchLen < cur.length && typed[matchLen] === cur[matchLen]) matchLen++;
-            let correctPart = cur.slice(0, matchLen); let errLen = typed.length - matchLen;
-            let wordWrongPart = cur.slice(matchLen, matchLen + errLen); let remPart = cur.slice(matchLen + wordWrongPart.length);
-            activeSpan.innerHTML = `<span class="char-ok">${correctPart}</span><span class="char-err">${wordWrongPart}</span>${remPart}`;
-        }
-
-        if (isSubmitting || (last && v === cur)) {
-            if (typed === cur && isPrefixValid) {
-                this.c += cur.length + (last ? 0 : 1);
-                activeSpan.className = 'word correct'; activeSpan.innerHTML = cur; 
-                this.i++; el.value = ''; el.classList.remove('input-error'); this.lastV = '';
-                
-                const progress = (this.i / this.w.length) * 100;
-                document.getElementById('race-progress').style.width = progress + '%';
-
-                if(this.i < this.w.length) spans[this.i].classList.add('active'); else this.end(); 
-            } else { el.value = v; el.classList.add('input-error'); }
-        }
-    }
-
-    die() {
-        this.stop(); document.body.style.backgroundColor = '#4a0000'; updateDiscordStatus("Muerto en Hardcore 💀", "F", false);
-        document.getElementById('game-input').disabled = true; document.getElementById('game-input').classList.add('hidden'); document.getElementById('in-game-controls').classList.add('hidden');
-        const uiTextDeath = CT.data.ui && CT.data.ui['t_game_dead_title'] ? CT.data.ui['t_game_dead_title'].v : "HAS MUERTO";
-        document.getElementById('final-speed-display').innerText = `💀 ${uiTextDeath}`;
-        
-        const u = CT.ses();
-        if(u) {
-            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
-            let hc_deaths = (userDoc.hc_deaths || 0) + 1;
-            let track_deaths = userDoc.hc_track_deaths || {};
-            track_deaths[this.track.title] = (track_deaths[this.track.title] || 0) + 1;
-            db.collection('users').doc(u.h).update({ hc_deaths: hc_deaths, hc_track_deaths: track_deaths });
-        }
-        document.getElementById('game-result-modal').classList.remove('hidden');
-        setTimeout(() => { document.body.style.backgroundColor = ''; }, 1500); 
-    }
-
-    end() { 
-        this.stop(); 
-        const sec = (new Date()-this.s)/1000; const finalCPM = Math.round(this.c/(sec/60)) || 0; 
-        
-        document.getElementById('game-input').disabled = true; document.getElementById('game-input').classList.add('hidden'); document.getElementById('in-game-controls').classList.add('hidden');
-        
-        const finalUnitLabel = CT.currentUnit === 'zen' ? 'ZEN' : CT.currentUnit.toUpperCase();
-        const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
-        
-        updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
-        const speedDisplayEl = document.getElementById('final-speed-display');
-        speedDisplayEl.innerText = finalSpeedValue + " " + finalUnitLabel;
-
-        document.getElementById('game-speed-display').innerText = finalSpeedValue;
-        document.getElementById('game-timer').innerText = sec.toFixed(1) + 's';
-        
-        if (CT.currentUnit === 'zen') { speedDisplayEl.classList.add('val-blurrable'); }
-        if (this.mode === 'training') { document.getElementById('game-result-modal').classList.remove('hidden'); return; }
-
-        const u = CT.ses(); 
-        if(u) {
-            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
-            let arrRef = this.mode === 'hardcore' ? (userDoc.hi_hc || []) : (userDoc.hi || []);
-            const previousBest = arrRef.length > 0 ? Math.max(...arrRef) : 0;
-            if(finalCPM > previousBest && arrRef.length > 0) { document.getElementById('pb-alert').classList.remove('hidden'); }
-
-            let bk = userDoc.bad_keys || {}; let bw = userDoc.bad_words || {};
-            for(let k in this.errKeys) bk[k] = (bk[k] || 0) + this.errKeys[k];
-            for(let w in this.errWords) bw[w] = (bw[w] || 0) + this.errWords[w];
-            
-            let sortedWords = Object.keys(bw).sort((a,b) => bw[b] - bw[a]); let prunedBw = {};
-            sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
-
-            const dateStr = CT.getARDate(); const scoreId = Date.now().toString();
-            let sList = CT.data.s_recent || []; const isHC = this.mode === 'hardcore';
-            const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title, hc: isHC };
-            sList.unshift(newScore); CT.data.s_recent = sList;
-            
-            if (CT.data.userScores && CT.data.userScores[u.h]) {
-                CT.data.userScores[u.h].unshift(newScore);
-            }
-
-            let updatePayload = { bad_keys: bk, bad_words: prunedBw };
-            if (isHC) { updatePayload.hi_hc = firebase.firestore.FieldValue.arrayUnion(finalCPM); if (!userDoc.hi_hc) userDoc.hi_hc = []; userDoc.hi_hc.push(finalCPM); } 
-            else { updatePayload.hi = firebase.firestore.FieldValue.arrayUnion(finalCPM); if (!userDoc.hi) userDoc.hi = []; userDoc.hi.push(finalCPM); }
-            
-            userDoc.bad_keys = bk; userDoc.bad_words = prunedBw;
-            db.collection('users').doc(u.h).update(updatePayload); 
-            db.collection('scores').doc(scoreId).set(newScore); 
-        }
-        document.getElementById('game-result-modal').classList.remove('hidden');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => { CT.init(); });
-
-
+            if(cleanWord) this.errWords[cleanWord] = (this.errWords
