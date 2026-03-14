@@ -30,7 +30,7 @@ function setDiscordActivity(details, state, showTimer) {
         details: details,
         state: state,
         largeImageKey: 'logo_principal', 
-        largeImageText: 'CananTyper v1.1.14', 
+        largeImageText: 'CananTyper v1.1.15', 
         instance: false,
     };
     if (showTimer) activity.startTimestamp = Date.now();
@@ -62,4 +62,3 @@ autoUpdater.on('update-downloaded', () => { if (mainWindow) mainWindow.webConten
 ipcMain.on('apply-update', () => { autoUpdater.quitAndInstall(); });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-
