@@ -1,7 +1,7 @@
 /* ================================================================
     CANANTYPER - CORE FRONTEND (HÍBRIDO WEB/ESCRITORIO)
     ================================================================
-    Versión 1.1.15 (MEGA CLEANUP: WebSockets, Drag&Drop, Fixes)
+    Versión 1.1.15 (MEGA CLEANUP: WebSockets, Drag&Drop, Crash Fixes)
 */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -112,7 +112,6 @@ const CT = {
         db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
 
         db.collection('config').doc('ui_texts').onSnapshot(snap => {
-            // Diccionario Purificado: Eliminadas las variables muertas
             const defaults = {
                 't_auth_title': { l: 'Título', v: 'CananTyper' }, 't_auth_sub': { l: 'Subtítulo', v: 'Mecanografía' },
                 't_btn_login': { l: 'Login', v: 'Iniciar sesión' }, 't_btn_register': { l: 'Registro', v: 'CREAR CUENTA' },
@@ -391,7 +390,14 @@ const UI = {
         document.getElementById('st-p-last10-avg').innerText = UI.formatValue(avgLast10);
         
         const phrases = CT.dbLocal('p'); let catAvgs = {};
-        userScores.forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
+        userScores.forEach(s => { 
+            const trackStr = (s.track || '').toString();
+            const trackObj = phrases.find(p => (p.title || '').toString() === trackStr); 
+            const cat = trackObj ? (trackObj.c || 'General') : 'General'; 
+            if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; 
+            catAvgs[cat].sum += Number(s.c || 0); 
+            catAvgs[cat].count++; 
+        });
         let bestCat = "-"; let maxCatAvg = -1;
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
@@ -422,7 +428,12 @@ const UI = {
         document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td></tr>`).join('');
 
         let trackAvgs = {};
-        userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
+        userScores.forEach(s => { 
+            let tName = (s.track || 'Desconocido').toString();
+            if(!trackAvgs[tName]) trackAvgs[tName] = { sum: 0, count: 0 }; 
+            trackAvgs[tName].sum += Number(s.c || 0); 
+            trackAvgs[tName].count++; 
+        });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
         let bottom5 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 5);
         if(bottom5.length === 0) bottom5 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 5);
@@ -472,12 +483,20 @@ const UI = {
         document.getElementById('st-g-avg').innerText = UI.formatValue(totalRaces ? Math.round(totalSum/totalRaces) : 0);
         document.getElementById('st-g-record').innerText = UI.formatValue(globalMax);
         
-        let textCounts = {}; (CT.data.s_recent || []).forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
+        let textCounts = {}; (CT.data.s_recent || []).forEach(s => { 
+            let tName = (s.track || 'Desconocido').toString();
+            textCounts[tName] = (textCounts[tName] || 0) + 1; 
+        });
         const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
         document.getElementById('st-g-top-texts').innerHTML = topTexts.map((tr, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td>${tr.count}</td></tr>`).join('');
         
         const phrases = CT.dbLocal('p'); let catCounts = {}; 
-        (CT.data.s_recent || []).forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; catCounts[cat] = (catCounts[cat] || 0) + 1; });
+        (CT.data.s_recent || []).forEach(s => { 
+            const trackStr = (s.track || '').toString();
+            const trackObj = phrases.find(p => (p.title || '').toString() === trackStr); 
+            const cat = trackObj ? (trackObj.c || 'General') : 'General'; 
+            catCounts[cat] = (catCounts[cat] || 0) + 1; 
+        });
         let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
         document.getElementById('st-g-top-cats').innerHTML = topCats.map((tc, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`).join('');
     },
@@ -507,22 +526,33 @@ const UI = {
         document.getElementById('st-e-bestavg-user').innerText = avgUser.n || "-";
 
         const topS = CT.data.s_top || [];
-        let tm = {}; topS.forEach(s => { if(!tm[s.track] || s.c > tm[s.track].c) tm[s.track] = s; });
+        let tm = {}; topS.forEach(s => { 
+            let tName = (s.track || 'Desconocido').toString();
+            if(!tm[tName] || s.c > tm[tName].c) tm[tName] = s; 
+        });
         let top1c = {}; Object.values(tm).forEach(s => { top1c[s.h] = (top1c[s.h]||0)+1; });
         let mTop1h = Object.keys(top1c).reduce((a,b) => top1c[a] > top1c[b] ? a : b, "");
         let mTop1Name = mTop1h ? (users.find(u=>u.h===mTop1h)||{n:"-"}).n : "-";
         document.getElementById('st-e-top1-val').innerText = mTop1h ? top1c[mTop1h] : 0;
         document.getElementById('st-e-top1-user').innerText = mTop1Name;
         
-        let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
-        document.getElementById('st-e-table-texts').innerHTML = top10T.map((tr, i) => { let trMax = topS.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0}); return `<tr><td><b>#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(trMax.c)}</b></td></tr>`; }).join('');
+        let tCounts = {}; topS.forEach(s => { 
+            let tName = (s.track || 'Desconocido').toString();
+            tCounts[tName] = (tCounts[tName] || 0) + 1; 
+        }); 
+        let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
+        document.getElementById('st-e-table-texts').innerHTML = top10T.map((tr, i) => { let trMax = topS.filter(s => (s.track || '').toString() === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0}); return `<tr><td><b>#${i+1}</b></td><td>${tr}</td><td>${trMax.n}</td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(trMax.c)}</b></td></tr>`; }).join('');
         
         const phrases = CT.dbLocal('p');
-        let scoresWithCat = topS.map(s => { let tObj = phrases.find(p => p.title.toString() === s.track.toString()); return { ...s, cat: tObj ? (tObj.c || 'General') : 'General' }; });
+        let scoresWithCat = topS.map(s => { 
+            const trackStr = (s.track || '').toString();
+            let tObj = phrases.find(p => (p.title || '').toString() === trackStr); 
+            return { ...s, cat: tObj ? (tObj.c || 'General') : 'General' }; 
+        });
         let cCounts = {}; scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; }); let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         document.getElementById('st-e-table-cats').innerHTML = top10C.map((cat, i) => { let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0}); return `<tr><td><b>#${i+1}</b></td><td>${cat}</td><td>${catMax.n}</td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(catMax.c)}</b></td></tr>`; }).join('');
     },
-    
+
     renderInfoPage() {
         if(!CT.data.info) return;
         document.getElementById('info-display-title').innerText = CT.data.info.title || "Información";
@@ -793,14 +823,14 @@ const UI = {
 
         if (query) {
             document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.add('hidden');
-            let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+            let filtered = tracks.filter(t => (t.title || '').toString().toLowerCase().includes(query) || (t.text || '').toString().toLowerCase().includes(query)); 
             filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
             const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
             listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${(t.c || 'General').trim()}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
             document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
         } else if (!UI.activeAdminCat) {
             document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
-            let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
+            let cats = CT.dbLocal('c').filter(c => !(c.name || '').startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
             cats.sort((a,b) => (a.order || 0) - (b.order || 0));
             document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
@@ -817,7 +847,7 @@ const UI = {
             else if (!query && UI.activeAdminCat) UI.initSortable('admin-phrases-list', 'phrases', UI.adminPhrasePage);
         }, 50);
     },
-    changeAdminPhrasePage(delta) { const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeAdminCat.trim()); } const nextStart = (UI.adminPhrasePage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.adminPhrasePage += delta; this.renderAdminP(); } },
+    changeAdminPhrasePage(delta) { const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); if (query) { filtered = filtered.filter(t => (t.title || '').toString().toLowerCase().includes(query) || (t.text || '').toString().toLowerCase().includes(query)); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeAdminCat.trim()); } const nextStart = (UI.adminPhrasePage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.adminPhrasePage += delta; this.renderAdminP(); } },
     prepEdit(idStr) { const pList = CT.dbLocal('p'); const track = pList.find(t => t.id.toString() === idStr.toString()); if(!track) return; UI.updateCategorySelects(); document.getElementById('phrase-title').value = track.title; document.getElementById('phrase-category').value = track.c || 'General'; document.getElementById('phrase-input').value = track.text; CT.editIdx = track.id.toString(); document.getElementById('admin-phrase-form').classList.remove('hidden'); },
     cancelEditP() { CT.editIdx = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('phrase-title').value = ''; document.getElementById('phrase-input').value = ''; },
     delP: (idStr) => { 
@@ -829,19 +859,19 @@ const UI = {
     },
 
     renderAdminTrn() {
-        let tracks = CT.dbLocal('p').filter(t => t.c && t.c.startsWith('[TRN]'));
+        let tracks = CT.dbLocal('p').filter(t => (t.c || '').startsWith('[TRN]'));
         const listContainer = document.getElementById('admin-trn-list');
         listContainer.className = 'custom-scroll admin-list ' + UI.listLayout;
 
         if (!UI.activeTrnCat) {
             document.getElementById('admin-trn-categories').classList.remove('hidden');
             document.getElementById('admin-trn-list-view').classList.add('hidden');
-            let cats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+            let cats = CT.dbLocal('c').filter(c => (c.name || '').startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
             let catCounts = {}; tracks.forEach(t => { const c = (t.c || '').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
-            document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${cat.name.replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+            document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${(cat.name || '').replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
         } else {
             let filtered = tracks.filter(t => (t.c || '').trim() === UI.activeTrnCat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
-            listContainer.innerHTML = filtered.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','').trim()}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted); margin-right:15px;" title="Arrastrar para ordenar">⠿</span><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
+            listContainer.innerHTML = filtered.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${(t.c || '').replace('[TRN] ','').trim()}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted); margin-right:15px;" title="Arrastrar para ordenar">⠿</span><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
         }
         
         setTimeout(() => {
@@ -908,7 +938,7 @@ const UI = {
         document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
         const tracks = CT.dbLocal('p'); let cats = CT.dbLocal('c'); let catCounts = {}; 
         tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
-        cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+        cats = cats.filter(c => c.name !== 'General' && !(c.name || '').startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
 
         let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
         let html = `<div class="cat-card cat-fav-card" onclick="UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
@@ -932,7 +962,7 @@ const UI = {
         let filtered = tracks;
         if (query) {
             document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.add('hidden');
-            filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+            filtered = tracks.filter(t => (t.title || '').toString().toLowerCase().includes(query) || (t.text || '').toString().toLowerCase().includes(query)); 
         } else if (UI.filterFavs) {
             filtered = tracks.filter(t => favs.includes(t.id.toString()));
             filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
@@ -958,7 +988,7 @@ const UI = {
                     <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? '⭐' : '☆'}</button>
                     ${reorderFavHtml}
                 </div>
-                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
+                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${(t.text || '').split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
             </div>`;
         }).join('');
         document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
@@ -968,7 +998,7 @@ const UI = {
             else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
         }, 50);
     },
-    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); const u = CT.ses(); let favs = (CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); const u = CT.ses(); let favs = (CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => (t.title || '').toString().toLowerCase().includes(query) || (t.text || '').toString().toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
 
     showAnnouncement(data) { if(!data.id) return; UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
     closeAnnouncement() { if(UI.currentAnnId) { localStorage.setItem('ct_last_announcement', UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
@@ -977,6 +1007,422 @@ const UI = {
     closeCropModal() { document.getElementById('crop-modal').classList.add('hidden'); document.getElementById('img-input').value = ''; },
     updateCropTransform() { const img = document.getElementById('crop-image'); img.style.transform = `translate(-50%, -50%) translate(${UI.cropX}px, ${UI.cropY}px) scale(${UI.cropScale})`; img.style.left = '50%'; img.style.top = '50%'; },
     setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.startX = cx - UI.cropX; UI.startY = cy - UI.cropY; }; const moveDrag = (e) => { if(!UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.cropX = cx - UI.startX; UI.cropY = cy - UI.startY; UI.updateCropTransform(); }; const endDrag = () => { UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { UI.cropScale = e.target.value; UI.updateCropTransform(); }; }
+};
+
+const App = {
+    currentTrack: null, activeEngine: null,
+    
+    // LÓGICA DE REORDENAMIENTO CON DRAG AND DROP (FRACCIONES DECIMALES Y ARRAYS)
+    handleDragReorder: async (type, domOldIdx, domNewIdx, pageContext) => {
+        if (type === 'favs') {
+            const u = CT.ses(); if(!u) return;
+            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+            let favs = [...(userDoc.favs || [])];
+
+            let actualOldIdx = (pageContext * 20) + domOldIdx;
+            let actualNewIdx = (pageContext * 20) + domNewIdx;
+
+            if(actualOldIdx < 0 || actualOldIdx >= favs.length || actualNewIdx < 0 || actualNewIdx >= favs.length) return;
+
+            const [movedItem] = favs.splice(actualOldIdx, 1);
+            favs.splice(actualNewIdx, 0, movedItem);
+
+            userDoc.favs = favs;
+            db.collection('users').doc(u.h).update({ favs: favs });
+        }
+        else if (type === 'categories' || type === 'categories_trn') {
+            let isTrn = type === 'categories_trn';
+            let items = CT.data.c.filter(c => isTrn ? (c.name || '').startsWith('[TRN]') : (!(c.name || '').startsWith('[TRN]') && c.name !== 'General')).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+            let actualOldIdx = domOldIdx;
+            let actualNewIdx = domNewIdx;
+
+            if(actualOldIdx < 0 || actualOldIdx >= items.length || actualNewIdx < 0 || actualNewIdx >= items.length) return;
+
+            const movedData = items[actualOldIdx];
+            items.splice(actualOldIdx, 1);
+            items.splice(actualNewIdx, 0, movedData);
+
+            let prevOrder = actualNewIdx > 0 ? Number(items[actualNewIdx - 1].order || 0) : null;
+            let nextOrder = actualNewIdx < items.length - 1 ? Number(items[actualNewIdx + 1].order || 0) : null;
+
+            let newOrder;
+            if (prevOrder === null && nextOrder === null) newOrder = Date.now();
+            else if (prevOrder === null) newOrder = nextOrder - 1000;
+            else if (nextOrder === null) newOrder = prevOrder + 1000;
+            else newOrder = prevOrder + (nextOrder - prevOrder) / 2;
+
+            movedData.order = newOrder;
+            let catItem = CT.data.c.find(c => c.name === movedData.name);
+            if(catItem) catItem.order = newOrder;
+
+            db.collection('categories').doc(movedData.name).update({order: newOrder});
+        }
+        else if (type === 'phrases' || type === 'phrases_trn') {
+            let isTrn = type === 'phrases_trn';
+            let cat = isTrn ? UI.activeTrnCat : UI.activeAdminCat;
+            if(!cat) return;
+
+            let items = CT.data.p.filter(t => (t.c || 'General').trim() === cat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+            let actualOldIdx = (pageContext * 20) + domOldIdx;
+            let actualNewIdx = (pageContext * 20) + domNewIdx;
+
+            if(actualOldIdx < 0 || actualOldIdx >= items.length || actualNewIdx < 0 || actualNewIdx >= items.length) return;
+
+            const movedData = items[actualOldIdx];
+            items.splice(actualOldIdx, 1);
+            items.splice(actualNewIdx, 0, movedData);
+
+            let prevOrder = actualNewIdx > 0 ? Number(items[actualNewIdx - 1].order || 0) : null;
+            let nextOrder = actualNewIdx < items.length - 1 ? Number(items[actualNewIdx + 1].order || 0) : null;
+
+            let newOrder;
+            if (prevOrder === null && nextOrder === null) newOrder = Date.now();
+            else if (prevOrder === null) newOrder = nextOrder - 1000;
+            else if (nextOrder === null) newOrder = prevOrder + 1000;
+            else newOrder = prevOrder + (nextOrder - prevOrder) / 2;
+
+            movedData.order = newOrder;
+            let tItem = CT.data.p.find(p => p.id === movedData.id);
+            if(tItem) tItem.order = newOrder;
+
+            db.collection('phrases').doc(movedData.id.toString()).update({order: newOrder});
+        }
+    },
+
+    // SCOREBOARD EN TIEMPO REAL (WebSockets)
+    loadDashboardData: () => {
+        // Escucha en TIEMPO REAL del Top Histórico
+        db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50)
+            .onSnapshot(snap => {
+                CT.data.s_top = snap.docs.map(d => d.data());
+                UI.refreshActiveViews();
+            }, err => {
+                // Fallback por si falta el índice en Firebase
+                db.collection('scores').orderBy('c', 'desc').limit(50).onSnapshot(snapFb => {
+                    CT.data.s_top = snapFb.docs.map(d => d.data()).filter(x => !x.hc);
+                    UI.refreshActiveViews();
+                });
+            });
+            
+        // Escucha en TIEMPO REAL de las Carreras Recientes (Hoy)
+        db.collection('scores').orderBy('id', 'desc').limit(100)
+            .onSnapshot(snap => {
+                CT.data.s_recent = snap.docs.map(d => d.data());
+                UI.refreshActiveViews();
+            });
+    },
+
+    getUserScores: async (handle) => {
+        if(!CT.data.userScores) CT.data.userScores = {};
+        if(CT.data.userScores[handle]) return CT.data.userScores[handle];
+        try {
+            const req = await db.collection('scores').where('h', '==', handle).limit(100).get();
+            let scores = req.docs.map(d => d.data());
+            scores.sort((a,b) => b.id - a.id);
+            CT.data.userScores[handle] = scores;
+            return scores;
+        } catch(e) { return []; }
+    },
+
+    loadAdminRaces: async (queryStr = "") => {
+        try {
+            let req;
+            if(queryStr && queryStr.startsWith('@')) {
+                req = await db.collection('scores').where('h', '==', queryStr.toLowerCase()).limit(100).get();
+                let res = req.docs.map(d=>d.data());
+                res.sort((a,b) => b.id - a.id);
+                CT.data.adminScores = res.slice(0, 50);
+            } else {
+                req = await db.collection('scores').orderBy('id', 'desc').limit(50).get();
+                CT.data.adminScores = req.docs.map(d => d.data());
+            }
+            UI.renderAdminR();
+        } catch(e) { console.error(e); }
+    },
+    
+    startRandomRace: () => { 
+        let tracks = CT.dbLocal('p').filter(t => !(t.c || '').startsWith('[TRN]')); 
+        if(!tracks || tracks.length === 0) return alert("No hay textos disponibles."); 
+        App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; 
+        if(App.activeEngine) App.activeEngine.stop(); 
+        App.activeEngine = new Engine(App.currentTrack, 'normal'); 
+    },
+    
+    startHardcoreRace: () => { 
+        let tracks = CT.dbLocal('p').filter(t => !(t.c || '').startsWith('[TRN]')); 
+        if(!tracks || tracks.length === 0) return alert("No hay textos disponibles."); 
+        App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; 
+        if(App.activeEngine) App.activeEngine.stop(); 
+        App.activeEngine = new Engine(App.currentTrack, 'hardcore'); 
+    },
+    
+    startGhostRace: (trackTitle, cpm) => {
+        let track = CT.dbLocal('p').find(t => (t.title || '').toString() === trackTitle.toString());
+        if(!track) return alert("Pista no encontrada o eliminada.");
+        App.currentTrack = track;
+        if(App.activeEngine) App.activeEngine.stop();
+        App.activeEngine = new Engine(track, 'normal', cpm);
+    },
+
+    startPurge: () => {
+        const u = CT.ses(); let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+        const bw = userDoc.bad_words || {}; let words = Object.keys(bw);
+        if(words.length < 5) return alert("No tienes suficientes errores registrados aún. ¡Juega más partidas normales!");
+        let genText = []; for(let i=0; i<20; i++) { genText.push(words[Math.floor(Math.random()*words.length)]); }
+        const track = { id: 'purge', title: 'Purgatorio', c: 'Entrenamiento', text: genText.join(' ') };
+        App.currentTrack = track;
+        if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'training');
+        UI.toggleTrainMenu();
+    },
+
+    startTrnCategory: (catName) => {
+        let extTracks = CT.dbLocal('p').filter(t => t.c === catName);
+        if(extTracks.length === 0) return alert("No hay textos en esta modalidad.");
+        App.currentTrack = extTracks[Math.floor(Math.random() * extTracks.length)];
+        if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(App.currentTrack, 'training');
+        UI.toggleTrainMenu();
+    },
+
+    startRaceWithTrack: (id) => { const track = CT.dbLocal('p').find(t => t.id.toString() === id.toString()); if(track) { App.currentTrack = track; if(App.activeEngine) App.activeEngine.stop(); App.activeEngine = new Engine(track, 'normal'); } },
+    
+    retryRace: () => { if(App.activeEngine) { const m = App.activeEngine.mode; const g = App.activeEngine.ghostCPM; App.activeEngine.stop(); if(App.currentTrack) App.activeEngine = new Engine(App.currentTrack, m, g); } },
+    
+    nextRace: () => { 
+        if(App.activeEngine) { 
+            const m = App.activeEngine.mode; 
+            const track = App.activeEngine.track; 
+            App.activeEngine.stop(); 
+            if(m === 'hardcore') {
+                App.startHardcoreRace(); 
+            } else if (m === 'training') {
+                if (track && track.id === 'purge') App.startPurge();
+                else if (track && track.c && track.c.startsWith('[TRN]')) App.startTrnCategory(track.c);
+                else App.startPurge(); 
+            } else {
+                App.startRandomRace(); 
+            }
+        } 
+    },
+    
+    quitRace: () => { if(App.activeEngine) { App.activeEngine.stop(); App.activeEngine = null; } UI.showLobby(); },
+    
+    toggleFav: (idStr) => {
+        const u = CT.ses(); if(!u) return;
+        let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+        let favs = userDoc.favs || [];
+        if (favs.includes(idStr.toString())) { favs = favs.filter(f => f !== idStr.toString()); } 
+        else { favs.push(idStr.toString()); }
+        userDoc.favs = favs; 
+        db.collection('users').doc(u.h).update({ favs: favs });
+        UI.renderTrackList(); 
+    },
+
+    toggleFeature: (feat) => {
+        const current = CT.data.maint ? CT.data.maint[feat] !== false : true;
+        db.collection('config').doc('maintenance').set({ [feat]: !current }, {merge: true});
+    },
+
+    saveTheme: (themeName) => {
+        let themeObj;
+        if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
+        else if (themeName === 'hacker') { themeObj = { p: '#00ff00', bg: '#050505', surface: '#0a0a0a' }; }
+        else { themeObj = { p: '#a6ff00', bg: '#000000', surface: '#141414' }; } 
+        
+        localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
+        const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: themeObj }); }
+        UI.applySavedTheme(); UI.closeThemeModal();
+    },
+
+    resetTheme: () => {
+        localStorage.removeItem('ct_custom_theme');
+        const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        UI.applySavedTheme(); UI.closeThemeModal();
+    },
+
+    saveInfoPage: () => {
+        const title = document.getElementById('info-title-input').value.trim();
+        const content = document.getElementById('info-msg-input').innerHTML.trim();
+        if(!title || !content) return alert("Rellena todos los campos.");
+        db.collection('config').doc('info_page').set({ title, content }).then(() => alert("Información guardada."));
+    },
+
+    saveShortcuts: () => {
+        const restart = document.getElementById('sc-restart').value;
+        const next = document.getElementById('sc-next').value;
+        const quit = document.getElementById('sc-quit').value;
+        db.collection('config').doc('shortcuts').set({ restart, next, quit }).then(() => alert("Atajos guardados."));
+    },
+    
+    listenShortcutInput: (e, id) => { e.preventDefault(); document.getElementById(id).value = e.key; },
+
+    handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
+    toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } UI.toggleSettings(); },
+    
+    downloadSetup: () => {
+        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
+        const link = document.createElement('a'); link.href = directUrl; link.download = 'CananTyper_Setup.exe';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); UI.toggleSettings();
+    },
+
+    // PURGA DE CACHÉ FANTASMA REALIZADA
+    clearCache: () => {
+        if(confirm("¿Seguro que deseas limpiar la caché local? Se volverán a descargar los textos y usuarios de la nube.")) {
+            localStorage.removeItem('ct_cache_u');
+            localStorage.removeItem('ct_cache_p'); localStorage.removeItem('ct_cache_c');
+            localStorage.removeItem('ct_cache_ui');
+            location.reload();
+        }
+    },
+
+    toggleMaintenance: () => { const current = CT.data.maint ? CT.data.maint.active : false; const next = !current; const confirmMsg = next ? "⚠️ ¿Seguro que deseas ACTIVAR el mantenimiento? Todos los usuarios no administradores serán expulsados." : "✅ ¿Seguro que deseas DESACTIVAR el mantenimiento? La web volverá a ser pública."; if(confirm(confirmMsg)) { db.collection('config').doc('maintenance').update({ active: next }).catch(e => alert("Error al cambiar estado.")); } },
+    saveMaintenanceInfo: () => { const icon = document.getElementById('maint-icon-input').value; const title = document.getElementById('maint-title-input').value.trim(); const msg = document.getElementById('maint-msg-input').value.trim(); if(!title || !msg) return alert("Completa los datos del cartel de mantenimiento."); db.collection('config').doc('maintenance').update({ icon, title, msg }).then(() => alert("Cartel de mantenimiento actualizado con éxito.")).catch(() => alert("Error al guardar el cartel.")); },
+
+    publishAnnouncement: async () => { const title = document.getElementById('ann-title').value.trim(); const msg = document.getElementById('ann-msg').innerHTML.trim(); const icon = document.getElementById('ann-icon').value; if(!title || !msg || msg === '<br>') return alert("Rellena el título y el mensaje del anuncio."); if(confirm("¿Seguro que deseas lanzar este Pop-Up a todos los jugadores?")) { const annId = Date.now().toString(); const timeStr = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit', timeZone: 'America/Argentina/Buenos_Aires'}); const dateStr = CT.getARDate() + " - " + timeStr; try { const activeDocs = await db.collection('announcements').where('active', '==', true).get(); const batch = db.batch(); activeDocs.forEach(d => { batch.update(d.ref, { active: false }); }); const newAnn = { id: annId, title: title, msg: msg, icon: icon, date: dateStr, active: true }; batch.set(db.collection('announcements').doc(annId), newAnn); await batch.commit(); alert("Anuncio publicado con éxito."); document.getElementById('ann-title').value = ''; document.getElementById('ann-msg').innerHTML = ''; } catch(e) { alert("Error al publicar el anuncio."); console.error(e); } } },
+    cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
+    deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
+    
+    editUIText: async (key) => { 
+        if(!CT.data.ui || !CT.data.ui[key]) return; 
+        const currentVal = CT.data.ui[key].v; 
+        const newVal = prompt(`Editar [${CT.data.ui[key].l}]:`, currentVal); 
+        if(newVal && newVal.trim() !== currentVal) { 
+            try {
+                await db.collection('config').doc('ui_texts').set({ 
+                    [key]: { l: CT.data.ui[key].l, v: newVal.trim() } 
+                }, { merge: true });
+            } catch(e) {
+                alert("Error al conectar con la base de datos: " + e.message);
+            }
+        } 
+    },
+
+    createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); CT.data.c.push({name: catName, order: Date.now()}); UI.updateCategorySelects(); nameInp.value = ''; UI.toggleCreateForm('text'); },
+    
+    deleteCategory: () => { 
+        const sel = document.getElementById('delete-cat-select'); 
+        const catName = sel.value; 
+        if(!catName) return; 
+        if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); 
+        if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { 
+            CT.data.c = CT.data.c.filter(c => c.name !== catName);
+            let pList = CT.data.p; 
+            pList.forEach(p => { 
+                if (p.c === catName) { 
+                    p.c = 'General'; 
+                    db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); 
+                } 
+            }); 
+            UI.updateCategorySelects();
+            UI.showAdminPhraseCategories();
+            db.collection('categories').doc(catName).delete(); 
+        } 
+    },
+    
+    createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value.trim() || !textInp.value.trim()) return alert("Faltan datos del texto."); const idStr = titleInp.value.trim(); const catValue = catInp.value.trim() || 'General'; const newPhrase = { id: Number(idStr) || Date.now(), title: idStr, c: catValue, text: textInp.value.trim(), order: Date.now() }; db.collection('phrases').doc(idStr).set(newPhrase); CT.data.p.push(newPhrase); UI.renderAdminP(); titleInp.value = ''; textInp.value = ''; },
+
+    createTrnCategory: () => { const nameInp = document.getElementById('trn-new-cat-name'); const baseName = nameInp.value.trim(); if(!baseName) return alert("Falta el nombre."); const catName = `[TRN] ${baseName}`; db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); CT.data.c.push({name: catName, order: Date.now()}); UI.updateCategorySelects(); UI.renderAdminTrn(); nameInp.value = ''; },
+    
+    deleteTrnCategory: () => { 
+        const sel = document.getElementById('trn-delete-cat-select'); 
+        const catName = sel.value; 
+        if(!catName) return; 
+        if(confirm(`¿Eliminar modalidad "${catName}"?`)) { 
+            CT.data.c = CT.data.c.filter(c => c.name !== catName);
+            UI.updateCategorySelects();
+            UI.showAdminTrnCategories();
+            db.collection('categories').doc(catName).delete(); 
+        } 
+    },
+    
+    createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value.trim() || !textInp.value.trim()) return alert("Faltan datos."); const idStr = titleInp.value.trim(); const catValue = catInp.value.trim() || '[TRN] Pistas Extremas'; const newPhrase = { id: Number(idStr) || Date.now(), title: idStr, c: catValue, text: textInp.value.trim(), order: Date.now() }; db.collection('phrases').doc(idStr).set(newPhrase); CT.data.p.push(newPhrase); UI.renderAdminTrn(); titleInp.value = ''; textInp.value = ''; },
+
+    editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
+    
+    login: async () => { 
+        const hInp = document.getElementById('login-user').value.toLowerCase(); 
+        const p = document.getElementById('login-pass').value; 
+        const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
+        
+        if(!hInp || !p) return alert("Por favor, ingresa usuario y contraseña.");
+
+        const btn = document.getElementById('t_btn_login');
+        const originalText = btn.innerText;
+        btn.innerText = "CONECTANDO...";
+        btn.disabled = true;
+
+        const cachedUser = CT.data.u.find(u => u.h === handle);
+        if (cachedUser && cachedUser.p === p) {
+            localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+            UI.initLobby();
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return; 
+        }
+
+        const attemptLogin = async (retries = 3) => {
+            for (let i = 0; i < retries; i++) {
+                try { 
+                    const docRef = await db.collection('users').doc(handle).get(); 
+                    if(docRef.exists && docRef.data().p === p) { 
+                        localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+                        if(!CT.data.u.find(u => u.h === handle)) CT.data.u.push(docRef.data()); 
+                        UI.initLobby(); 
+                        return true;
+                    } else { 
+                        alert("Usuario o contraseña incorrectos"); 
+                        return true; 
+                    } 
+                } catch(e) { 
+                    if (i === retries - 1) throw e; 
+                    await new Promise(r => setTimeout(r, 1000)); 
+                }
+            }
+            return false;
+        };
+
+        try {
+            const success = await attemptLogin();
+            if(!success) throw new Error("Timeout");
+        } catch(e) {
+            console.error("Error en DB:", e); 
+            btn.innerText = "REINTENTAR";
+            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+            return;
+        }
+
+        btn.innerText = originalText;
+        btn.disabled = false;
+    },
+
+    register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
+    
+    savePhrase: () => { 
+        const catInp = document.getElementById('phrase-category'); 
+        const textInp = document.getElementById('phrase-input'); 
+        if(!textInp.value) return alert("Faltan datos"); 
+        if(CT.editIdx !== null) { 
+            const idStr = CT.editIdx;
+            const catValue = catInp.value.trim() || 'General'; 
+            const newText = textInp.value.trim();
+
+            let track = CT.data.p.find(t => t.id.toString() === idStr);
+            if(track) {
+                track.c = catValue;
+                track.text = newText;
+            }
+            UI.renderAdminP();
+            UI.renderAdminTrn();
+
+            db.collection('phrases').doc(idStr).update({ c: catValue, text: newText }); 
+            UI.cancelEditP(); 
+        } 
+    },
+    
+    logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
+
+    saveCrop: () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; const sW = (imgW * 220) / (viewerImgW * UI.cropScale); const sH = (imgH * 220) / (viewerImgH * UI.cropScale); const sX = (((viewerImgW * UI.cropScale) / 2) - UI.cropX - 110) * (imgW / (viewerImgW * UI.cropScale)); const sY = (((viewerImgH * UI.cropScale) / 2) - UI.cropY - 110) * (imgH / (viewerImgH * UI.cropScale)); ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ a: compressedBase64 }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); document.getElementById('prof-img').src = compressedBase64; } UI.closeCropModal(); }
 };
 
 class Engine {
@@ -1155,6 +1601,8 @@ class Engine {
             const dateStr = CT.getARDate(); const scoreId = Date.now().toString();
             let sList = CT.data.s_recent || []; const isHC = this.mode === 'hardcore';
             const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title, hc: isHC };
+            
+            // WebSockets handle recent updates, but for immediate local feel before Firebase confirms:
             sList.unshift(newScore); CT.data.s_recent = sList;
             
             if (CT.data.userScores && CT.data.userScores[u.h]) {
