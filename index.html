@@ -30,15 +30,15 @@
                 <div id="login-form" class="auth-form">
                     <input type="text" id="login-user" placeholder="Usuario">
                     <input type="password" id="login-pass" placeholder="Contraseña">
-                    <button id="t_btn_login" class="btn-primary" onclick="App.login()">Iniciar sesión</button>
-                    <p class="switch-text" id="t_txt_new">¿Nuevo? <span onclick="UI.toggleAuth(false)">Registrarse</span></p>
+                    <button id="t_btn_login" class="btn-primary" onclick="window.App.login()">Iniciar sesión</button>
+                    <p class="switch-text" id="t_txt_new">¿Nuevo? <span onclick="window.UI.toggleAuth(false)">Registrarse</span></p>
                 </div>
                 <div id="register-form" class="auth-form hidden">
                     <input type="text" id="reg-display" placeholder="Nombre" maxlength="15">
                     <input type="text" id="reg-user" placeholder="Usuario" maxlength="15">
                     <input type="password" id="reg-pass" placeholder="Contraseña">
-                    <button id="t_btn_register" class="btn-primary" onclick="App.register()">CREAR CUENTA</button>
-                    <p class="switch-text" id="t_txt_haveacc">¿Tenés cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
+                    <button id="t_btn_register" class="btn-primary" onclick="window.App.register()">CREAR CUENTA</button>
+                    <p class="switch-text" id="t_txt_haveacc">¿Tenés cuenta? <span onclick="window.UI.toggleAuth(true)">Inicia sesión</span></p>
                 </div>
             </div>
         </section>
@@ -46,7 +46,7 @@
         <section id="home-screen" class="screen hidden">
             <header class="top-nav">
                 <div class="nav-left">
-                    <div class="user-pill player-link" onclick="UI.showProfile('me')">
+                    <div class="user-pill player-link" onclick="window.UI.showProfile('me')">
                         <div class="avatar-sm"><img id="lobby-avatar" src="" alt=""></div>
                         <div class="user-meta">
                             <b id="val-display-name"></b>
@@ -54,26 +54,26 @@
                         </div>
                     </div>
                     <div class="unit-switcher">
-                        <div id="btn-cpm" class="sw-btn active" onclick="UI.setUnit('cpm')">CPM</div>
-                        <div id="btn-wpm" class="sw-btn" onclick="UI.setUnit('wpm')">WPM</div>
-                        <div id="btn-zen" class="sw-btn" onclick="UI.setUnit('zen')">ZEN</div>
+                        <div id="btn-cpm" class="sw-btn active" onclick="window.UI.setUnit('cpm')">CPM</div>
+                        <div id="btn-wpm" class="sw-btn" onclick="window.UI.setUnit('wpm')">WPM</div>
+                        <div id="btn-zen" class="sw-btn" onclick="window.UI.setUnit('zen')">ZEN</div>
                     </div>
                 </div>
                 <div class="nav-right">
-                    <button id="btn-nav-info" class="nav-icon-btn" onclick="UI.showInfo()" data-tooltip="Información">ℹ️</button>
-                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" data-tooltip="Estadísticas">📊</button>
+                    <button id="btn-nav-info" class="nav-icon-btn" onclick="window.UI.showInfo()" data-tooltip="Información">ℹ️</button>
+                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="window.UI.showStats()" data-tooltip="Estadísticas">📊</button>
                     
                     <div style="position: relative; display: inline-block;">
-                        <button id="btn-nav-settings" onclick="UI.toggleSettings()" class="nav-icon-btn" data-tooltip="Ajustes">
+                        <button id="btn-nav-settings" onclick="window.UI.toggleSettings()" class="nav-icon-btn" data-tooltip="Ajustes">
                             ⚙️<span id="update-dot" class="update-dot hidden"></span>
                         </button>
                         <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 230px; z-index: 100; cursor: default;">
-                            <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
-                            <button id="btn-fast-mode" onclick="UI.toggleFastMode()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⚡ Modo Rápido: NO</button>
-                            <button id="t_theme_btn" onclick="UI.openThemeBuilder()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">🎨 Personalizar</button>
-                            <button id="t_sett_full" onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
-                            <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
-                            <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
+                            <button id="btn-update-status" class="update-menu-item hidden" onclick="window.App.handleUpdateClick()"></button>
+                            <button id="btn-fast-mode" onclick="window.UI.toggleFastMode()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⚡ Modo Rápido: NO</button>
+                            <button id="t_theme_btn" onclick="window.UI.openThemeBuilder()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">🎨 Personalizar</button>
+                            <button id="t_sett_full" onclick="window.App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
+                            <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
+                            <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
                                 CananTyper v1.1.15 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
@@ -81,17 +81,17 @@
                         </div>
                     </div>
                     
-                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="App.logout()" data-tooltip-exit="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
+                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="window.App.logout()" data-tooltip-exit="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
                 </div>
             </header>
 
             <div class="mode-selectors" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-                <button id="t_btn_random" onclick="App.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
-                <button id="t_btn_hardcore" onclick="App.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
-                <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PERSONALIZADO</button>
+                <button id="t_btn_random" onclick="window.App.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
+                <button id="t_btn_hardcore" onclick="window.App.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
+                <button id="t_btn_custom" onclick="window.UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PERSONALIZADO</button>
                 
                 <div style="position: relative;">
-                    <button id="t_btn_train_menu" onclick="UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);">ENTRENAR 🏋️</button>
+                    <button id="t_btn_train_menu" onclick="window.UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);">ENTRENAR 🏋️</button>
                     <div id="train-dropdown" class="edit-dropdown hidden" style="top:110%; right:0; width:100%;">
                         </div>
                 </div>
@@ -104,7 +104,7 @@
                             <h3 id="t_hd_rank_races">Ranking | Carreras</h3>
                             <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Los más veloces del día</small>
                         </div>
-                        <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
+                        <select id="leaderboard-type" class="nitro-select" onchange="window.UI.renderGlobal()">
                             <option value="today">Hoy</option>
                             <option value="history">Histórico</option>
                         </select>
@@ -123,7 +123,7 @@
                             <h3 id="t_hd_rank_avg">Ranking | Promedios</h3>
                             <small id="t_hd_rank_avg_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Constancia y disciplina</small>
                         </div>
-                        <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
+                        <select id="ranking-type" class="nitro-select" onchange="window.UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
                             <option value="general">General</option>
                         </select>
@@ -143,7 +143,7 @@
                 <div>
                     <h2 id="info-display-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Información</h2>
                 </div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+                <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
         </section>
@@ -154,13 +154,13 @@
                     <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
                     <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
                 </div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+                <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
             <div class="admin-tabs">
-                <button id="t-st-pe" class="tab-btn active" onclick="UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Personales</span></button>
-                <button id="t-st-ge" class="tab-btn" onclick="UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
-                <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
-                <button id="t-st-hc" class="tab-btn" onclick="UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Hardcore 💀</span></button>
+                <button id="t-st-pe" class="tab-btn active" onclick="window.UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Personales</span></button>
+                <button id="t-st-ge" class="tab-btn" onclick="window.UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
+                <button id="t-st-el" class="tab-btn" onclick="window.UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
+                <button id="t-st-hc" class="tab-btn" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Hardcore 💀</span></button>
             </div>
             
             <div class="admin-content-area" style="padding: 15px; display: flex; flex-direction: column;">
@@ -257,40 +257,42 @@
         </section>
 
         <section id="profile-screen" class="screen hidden">
-            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
+            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="window.UI.showLobby()" class="btn-outline">Volver</button></header>
             <div class="profile-top-area">
-                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div>
+                <input type="file" id="img-input" accept="image/*" hidden onchange="if(this.files && this.files[0]){const r=new FileReader();r.onload=e=>window.UI.openCropModal(e.target.result);r.readAsDataURL(this.files[0]);}this.value='';">
+                <div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="window.UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="window.App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
                 <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
             </div>
             <div class="profile-history-area">
                 <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
-                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button></div>
+                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="window.UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="window.UI.changeProfPage(1)">→</button></div>
             </div>
         </section>
 
         <section id="track-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="UI.showLobby()" class="btn-outline">VOLVER</button></header>
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button></header>
             <div class="track-selection-area">
-                <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="UI.renderTrackList()" style="margin-bottom: 15px;">
+                <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="window.UI.renderTrackList()" style="margin-bottom: 15px;">
                 <div id="track-category-view" class="category-grid custom-scroll"></div>
                 <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; flex-grow: 1; min-height: 0;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <button id="btn-back-cat-track" onclick="UI.showTrackCategorySelect()" class="btn-outline"><span id="t_trk_back">← Categorías</span></button>
+                        <button id="btn-back-cat-track" onclick="window.UI.showTrackCategorySelect()" class="btn-outline"><span id="t_trk_back">← Categorías</span></button>
                         <div class="layout-controls" style="display:flex; gap:5px;">
-                            <button onclick="UI.setLayout('layout-list')" class="btn-outline layout-btn" data-mode="layout-list" style="padding:4px 8px;" title="Lista">☷</button>
-                            <button onclick="UI.setLayout('layout-grid')" class="btn-outline layout-btn" data-mode="layout-grid" style="padding:4px 8px;" title="Cuadrícula">⊞</button>
-                            <button onclick="UI.setLayout('layout-compact')" class="btn-outline layout-btn" data-mode="layout-compact" style="padding:4px 8px;" title="Compacto">⊟</button>
-                            <button onclick="UI.setLayout('layout-zoom')" class="btn-outline layout-btn" data-mode="layout-zoom" style="padding:4px 8px;" title="Alejar Zoom">🔍</button>
+                            <button onclick="window.UI.setLayout('layout-list')" class="btn-outline layout-btn" data-mode="layout-list" style="padding:4px 8px;" title="Lista">☷</button>
+                            <button onclick="window.UI.setLayout('layout-grid')" class="btn-outline layout-btn" data-mode="layout-grid" style="padding:4px 8px;" title="Cuadrícula">⊞</button>
+                            <button onclick="window.UI.setLayout('layout-compact')" class="btn-outline layout-btn" data-mode="layout-compact" style="padding:4px 8px;" title="Compacto">⊟</button>
+                            <button onclick="window.UI.setLayout('layout-zoom')" class="btn-outline layout-btn" data-mode="layout-zoom" style="padding:4px 8px;" title="Alejar Zoom">🔍</button>
                         </div>
                     </div>
                     <div id="track-list-full" class="custom-scroll track-list"></div>
-                    <div class="pagination-bar" style="margin-top: 15px;"><button id="track-prev" class="btn-outline" onclick="UI.changeTrackPage(-1)">←</button><span id="track-page-num" class="page-indicator">Página 1</span><button id="track-next" class="btn-outline" onclick="UI.changeTrackPage(1)">→</button></div>
+                    <div class="pagination-bar" style="margin-top: 15px;"><button id="track-prev" class="btn-outline" onclick="window.UI.changeTrackPage(-1)">←</button><span id="track-page-num" class="page-indicator">Página 1</span><button id="track-next" class="btn-outline" onclick="window.UI.changeTrackPage(1)">→</button></div>
                 </div>
             </div>
         </section>
 
         <section id="game-screen" class="screen hidden">
-            <div class="game-container" style="max-width: 950px; width: 100%;">
+            <div class="game-container" style="max-width: 1200px; width: 100%;">
                 
                 <div class="game-hud">
                     <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
@@ -306,9 +308,9 @@
                 <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
                 
                 <div id="in-game-controls" class="game-controls">
-                    <button id="t_btn_back" onclick="App.quitRace()" class="btn-outline">Volver</button>
-                    <button id="t_btn_retry" onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
-                    <button id="t_btn_new" onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                    <button id="t_btn_back" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
+                    <button id="t_btn_retry" onclick="window.App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
+                    <button id="t_btn_new" onclick="window.App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
 
                 <div id="game-result-modal" class="game-result hidden">
@@ -317,9 +319,9 @@
                     <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
                     
                     <div class="result-actions" style="margin-top: 25px;">
-                        <button id="t_btn_retry2" onclick="App.retryRace()" class="btn-outline">Repetir</button>
-                        <button id="t_btn_cont" onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
-                        <button id="t_btn_back2" onclick="App.quitRace()" class="btn-outline">Volver</button>
+                        <button id="t_btn_retry2" onclick="window.App.retryRace()" class="btn-outline">Repetir</button>
+                        <button id="t_btn_cont" onclick="window.App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button id="t_btn_back2" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
                     </div>
                 </div>
             </div>
@@ -330,25 +332,25 @@
                 <h3 id="t_theme_title" style="color:var(--p); margin: 0 0 5px 0;">Elegir Plantilla</h3>
                 <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 20px 0;">Personaliza tu entorno de mecanografía.</p>
                 <div class="admin-form" style="padding: 15px; gap: 15px; border-color:var(--p); background:transparent;">
-                    <button class="theme-btn" onclick="App.saveTheme('cpm')" style="--t-color: #a6ff00; --t-bg: #000000;">
+                    <button class="theme-btn" onclick="window.App.saveTheme('cpm')" style="--t-color: #a6ff00; --t-bg: #000000;">
                         <div class="theme-preview"></div><span>Clásico (Verde)</span>
                     </button>
-                    <button class="theme-btn" onclick="App.saveTheme('wpm')" style="--t-color: #ff3c00; --t-bg: #000000;">
+                    <button class="theme-btn" onclick="window.App.saveTheme('wpm')" style="--t-color: #ff3c00; --t-bg: #000000;">
                         <div class="theme-preview"></div><span>Clásico (Naranja)</span>
                     </button>
-                    <button class="theme-btn" onclick="App.saveTheme('galactic')" style="--t-color: #b388ff; --t-bg: #090a0f;">
+                    <button class="theme-btn" onclick="window.App.saveTheme('galactic')" style="--t-color: #b388ff; --t-bg: #090a0f;">
                         <div class="theme-preview"></div><span>Galáctico (Snoopy)</span>
                     </button>
-                    <button class="theme-btn" onclick="App.saveTheme('hacker')" style="--t-color: #00ff00; --t-bg: #050505;">
+                    <button class="theme-btn" onclick="window.App.saveTheme('hacker')" style="--t-color: #00ff00; --t-bg: #050505;">
                         <div class="theme-preview"></div><span>Hacker Terminal</span>
                     </button>
                 </div>
-                <button onclick="UI.closeThemeModal()" class="btn-outline" style="width:100%; margin-top:10px; border:none;">Cancelar</button>
+                <button onclick="window.UI.closeThemeModal()" class="btn-outline" style="width:100%; margin-top:10px; border:none;">Cancelar</button>
             </div>
         </div>
 
-        <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="App.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
-        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
+        <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="window.App.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="window.UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
+        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="window.UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
 
     </div>
 
