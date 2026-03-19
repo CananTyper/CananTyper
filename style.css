@@ -2,22 +2,24 @@
 :root {
     --theme-cpm: #a6ff00; 
     --theme-wpm: #ff3c00; 
+    --theme-zen: #b388ff; /* AÑADIDO: Soporte nativo para ZEN en root */
     --p: var(--theme-cpm); 
     
     --bg: #000000;
     --surface: #0a0a0a;
     --surface-light: #141414;
-    --surface-glass: rgba(20, 20, 20, 0.7); /* Background tipo CananStudio */
+    --surface-glass: rgba(20, 20, 20, 0.7); 
     --border: #222222;
     --text-main: #ffffff;
     --text-muted: #777777;
     --error: #f44336;
     --success: #4caf50;
-    --shadow-studio: 0 10px 30px rgba(0,0,0,0.5); /* Sombra tipo Studio */
+    --shadow-studio: 0 10px 30px rgba(0,0,0,0.5); 
 }
 
 :root[data-theme="cpm"] { --p: var(--theme-cpm); }
 :root[data-theme="wpm"] { --p: var(--theme-wpm); }
+:root[data-theme="zen"] { --p: var(--theme-zen); }
 
 :root[data-custom-theme="true"] {
     --p: var(--theme-custom) !important;
@@ -29,7 +31,6 @@
 
 * { box-sizing: border-box; }
 
-/* FULL SCREEN RESPONSIVE */
 body { 
     background: var(--bg); 
     color: var(--text-main); 
@@ -63,11 +64,13 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 .screen { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; width: 100%; max-width: 100%; margin: 0; }
 .hidden { display: none !important; }
 
-/* SEGURIDAD VISUAL DE ADMIN (Oculta botones de resize/drag si no eres admin) */
 .admin-ctrl { display: none; }
 body.is-admin .admin-ctrl { display: inline-flex; align-items: center; justify-content: center; }
 
-/* SCROLLBARS GLOBALES */
+/* MODO ZEN BLUR EFECTO */
+:root[data-theme="zen"] .val-blurrable { filter: blur(12px); opacity: 0.3; transition: filter 0.4s ease, opacity 0.4s ease; cursor: crosshair; }
+:root[data-theme="zen"] .val-blurrable:hover { filter: blur(0); opacity: 1; }
+
 .custom-scroll { overflow-y: auto; padding-right: 8px; }
 .custom-scroll::-webkit-scrollbar { width: 6px; }
 .custom-scroll::-webkit-scrollbar-track { background: var(--surface-light); border-radius: 10px; }
@@ -142,23 +145,22 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .sw-btn { padding: 6px 14px; font-size: 0.75rem; font-weight: 900; color: #555; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
 #btn-cpm.active { background: var(--theme-cpm); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--theme-cpm) 40%, transparent); }
 #btn-wpm.active { background: var(--theme-wpm); color: #fff; box-shadow: 0 0 15px color-mix(in srgb, var(--theme-wpm) 40%, transparent); }
+#btn-zen.active { background: var(--theme-zen); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--theme-zen) 40%, transparent); }
 
-/* ================================================================
-   GRILLA DE ESTADÍSTICAS TIPO CANANSTUDIO (DASHBOARD)
-   ================================================================ */
+/* GRILLA DE ESTADÍSTICAS TIPO CANANSTUDIO */
 .stats-tabs-compact { display: flex; gap: 5px; background: var(--bg); padding: 5px; border-radius: 8px; border: 1px solid var(--border); }
 .st-tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 0.8rem; text-transform: uppercase; }
 .st-tab-btn:hover { color: var(--text-main); }
 .st-tab-btn.active { background: var(--p); color: #000 !important; }
 .st-tab-error.active { background: var(--error); color: #fff !important; box-shadow: 0 0 15px color-mix(in srgb, var(--error) 40%, transparent); }
 
-/* GRID ESTRICTO PARA EVITAR CRECIMIENTO INFINITO */
+/* GRID ESTRICTO */
 .analytics-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 280px; gap: 15px; align-content: start; width: 100%; transition: all 0.3s; }
 .analytic-widget { background: var(--surface-glass); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; transition: all 0.3s ease; overflow: hidden; height: 100%; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
 .analytic-widget:hover { border-color: color-mix(in srgb, var(--p) 30%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
 
 .w-wide { grid-column: span 2; }
-.w-large { grid-column: span 2; grid-row: span 2; } /* Doble altura estricta: 560px + gap */
+.w-large { grid-column: span 2; grid-row: span 2; } 
 
 .w-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 0.85rem; font-weight: bold; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
 .w-body { padding: 15px; flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; overflow-y: auto; }
@@ -245,6 +247,9 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .ghost-btn { background: transparent; border: none; cursor: pointer; transition: all 0.2s; padding: 0; outline: none; font-size: 1.2rem; opacity: 0.5; }
 .ghost-btn:hover { opacity: 1; transform: scale(1.2); filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
 
+.drag-handle { transition: color 0.2s, transform 0.2s; user-select: none; }
+.drag-handle:hover { color: var(--p) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 50%, transparent); transform: scale(1.1); }
+
 .profile-history-area { margin-top: 20px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; min-height: 0; padding: 20px; transition: border-color 0.3s; }
 .profile-history-area:hover { border-color: color-mix(in srgb, var(--p) 20%, transparent); }
 .history-list-wrapper { flex-grow: 1; min-height: 0; margin-bottom: 15px; }
@@ -289,6 +294,14 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 .track-card-text { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; text-align: justify; }
 .track-card-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; }
 
+.admin-tabs { display: flex; gap: 10px; background: var(--surface-light); padding: 8px; border-radius: 12px; flex-shrink: 0; margin-top: 15px; border: 1px solid var(--border); }
+.tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+.tab-btn:hover { color: var(--text-main); }
+.tab-btn.active { background: var(--p); color: #000 !important; box-shadow: 0 0 15px color-mix(in srgb, var(--p) 30%, transparent); }
+.admin-content-area { flex-grow: 1; min-height: 0; background: var(--surface-light); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-top: 15px; display: flex; flex-direction: column; transition: border-color 0.3s; }
+.admin-content-area:hover { border-color: color-mix(in srgb, var(--p) 20%, transparent); }
+.pane { display: flex; flex-direction: column; height: 100%; }
+
 /* GAME UI */
 .game-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; margin: 0 auto; width: 100%; }
 .game-hud { display: flex; gap: 30px; margin-bottom: 30px; transition: opacity 0.5s ease; }
@@ -324,11 +337,6 @@ kbd:hover { transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.5);
 #crop-image { position: absolute; transform-origin: center center; pointer-events: none; max-width: none; }
 .crop-slider { width: 100%; margin-bottom: 20px; accent-color: var(--p); transition: accent-color 0.3s; }
 .crop-actions { display: flex; justify-content: center; gap: 15px; }
-
-:root[data-theme="zen"] { --p: #b388ff; } 
-#btn-zen.active { background: var(--theme-zen, #b388ff); color: #000; box-shadow: 0 0 15px color-mix(in srgb, #b388ff 40%, transparent); }
-:root[data-theme="zen"] .val-blurrable { filter: blur(12px); opacity: 0.3; transition: filter 0.4s ease, opacity 0.4s ease; cursor: crosshair; }
-:root[data-theme="zen"] .val-blurrable:hover { filter: blur(0); opacity: 1; }
 
 body.zen-focus .top-nav { opacity: 0.05; pointer-events: none; }
 body.zen-focus .mode-selectors { opacity: 0.05; pointer-events: none; }
