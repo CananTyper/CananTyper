@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - MÓDULO UI (V2.0)
+   CANANTYPER - MÓDULO UI (V2.1)
    Maneja DOM, Renderizado de Estadísticas, Modales y Temas.
    ================================================================ */
 
@@ -9,6 +9,17 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
+
+    // EVENTO AÑADIDO: Leer la imagen de la PC
+    handleImageUpload: (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            UI.openCropModal(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    },
 
     initSortable: (containerId, type, pageContext = 0) => {
         if (typeof Sortable === 'undefined') return;
@@ -220,15 +231,13 @@ const UI = {
     },
 
     renderGlobalStats() {
-        // Basado en Muestra (s_top y s_recent) para no quemar cuota
         const sTop = CT.data.s_top || [];
         const sRec = CT.data.s_recent || [];
         
-        // Extraemos usuarios únicos y sus máximos de la muestra top
         let uMap = {};
         sTop.forEach(s => { if(!uMap[s.h] || s.c > uMap[s.h].max) uMap[s.h] = { n: s.n, max: s.c }; });
         
-        document.getElementById('st-g-users-val').innerText = Object.keys(uMap).length + "+"; // Estimado
+        document.getElementById('st-g-users-val').innerText = Object.keys(uMap).length + "+";
         document.getElementById('st-g-races-val').innerText = sRec.length > 0 ? "1000+" : "0";
         
         let sumMax = 0; let countMax = 0; let globalMax = 0;
@@ -357,7 +366,7 @@ const UI = {
         const typeEl = document.getElementById('leaderboard-type'); const rankTypeEl = document.getElementById('ranking-type');
         if(!typeEl || !rankTypeEl) return; 
 
-        // Filtrar Shadowbanned users en Rankings
+        // Filtro Shadowban
         let filteredScores = typeEl.value === 'today' ? (CT.data.s_recent || []).filter(s => !s.hc && s.d === todayAR && !s.sb) : (CT.data.s_top || []).filter(s => !s.hc && !s.sb);
         let limitTimes = typeEl.value === 'today' ? 10 : 20; 
         filteredScores.sort((a,b) => b.c - a.c);
@@ -376,7 +385,6 @@ const UI = {
         }).join('');
 
         const rankingMode = rankTypeEl.value;
-        // Agregación Local Client-Side para Promedios
         let uAverages = {};
         (CT.data.s_recent || []).forEach(s => {
             if(s.sb) return;
@@ -404,7 +412,6 @@ const UI = {
         try {
             const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
             
-            // Si es un usuario ajeno, lo descargamos temporalmente para verlo
             let u = (who === 'me') ? currentSes : null;
             if(!u) {
                 const snap = await db.collection('users').doc(targetHandle).get();
@@ -557,5 +564,22 @@ const UI = {
     updateCropTransform() { const img = document.getElementById('crop-image'); img.style.transform = `translate(-50%, -50%) translate(${UI.cropX}px, ${UI.cropY}px) scale(${UI.cropScale})`; img.style.left = '50%'; img.style.top = '50%'; },
     setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.startX = cx - UI.cropX; UI.startY = cy - UI.cropY; }; const moveDrag = (e) => { if(!UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.cropX = cx - UI.startX; UI.cropY = cy - UI.startY; UI.updateCropTransform(); }; const endDrag = () => { UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { UI.cropScale = e.target.value; UI.updateCropTransform(); }; },
     
-    saveCrop: () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; const sW = (imgW * 220) / (viewerImgW * UI.cropScale); const sH = (imgH * 220) / (viewerImgH * UI.cropScale); const sX = (((viewerImgW * UI.cropScale) / 2) - UI.cropX - 110) * (imgW / (viewerImgW * UI.cropScale)); const sY = (((viewerImgH * UI.cropScale) / 2) - UI.cropY - 110) * (imgH / (viewerImgH * UI.cropScale)); ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ a: compressedBase64 }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); document.getElementById('prof-img').src = compressedBase64; } UI.closeCropModal(); }
+    saveCrop: () => { 
+        const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); 
+        const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; 
+        let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } 
+        const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; 
+        const sW = (imgW * 220) / (viewerImgW * UI.cropScale); const sH = (imgH * 220) / (viewerImgH * UI.cropScale); 
+        const sX = (((viewerImgW * UI.cropScale) / 2) - UI.cropX - 110) * (imgW / (viewerImgW * UI.cropScale)); 
+        const sY = (((viewerImgH * UI.cropScale) / 2) - UI.cropY - 110) * (imgH / (viewerImgH * UI.cropScale)); 
+        ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); 
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); 
+        const u = CT.ses(); 
+        if(u) { 
+            db.collection('users').doc(u.h).update({ a: compressedBase64 }); 
+            db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); 
+            document.getElementById('prof-img').src = compressedBase64; 
+        } 
+        UI.closeCropModal(); 
+    }
 };
