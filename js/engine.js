@@ -2,14 +2,14 @@
     CANANTYPER - MOTOR DEL JUEGO (GAME ENGINE)
    ================================================================ */
 
-class Engine {
+window.Engine = class Engine {
     constructor(trackObj, mode = 'normal', ghostCPM = 0) { 
         this.track = trackObj; this.t = trackObj.text; this.w = this.t.split(' '); 
         this.i = 0; this.c = 0; this.s = null; this.timer = null; 
         this.mode = mode; 
         this.ghostCPM = ghostCPM;
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
-        App.activeEngine = this;
+        window.App.activeEngine = this;
         this.init(); 
     }
     
@@ -21,9 +21,9 @@ class Engine {
     }
     
     init() { 
-        UI.show('game-screen'); 
+        window.UI.show('game-screen'); 
         let statusText = this.mode === 'hardcore' ? "Jugando: Muerte Súbita 💀" : (this.mode === 'training' ? "Modo Entrenamiento 🏋️" : `Corriendo: #${this.track.title}`);
-        updateDiscordStatus(statusText, "En plena carrera 🏎️");
+        window.updateDiscordStatus(statusText, "En plena carrera 🏎️");
 
         document.getElementById('game-result-modal').classList.add('hidden');
         document.getElementById('game-input').classList.remove('hidden');
@@ -57,14 +57,14 @@ class Engine {
     check(v, el) { 
         if(!this.s) { 
             this.s = new Date(); 
-            if(CT.currentUnit === 'zen' && !document.body.classList.contains('zen-focus')) { document.body.classList.add('zen-focus'); }
+            if(window.CT.currentUnit === 'zen' && !document.body.classList.contains('zen-focus')) { document.body.classList.add('zen-focus'); }
             
             this.timer = setInterval(() => { 
                 const sec = (new Date()-this.s)/1000; 
                 if(document.getElementById('game-timer')) document.getElementById('game-timer').innerText = Math.floor(sec)+'s'; 
                 if(document.getElementById('game-speed-display')) {
                     const currentCPM = Math.round(this.c/(sec/60));
-                    document.getElementById('game-speed-display').innerText = UI.formatValue(currentCPM);
+                    document.getElementById('game-speed-display').innerText = window.UI.formatValue(currentCPM);
                 }
                 if (this.ghostCPM > 0) {
                     const totalChars = this.t.length;
@@ -86,7 +86,7 @@ class Engine {
         let addedChar = v.length > this.lastV.length;
         
         if (!isPrefixValid && addedChar) {
-            if (CT.fastMode && this.mode !== 'hardcore') { App.nextRace(); return; }
+            if (window.CT.fastMode && this.mode !== 'hardcore') { window.App.nextRace(); return; }
             if (this.mode === 'hardcore') { this.die(); return; }
 
             let matchLen = 0; 
@@ -125,18 +125,18 @@ class Engine {
     }
 
     die() {
-        this.stop(); document.body.style.backgroundColor = '#4a0000'; updateDiscordStatus("Muerto en Hardcore 💀", "F", false);
+        this.stop(); document.body.style.backgroundColor = '#4a0000'; window.updateDiscordStatus("Muerto en Hardcore 💀", "F", false);
         document.getElementById('game-input').disabled = true; document.getElementById('game-input').classList.add('hidden'); document.getElementById('in-game-controls').classList.add('hidden');
-        const uiTextDeath = CT.data.ui && CT.data.ui['t_game_dead_title'] ? CT.data.ui['t_game_dead_title'].v : "HAS MUERTO";
+        const uiTextDeath = window.CT.data.ui && window.CT.data.ui['t_game_dead_title'] ? window.CT.data.ui['t_game_dead_title'].v : "HAS MUERTO";
         document.getElementById('final-speed-display').innerText = `💀 ${uiTextDeath}`;
         
-        const u = CT.ses();
+        const u = window.CT.ses();
         if(u) {
-            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+            let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
             let hc_deaths = (userDoc.hc_deaths || 0) + 1;
             let track_deaths = userDoc.hc_track_deaths || {};
             track_deaths[this.track.title] = (track_deaths[this.track.title] || 0) + 1;
-            db.collection('users').doc(u.h).update({ hc_deaths: hc_deaths, hc_track_deaths: track_deaths });
+            window.db.collection('users').doc(u.h).update({ hc_deaths: hc_deaths, hc_track_deaths: track_deaths });
         }
         document.getElementById('game-result-modal').classList.remove('hidden');
         setTimeout(() => { document.body.style.backgroundColor = ''; }, 1500); 
@@ -148,22 +148,22 @@ class Engine {
         
         document.getElementById('game-input').disabled = true; document.getElementById('game-input').classList.add('hidden'); document.getElementById('in-game-controls').classList.add('hidden');
         
-        const finalUnitLabel = CT.currentUnit === 'zen' ? 'ZEN' : CT.currentUnit.toUpperCase();
-        const finalSpeedValue = CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
+        const finalUnitLabel = window.CT.currentUnit === 'zen' ? 'ZEN' : window.CT.currentUnit.toUpperCase();
+        const finalSpeedValue = window.CT.currentUnit === 'wpm' ? Math.round(finalCPM/5) : finalCPM;
         
-        updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
+        window.updateDiscordStatus("Carrera terminada", `Resultado: ${finalSpeedValue} ${finalUnitLabel}`, false);
         const speedDisplayEl = document.getElementById('final-speed-display');
         speedDisplayEl.innerText = finalSpeedValue + " " + finalUnitLabel;
 
         document.getElementById('game-speed-display').innerText = finalSpeedValue;
         document.getElementById('game-timer').innerText = sec.toFixed(1) + 's';
         
-        if (CT.currentUnit === 'zen') { speedDisplayEl.classList.add('val-blurrable'); }
+        if (window.CT.currentUnit === 'zen') { speedDisplayEl.classList.add('val-blurrable'); }
         if (this.mode === 'training') { document.getElementById('game-result-modal').classList.remove('hidden'); return; }
 
-        const u = CT.ses(); 
+        const u = window.CT.ses(); 
         if(u) {
-            let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
+            let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
             let arrRef = this.mode === 'hardcore' ? (userDoc.hi_hc || []) : (userDoc.hi || []);
             const previousBest = arrRef.length > 0 ? Math.max(...arrRef) : 0;
             if(finalCPM > previousBest && arrRef.length > 0) { document.getElementById('pb-alert').classList.remove('hidden'); }
@@ -175,13 +175,13 @@ class Engine {
             let sortedWords = Object.keys(bw).sort((a,b) => bw[b] - bw[a]); let prunedBw = {};
             sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
 
-            const dateStr = CT.getARDate(); const scoreId = Date.now().toString();
-            let sList = CT.data.s_recent || []; const isHC = this.mode === 'hardcore';
+            const dateStr = window.CT.getARDate(); const scoreId = Date.now().toString();
+            let sList = window.CT.data.s_recent || []; const isHC = this.mode === 'hardcore';
             const newScore = { id: scoreId, n: u.n, h: u.h, c: finalCPM, a: u.a, d: dateStr, track: this.track.title, hc: isHC };
-            sList.unshift(newScore); CT.data.s_recent = sList;
+            sList.unshift(newScore); window.CT.data.s_recent = sList;
             
-            if (CT.data.userScores && CT.data.userScores[u.h]) {
-                CT.data.userScores[u.h].unshift(newScore);
+            if (window.CT.data.userScores && window.CT.data.userScores[u.h]) {
+                window.CT.data.userScores[u.h].unshift(newScore);
             }
 
             let updatePayload = { bad_keys: bk, bad_words: prunedBw };
@@ -189,8 +189,8 @@ class Engine {
             else { updatePayload.hi = firebase.firestore.FieldValue.arrayUnion(finalCPM); if (!userDoc.hi) userDoc.hi = []; userDoc.hi.push(finalCPM); }
             
             userDoc.bad_keys = bk; userDoc.bad_words = prunedBw;
-            db.collection('users').doc(u.h).update(updatePayload); 
-            db.collection('scores').doc(scoreId).set(newScore); 
+            window.db.collection('users').doc(u.h).update(updatePayload); 
+            window.db.collection('scores').doc(scoreId).set(newScore); 
         }
         document.getElementById('game-result-modal').classList.remove('hidden');
     }
