@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - MÓDULO UI (V3.1.0 - OPTIMIZACIÓN Y GESTIÓN DE WIDGETS)
+   CANANTYPER - MÓDULO UI (V3.2.0 - COMPETITIVO GLOBAL)
    ================================================================ */
 
 const UI = {
@@ -8,7 +8,6 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     personalChartInstance: null,
     
-    // Lista Maestra de Widgets (Si active=false, no gasta CPU ni DOM)
     widgetState: [
         { id: 'w-p-heat', name: 'Mapa de Calor', active: true, size: 'wide', pane: 'grid-stats-personal' },
         { id: 'w-p-trend', name: 'Evolución Personal', active: true, size: 'wide', pane: 'grid-stats-personal' },
@@ -31,7 +30,6 @@ const UI = {
         reader.readAsDataURL(file);
     },
 
-    /* --- SISTEMA DE GESTIÓN DE WIDGETS --- */
     applyStatsLayout: () => {
         if(CT.data.statsLayout && CT.data.statsLayout.length > 0) {
             CT.data.statsLayout.forEach(fbW => {
@@ -39,7 +37,6 @@ const UI = {
                 if(w) { w.active = fbW.active !== false; w.size = fbW.size; w.pane = fbW.pane; }
             });
         }
-
         UI.widgetState.forEach(w => {
             const el = document.querySelector(`.analytic-widget[data-id="${w.id}"]`);
             const grid = document.getElementById(w.pane);
@@ -52,7 +49,7 @@ const UI = {
             }
         });
         UI.buildStatsMenu();
-        setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300);
+        try { setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300); } catch(e){}
     },
 
     saveStatsLayout: () => {
@@ -115,25 +112,17 @@ const UI = {
     initStatsSortable: () => {
         if (typeof Sortable === 'undefined') return;
         const u = CT.ses(); if(!u || u.r !== 'admin') return;
-
         const grids = ['grid-stats-personal', 'grid-stats-elite', 'grid-stats-hc'];
         grids.forEach(paneId => {
             const container = document.getElementById(paneId);
             if(container) {
                 if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
-                container._sortable = Sortable.create(container, {
-                    handle: '.w-handle', animation: 150, ghostClass: 'sortable-ghost',
-                    onEnd: () => UI.saveStatsLayout()
-                });
+                container._sortable = Sortable.create(container, { handle: '.w-handle', animation: 150, ghostClass: 'sortable-ghost', onEnd: () => UI.saveStatsLayout() });
             }
         });
     },
 
-    isWidgetActive: (id) => {
-        const w = UI.widgetState.find(x => x.id === id);
-        return w ? w.active : false;
-    },
-    /* --------------------------------------------------------------- */
+    isWidgetActive: (id) => { const w = UI.widgetState.find(x => x.id === id); return w ? w.active : false; },
 
     setLayout: (mode) => {
         UI.listLayout = mode; localStorage.setItem('ct_layout', mode);
@@ -189,9 +178,7 @@ const UI = {
             if(UI.applyStatsLayout) UI.applyStatsLayout();
             if(UI.initStatsSortable) UI.initStatsSortable();
             UI.show('stats-screen'); 
-        } catch(e) {
-            console.error("Error abriendo estadísticas:", e);
-        }
+        } catch(e) { console.error(e); }
     },
     
     showInfo() { this.renderInfoPage(); this.show('info-screen'); },
@@ -206,11 +193,14 @@ const UI = {
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
         
-        if (tab === 'personal') this.renderPersonalStats(); 
-        else if (tab === 'elite') this.renderEliteStats();
-        else if (tab === 'hc') this.renderHardcoreStats();
+        // Bloque try catch para evitar que el renderizado colapse si algo falla y bloquee la UI
+        try {
+            if (tab === 'personal') this.renderPersonalStats(); 
+            else if (tab === 'elite') this.renderEliteStats();
+            else if (tab === 'hc') this.renderHardcoreStats();
+        } catch(e) { console.error(e); }
 
-        setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300);
+        try { setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300); } catch(e){}
     },
     
     applyUITexts: () => {
@@ -245,26 +235,22 @@ const UI = {
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
 
-        // WIDGET: Evolución de Velocidad (Ahora en Canvas correcto)
-        if(UI.isWidgetActive('w-p-trend') && typeof Chart !== 'undefined') {
+        if(UI.isWidgetActive('w-p-trend') && typeof Chart !== 'undefined' && document.getElementById('chart-personal-trend')) {
             const canvasEl = document.getElementById('chart-personal-trend');
-            if(canvasEl) {
-                if(UI.personalChartInstance) { UI.personalChartInstance.destroy(); }
-                const ctx = canvasEl.getContext('2d');
-                const trendData = hi.slice(-20); 
-                const labels = trendData.map((s, i) => `#${i+1}`);
-                const dataPts = trendData.map(s => UI.formatValue(s));
-                
-                Chart.defaults.color = '#777'; Chart.defaults.font.family = 'monospace';
-                UI.personalChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: labels, datasets: [{ label: 'Velocidad', data: dataPts, borderColor: '#a6ff00', backgroundColor: 'rgba(166,255,0,0.05)', fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { grid: { color: '#222' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { display: false } } } }
-                });
-            }
+            if(UI.personalChartInstance) { UI.personalChartInstance.destroy(); }
+            const ctx = canvasEl.getContext('2d');
+            const trendData = hi.slice(-20); 
+            const labels = trendData.map((s, i) => `#${i+1}`);
+            const dataPts = trendData.map(s => UI.formatValue(s));
+            
+            Chart.defaults.color = '#777'; Chart.defaults.font.family = 'monospace';
+            UI.personalChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: 'Velocidad', data: dataPts, borderColor: '#a6ff00', backgroundColor: 'rgba(166,255,0,0.05)', fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { grid: { color: '#222' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { display: false } } } }
+            });
         }
 
-        // WIDGET: Teclado Heatmap
         if(UI.isWidgetActive('w-p-heat')) {
             const bk = u.bad_keys || {};
             const maxErr = Math.max(...Object.values(bk), 1); 
@@ -306,13 +292,10 @@ const UI = {
         eliteUsers.forEach(eu => {
             let maxHC = eu.hi_hc && eu.hi_hc.length > 0 ? Math.max(...eu.hi_hc) : 0;
             if(maxHC > rG) { rG = maxHC; rU = eu.n; }
-            
             let survCount = (eu.hi_hc || []).length;
             if(survCount > mG) { mG = survCount; sU = eu.n; }
-
             let deathCount = eu.hc_deaths || 0;
             if(deathCount > dG) { dG = deathCount; dU = eu.n; }
-            
             let total = survCount + deathCount;
             if(total >= 3) {
                 let rate = deathCount / total;
@@ -320,14 +303,10 @@ const UI = {
             }
         });
 
-        document.getElementById('st-hc-record').innerText = UI.formatValue(rG);
-        document.getElementById('st-hc-record-user').innerText = rU;
-        document.getElementById('st-hc-surv').innerText = mG;
-        document.getElementById('st-hc-surv-user').innerText = sU;
-        document.getElementById('st-hc-deaths').innerText = dG;
-        document.getElementById('st-hc-deaths-user').innerText = dU;
-        document.getElementById('st-hc-danger-val').innerText = Math.round(dnG * 100) + "%";
-        document.getElementById('st-hc-danger-user').innerText = dnU;
+        document.getElementById('st-hc-record').innerText = UI.formatValue(rG); document.getElementById('st-hc-record-user').innerText = rU;
+        document.getElementById('st-hc-surv').innerText = mG; document.getElementById('st-hc-surv-user').innerText = sU;
+        document.getElementById('st-hc-deaths').innerText = dG; document.getElementById('st-hc-deaths-user').innerText = dU;
+        document.getElementById('st-hc-danger-val').innerText = Math.round(dnG * 100) + "%"; document.getElementById('st-hc-danger-user').innerText = dnU;
 
         if(UI.isWidgetActive('w-hc-surv')) {
             const top10HC = eliteUsers.filter(eu => eu.hi_hc && eu.hi_hc.length > 0).sort((a,b) => Math.max(...b.hi_hc) - Math.max(...a.hi_hc)).slice(0, 15);
@@ -350,35 +329,25 @@ const UI = {
         document.getElementById('st-e-most-races-user').innerText = mostRacesUser.n || "-";
 
         let recordUser = eliteUsers.reduce((p, c) => {
-            let maxC = Math.max(...(c.hi||[0]), ...(c.hi_hc||[0]), 0);
-            let maxP = Math.max(...(p.hi||[0]), ...(p.hi_hc||[0]), 0);
-            return maxC > maxP ? c : p;
+            let maxC = Math.max(...(c.hi||[0]), ...(c.hi_hc||[0]), 0); let maxP = Math.max(...(p.hi||[0]), ...(p.hi_hc||[0]), 0); return maxC > maxP ? c : p;
         }, eliteUsers[0]);
         let maxGlobalCPM = Math.max(...(recordUser.hi||[0]), ...(recordUser.hi_hc||[0]), 0);
-        document.getElementById('st-e-record-val').innerText = UI.formatValue(maxGlobalCPM);
-        document.getElementById('st-e-record-user').innerText = recordUser.n || "-";
+        document.getElementById('st-e-record-val').innerText = UI.formatValue(maxGlobalCPM); document.getElementById('st-e-record-user').innerText = recordUser.n || "-";
 
         let speedKing = eliteUsers.reduce((p, c) => (Math.max(...(c.hi||[0]), 0) > Math.max(...(p.hi||[0]), 0)) ? c : p, eliteUsers[0]);
-        document.getElementById('st-e-speed-king-val').innerText = UI.formatValue(Math.max(...(speedKing.hi||[0]), 0));
-        document.getElementById('st-e-speed-king-user').innerText = speedKing.n || "-";
+        document.getElementById('st-e-speed-king-val').innerText = UI.formatValue(Math.max(...(speedKing.hi||[0]), 0)); document.getElementById('st-e-speed-king-user').innerText = speedKing.n || "-";
 
         let avgUser = eliteUsers.reduce((p, c) => {
             let cScores = [...(c.hi||[]), ...(c.hi_hc||[])]; let pScores = [...(p.hi||[]), ...(p.hi_hc||[])];
-            let avgC = cScores.length >= 5 ? (cScores.reduce((a,b)=>a+b,0)/cScores.length) : 0;
-            let avgP = pScores.length >= 5 ? (pScores.reduce((a,b)=>a+b,0)/pScores.length) : 0;
+            let avgC = cScores.length >= 5 ? (cScores.reduce((a,b)=>a+b,0)/cScores.length) : 0; let avgP = pScores.length >= 5 ? (pScores.reduce((a,b)=>a+b,0)/pScores.length) : 0;
             return avgC > avgP ? c : p;
         }, eliteUsers[0]);
         
         let bestScores = [...(avgUser.hi||[]), ...(avgUser.hi_hc||[])];
         let bestAvg = bestScores.length >= 5 ? (bestScores.reduce((a,b)=>a+b,0)/bestScores.length) : 0;
         
-        if (bestAvg > 0) {
-            document.getElementById('st-e-bestavg-val').innerText = UI.formatValue(Math.round(bestAvg));
-            document.getElementById('st-e-bestavg-user').innerText = avgUser.n || "-";
-        } else {
-            document.getElementById('st-e-bestavg-val').innerText = "0";
-            document.getElementById('st-e-bestavg-user').innerText = "Min 5 car.";
-        }
+        if (bestAvg > 0) { document.getElementById('st-e-bestavg-val').innerText = UI.formatValue(Math.round(bestAvg)); document.getElementById('st-e-bestavg-user').innerText = avgUser.n || "-"; } 
+        else { document.getElementById('st-e-bestavg-val').innerText = "0"; document.getElementById('st-e-bestavg-user').innerText = "Min 5 car."; }
         
         if(UI.isWidgetActive('w-e-speed')) {
             const top10Speed = [...eliteUsers].sort((a,b) => Math.max(...(b.hi||[0]),0) - Math.max(...(a.hi||[0]),0)).slice(0, 15);
@@ -392,10 +361,8 @@ const UI = {
             const todayAR = CT.getARDate(); let todayCounts = {};
             (CT.data.s_recent || []).forEach(s => { if(s.d === todayAR && !s.sb) todayCounts[s.h] = (todayCounts[s.h] || 0) + 1; });
             const topActive = Object.keys(todayCounts).map(h => {
-                const uObj = eliteUsers.find(u => u.h === h);
-                return { h: h, n: uObj ? uObj.n : h, a: uObj ? uObj.a : '', c: todayCounts[h] };
+                const uObj = eliteUsers.find(u => u.h === h); return { h: h, n: uObj ? uObj.n : h, a: uObj ? uObj.a : '', c: todayCounts[h] };
             }).sort((a,b) => b.c - a.c).slice(0, 15);
-
             document.getElementById('list-e-active').innerHTML = topActive.map((u, i) => {
                 const posClass = i === 0 ? 'podium-1' : (i === 1 ? 'podium-2' : (i === 2 ? 'podium-3' : ''));
                 return `<li><span class="w-rank ${posClass}" style="width:20px;">${i+1}</span> <div class="player-link" style="flex-grow:1; justify-content:flex-start;" onclick="UI.showProfile('${u.h}')"><div class="avatar-xs" style="width:20px;height:20px;"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div> <b style="color:#00bcd4;">${u.c} 🏎️</b></li>`;
@@ -439,10 +406,9 @@ const UI = {
         const typeEl = document.getElementById('leaderboard-type'); if(!typeEl) return;
         const todayAR = CT.getARDate();
 
-        let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb);
+        let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb && s.d === todayAR);
         let histScores = (CT.data.s_top || []).filter(s => !s.sb);
 
-        // "today" ahora es "Recientes"
         let filtered = typeEl.value === 'today' ? vivoScores : histScores;
         filtered.sort((a,b) => b.c - a.c);
         
@@ -463,8 +429,7 @@ const UI = {
             let arr = u.hi || []; let scores = rankingMode === 'last10' ? arr.slice(-10) : arr;
             let avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
             return { h: u.h, n: u.n, a: u.a, avg: avg, total: arr.length };
-        }).filter(p => p.total >= 5) // Exigimos 5 carreras
-          .sort((a,b) => b.avg - a.avg);
+        }).filter(p => p.total >= 5).sort((a,b) => b.avg - a.avg);
 
         const targetPlayers = document.getElementById('global-rank-players');
         if (playerStats.length === 0) {
@@ -477,7 +442,6 @@ const UI = {
         }
     },
 
-    // (Omití el resto de funciones estáticas para mantener el tamaño seguro, como modales y track list, que siguen sin cambios)
     async showProfile(who) {
         try {
             const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
