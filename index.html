@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=2.2.0">
+    <link rel="stylesheet" href="style.css?v=3.0.0">
 </head>
 <body>
 
@@ -56,7 +56,7 @@
                 </div>
                 <div class="nav-right">
                     <button id="btn-nav-info" class="nav-icon-btn" onclick="UI.showInfo()" data-tooltip="Información">ℹ️</button>
-                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" data-tooltip="Rendimiento y Rankings">📊</button>
+                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" data-tooltip="Centro de Rendimiento">📊</button>
                     
                     <div style="position: relative; display: inline-block;">
                         <button id="btn-nav-settings" onclick="UI.toggleSettings()" class="nav-icon-btn" data-tooltip="Ajustes">
@@ -66,11 +66,11 @@
                             <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
                             <button id="btn-fast-mode" onclick="UI.toggleFastMode()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⚡ Modo Rápido: NO</button>
                             <button id="t_theme_btn" onclick="UI.openThemeBuilder()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">🎨 Personalizar</button>
-                            <button id="t_sett_full" onclick="UI.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
+                            <button id="t_sett_full" onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
                             <button id="t_sett_clear" onclick="Auth.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
-                            <button id="btn-direct-download" onclick="UI.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
+                            <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v2.2.0 
+                                CananTyper v3.0.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -132,6 +132,141 @@
             </div>
         </section>
 
+        <section id="stats-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border); position: relative; padding-bottom: 10px; align-items: center;">
+                <div style="flex: 1;">
+                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Centro de Rendimiento</h2>
+                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Analíticas avanzadas y competencia global</p>
+                </div>
+                
+                <div class="stats-tabs-compact" style="flex: 1; display: flex; justify-content: center; gap: 10px;">
+                    <button id="t-st-pe" class="st-tab-btn active" onclick="UI.switchStatsTab('personal')">Individual</button>
+                    <button id="t-st-el" class="st-tab-btn" onclick="UI.switchStatsTab('elite')">Ranking</button>
+                    <button id="t-st-hc" class="st-tab-btn st-tab-error" onclick="UI.switchStatsTab('hc')">Hardcore</button>
+                </div>
+                
+                <div style="flex: 1; display: flex; justify-content: flex-end;">
+                    <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+                </div>
+            </header>
+
+            <div class="admin-content-area custom-scroll" style="padding: 15px 0; display: flex; flex-direction: column; width: 100%; border: none; background: transparent;">
+                
+                <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
+                    
+                    <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
+                        <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b></div>
+                        <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b></div>
+                        <div class="stat-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-size: 1.2rem;">-</b></div>
+                        <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b></div>
+                    </div>
+
+                    <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+                        <h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Panel Analítico</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-fs-p" onclick="UI.toggleStatsFullscreen('pane-stats-personal', 'btn-fs-p')" class="btn-outline" style="padding: 4px 10px; font-size: 0.7rem;">⛶ AMPLIAR</button>
+                        </div>
+                    </div>
+
+                    <div id="grid-stats-personal" class="analytics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(240px, auto); gap: 15px; align-content: start;">
+                        
+                        <div class="analytic-widget w-wide" data-id="w-p-heat" style="border-color: var(--error);">
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mapa de Calor: Teclas Críticas <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-heat', 'personal')">⤢</button></div>
+                            <div class="w-body" style="display:flex; justify-content:center; align-items:center;">
+                                <div class="keyboard-container" style="padding:0;">
+                                    <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
+                                    <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
+                                    <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="analytic-widget w-wide" data-id="w-p-trend">
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Evolución de Velocidad (Últ. 20) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-trend', 'personal')">⤢</button></div>
+                            <div class="w-body"><canvas id="chart-personal-trend"></canvas></div>
+                        </div>
+
+                        <div class="analytic-widget" data-id="w-p-top">
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mis Mejores Carreras <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-top', 'personal')">⤢</button></div>
+                            <div class="w-body custom-scroll"><ul class="w-list" id="list-p-top10"></ul></div>
+                        </div>
+
+                        <div class="analytic-widget" data-id="w-p-worst-trk" style="border-color: var(--error);">
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Textos a Mejorar (Bottom 5) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-trk', 'personal')">⤢</button></div>
+                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-tracks"></ul></div>
+                        </div>
+
+                        <div class="analytic-widget" data-id="w-p-worst-wrd" style="border-color: var(--error);">
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Palabras Críticas (Top 30) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-wrd', 'personal')">⤢</button></div>
+                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-words"></ul></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="pane-stats-elite" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
+                    
+                    <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
+                        <div class="stat-card"><small id="t_st_e_most">DOMINADOR (MÁS CARRERAS)</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px; color: var(--p);">0</b><span id="st-e-record-user" class="st-p-owner" style="color: var(--p);">-</span></div>
+                    </div>
+
+                    <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+                        <h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Salón de la Fama</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-fs-e" onclick="UI.toggleStatsFullscreen('pane-stats-elite', 'btn-fs-e')" class="btn-outline" style="padding: 4px 10px; font-size: 0.7rem;">⛶ AMPLIAR</button>
+                        </div>
+                    </div>
+
+                    <div id="grid-stats-elite" class="analytics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(240px, auto); gap: 15px; align-content: start;">
+                        
+                        <div class="analytic-widget" data-id="w-e-speed">
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 10: Velocidad Absoluta <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-speed', 'elite')">⤢</button></div>
+                            <div class="w-body custom-scroll"><ul class="w-list" id="list-e-speed"></ul></div>
+                        </div>
+
+                        <div class="analytic-widget" data-id="w-e-active">
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 10: Rendimiento Diario (Hoy) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active', 'elite')">⤢</button></div>
+                            <div class="w-body custom-scroll"><ul class="w-list" id="list-e-active"></ul></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="pane-stats-hc" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
+                    
+                    <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
+                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small><b id="st-hc-surv" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-surv-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card" style="border-color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent);"><small style="color: var(--error);">EL MÁS MASACRADO</small><b id="st-hc-deaths" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-deaths-user" class="st-p-owner">-</span></div>
+                    </div>
+
+                    <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+                        <h3 style="color: var(--error); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Purgatorio</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-fs-hc" onclick="UI.toggleStatsFullscreen('pane-stats-hc', 'btn-fs-hc')" class="btn-outline" style="padding: 4px 10px; font-size: 0.7rem; border-color: var(--error); color: var(--error);">⛶ AMPLIAR</button>
+                        </div>
+                    </div>
+
+                    <div id="grid-stats-hc" class="analytics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(240px, auto); gap: 15px; align-content: start;">
+                        
+                        <div class="analytic-widget" data-id="w-hc-surv" style="border-color: var(--error);">
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Sobrevivientes Globales <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-surv', 'hc')">⤢</button></div>
+                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-surv"></ul></div>
+                        </div>
+
+                        <div class="analytic-widget" data-id="w-hc-deadly" style="border-color: var(--error);">
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Pistas Mortales (Servidor) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-deadly', 'hc')">⤢</button></div>
+                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-deadly"></ul></div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
         <section id="track-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="UI.showLobby()" class="btn-outline">VOLVER</button></header>
             <div class="track-selection-area">
@@ -161,182 +296,6 @@
             <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border); max-width: 1000px; margin: 0 auto; width: 100%;"></div>
         </section>
 
-        <section id="stats-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
-                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Centro de Rendimiento</h2>
-                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Analíticas avanzadas de tu cuenta y competencia global</p>
-                </div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
-            <div class="admin-tabs" style="max-width: 1200px; margin: 0 auto 15px auto; width: 100%;">
-                <button id="t-st-pe" class="tab-btn active" onclick="UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Mi Rendimiento</span></button>
-                <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')"><span id="t_st_tab_el">Salón de la Fama</span></button>
-                <button id="t-st-hc" class="tab-btn" onclick="UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Purgatorio (Hardcore) 💀</span></button>
-            </div>
-            
-            <div class="admin-content-area custom-scroll" style="padding: 15px; display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; width: 100%;">
-                
-                <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    
-                    <div id="keyboard-heat-map-container" class="stat-studio-container" style="margin-bottom: 15px;">
-                        <div class="studio-stat-box studio-stat-box-full studio-stat-box-error">
-                            <div class="studio-box-header">
-                                <h3 id="t_st_p_heat" style="color: var(--error);">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
-                                <p id="t_st_p_heat_sub" style="color: var(--text-muted); font-size: 0.75rem;">Foco de error basado en tu historial</p>
-                            </div>
-                            <div class="studio-box-content" style="display:flex; justify-content:center; align-items:center; padding-top:10px;">
-                                <div class="keyboard-container" style="padding:0;">
-                                    <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
-                                    <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
-                                    <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="personal-analytic-cards" class="stats-grid-studio" style="margin-bottom: 15px; flex-shrink: 0;">
-                        
-                        <div class="studio-stat-box">
-                            <div class="studio-box-header"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><span class="st-p-owner studio-meta-p">-</span></div>
-                            <b id="st-p-best-avg" class="val-blurrable studio-stat-value">0</b>
-                            <div class="studio-box-footer"><span id="t_st_p_best_avg_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM</span></div>
-                        </div>
-
-                        <div class="studio-stat-box">
-                            <div class="studio-box-header"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><span class="st-p-owner studio-meta-p">-</span></div>
-                            <b id="st-p-last10-avg" class="val-blurrable studio-stat-value">0</b>
-                            <div class="studio-box-footer"><span id="t_st_p_last10_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM</span></div>
-                        </div>
-
-                        <div class="studio-stat-box">
-                            <div class="studio-box-header"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small></div>
-                            <b id="st-p-best-cat" class="studio-stat-value studio-stat-text-value">-</b>
-                            <div class="studio-box-footer"><span id="t_st_p_best_cat_sub" style="color:var(--text-muted); font-size:0.7rem;"> Mayor Promedio</span></div>
-                        </div>
-
-                        <div class="studio-stat-box studio-stat-box-active">
-                            <div class="studio-box-header"><small id="t_lbl_st_p_tot" style="color: var(--bg);">CARRERAS TOTALES</small></div>
-                            <b id="st-p-total-races" class="studio-stat-value" style="color: var(--bg);">0</b>
-                            <div class="studio-box-footer"><span id="t_st_p_tot_sub" style="color:color-mix(in srgb, var(--bg) 70%, transparent); font-size:0.7rem;"> Normales</span></div>
-                        </div>
-
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; flex-grow: 1; min-height: 200px;">
-                        
-                        <div class="studio-stat-box studio-stat-box-medium">
-                            <div class="studio-box-header"><h3 style="color: var(--text-main);">Evolución de Velocidad (Últimas 20)</h3></div>
-                            <div class="studio-box-content" style="height: 200px; padding: 10px;">
-                                <canvas id="personal-trend-chart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_box_top10">Mis Mejores Carreras (TOP 10)</h3></div>
-                            <div class="custom-scroll table-body-wrapper">
-                                <table class="data-table">
-                                    <thead><tr><th width="15%" id="t_lbl_st_top10_num">N°</th><th id="t_lbl_st_top10_txt">Texto</th><th width="25%" id="th_st_p_top10_vel">VEL.</th></tr></thead>
-                                    <tbody id="st-p-top10-races"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_st_box_w_trk" style="color: var(--error) !important;">Textos a Mejorar (Bottom 5)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Texto</th><th id="th_st_p_avg" style="color: var(--error);">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
-                        </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_st_box_w_wrd" style="color: var(--error) !important;">Palabras Críticas (Top 30)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Palabra</th><th id="th_st_p_err" style="color: var(--error);">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="pane-stats-elite" class="pane hidden">
-                    <div id="elite-analytic-cards" class="stats-grid-studio" style="margin-bottom: 15px; flex-shrink: 0;">
-                        
-                        <div class="studio-stat-box">
-                            <div class="studio-box-header"><small id="t_st_e_most">DOMINADOR CONSTANTE</small></div>
-                            <b id="st-e-most-races-val" class="studio-stat-value studio-stat-small-value">0</b>
-                            <span id="st-e-most-races-user" class="studio-meta-p" style="margin-top:2px;">-</span>
-                            <div class="studio-box-footer"><span id="t_st_e_most_sub" style="color:var(--text-muted); font-size:0.7rem;"> Carreras Totales</span></div>
-                        </div>
-
-                        <div class="studio-stat-box">
-                            <div class="studio-box-header"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small></div>
-                            <b id="st-e-bestavg-val" class="val-blurrable studio-stat-value">0</b>
-                            <span id="st-e-bestavg-user" class="studio-meta-p" style="margin-top:2px;">-</span>
-                            <div class="studio-box-footer"><span id="t_st_e_bestavg_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM (Min 5 car.)</span></div>
-                        </div>
-
-                        <div class="studio-stat-box studio-stat-box-active">
-                            <div class="studio-box-header"><small id="lbl-st-e-record" style="color: var(--bg);">RÉCORD ABSOLUTO DEL SERVIDOR</small></div>
-                            <b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--bg);">0</b>
-                            <span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--bg) 70%, transparent);">-</span>
-                            <div class="studio-box-footer"><span id="t_st_e_record_sub" style="color:color-mix(in srgb, var(--bg) 70%, transparent); font-size:0.7rem;"> CPM</span></div>
-                        </div>
-                        
-                        <div class="studio-stat-box">
-                            <div class="studio-box-header"><small id="t_st_e_speed_king">REY DE LA VELOCIDAD</small></div>
-                            <b id="st-e-speed-king-val" class="val-blurrable studio-stat-value">0</b>
-                            <span id="st-e-speed-king-user" class="studio-meta-p" style="margin-top:2px;">-</span>
-                            <div class="studio-box-footer"><span id="t_st_e_sk_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM (Normales)</span></div>
-                        </div>
-
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Top 10: Velocidad Absoluta (Máxima CPM)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Jugador</th><th id="th-st-e-t-vel">MÁX. VELOCIDAD</th></tr></thead><tbody id="st-e-table-speed"></tbody></table></div></div>
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Top 10: Récord Hardcore Global</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Jugador</th><th>RÉCORD HC</th></tr></thead><tbody id="st-e-table-active"></tbody></table></div></div>
-                    </div>
-                </div>
-
-                <div id="pane-stats-hc" class="pane hidden table-strict-error">
-                    <div id="hc-analytic-cards" class="stats-grid-studio" style="margin-bottom: 15px; flex-shrink: 0;">
-                        
-                        <div class="studio-stat-box studio-stat-box-error">
-                            <div class="studio-box-header"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small></div>
-                            <b id="st-hc-record" class="studio-stat-value" style="color: var(--error);">0</b>
-                            <span id="st-hc-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--error) 70%, transparent);">-</span>
-                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--error) 70%, transparent); font-size:0.7rem;"> CPM</span></div>
-                        </div>
-
-                        <div class="studio-stat-box studio-stat-box-error">
-                            <div class="studio-box-header"><small id="t_lbl_hc_surv" style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small></div>
-                            <b id="st-hc-surv" class="studio-stat-value" style="color: var(--error);">0</b>
-                            <span id="st-hc-surv-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--error) 70%, transparent);">-</span>
-                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--error) 70%, transparent); font-size:0.7rem;"> Carreras Supervividas</span></div>
-                        </div>
-
-                        <div class="studio-stat-box studio-stat-box-error-active">
-                            <div class="studio-box-header"><small id="t_lbl_hc_death" style="color: var(--bg);">EL MÁS MASACRADO (GLOBAL)</small></div>
-                            <b id="st-hc-deaths" class="studio-stat-value" style="color: var(--bg);">0</b>
-                            <span id="st-hc-deaths-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--bg) 70%, transparent);">-</span>
-                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--bg) 70%, transparent); font-size:0.7rem;"> Muertes Súbitas</span></div>
-                        </div>
-                        
-                        <div class="studio-stat-box studio-stat-box-error">
-                            <div class="studio-box-header"><small id="t_st_hc_danger" style="color: var(--error);">MAYOR TASA DE MORTALIDAD (MIN 3)</small></div>
-                            <b id="st-hc-danger-val" class="studio-stat-value" style="color: var(--error);">0%</b>
-                            <span id="st-hc-danger-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--error) 70%, transparent);">-</span>
-                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--error) 70%, transparent); font-size:0.7rem;"> Veces Muerto</span></div>
-                        </div>
-
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_hc_box_surv" style="color: var(--error) !important;">Top 10 Sobrevivientes del Purgatorio</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Jugador</th><th style="color: var(--error);">VICTORIAS HC</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div>
-                        </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_hc_box_dead" style="color: var(--error) !important;">Pistas más Mortales (Top 10 Servidor)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">MUERTES GLOBALES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <section id="profile-screen" class="screen hidden">
             <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none; max-width: 1000px; margin-left: auto; margin-right: auto; width: 100%;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
             <div class="profile-top-area" style="max-width: 1000px; margin: 0 auto 20px auto;">
@@ -350,32 +309,25 @@
         </section>
 
         <section id="game-screen" class="screen hidden">
-            <div class="game-container">
-                
+            <div class="game-container" style="width: 100%;">
                 <div class="game-hud">
                     <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
-
-                <div class="progress-container" style="max-width: 900px;">
+                <div class="progress-container" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto;">
                     <div id="race-progress" class="progress-bar"></div>
                     <div id="ghost-progress" class="ghost-bar hidden"></div>
                 </div>
-
-                <div id="target-text" class="game-text-display custom-scroll" style="max-width: 1000px; height: 35vh; min-height: 250px;"></div>
-                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="max-width: 800px;">
-                
+                <div id="target-text" class="game-text-display custom-scroll" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto; height: 35vh; min-height: 250px;"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="width: 60%; max-width: 1000px; margin: 0 auto 20px auto;">
                 <div id="in-game-controls" class="game-controls">
                     <button id="t_btn_back" onclick="EngineControl.quitRace()" class="btn-outline">Volver</button>
                     <button id="t_btn_retry" onclick="EngineControl.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
                     <button id="t_btn_new" onclick="EngineControl.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
-
-                <div id="game-result-modal" class="game-result hidden" style="max-width: 800px;">
+                <div id="game-result-modal" class="game-result hidden" style="width: 60%; max-width: 1000px; margin: 20px auto 0 auto;">
                     <h2 id="final-speed-display" class="result-score">0 CPM</h2>
-                    
                     <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
-                    
                     <div class="result-actions" style="margin-top: 25px;">
                         <button id="t_btn_retry2" onclick="EngineControl.retryRace()" class="btn-outline">Repetir</button>
                         <button id="t_btn_cont" onclick="EngineControl.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
@@ -416,7 +368,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script src="core.js?v=2.2.0"></script>
