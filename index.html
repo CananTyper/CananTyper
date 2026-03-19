@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=3.0.1">
+    <link rel="stylesheet" href="style.css?v=3.1.0">
 </head>
 <body>
 
@@ -70,7 +70,7 @@
                             <button id="t_sett_clear" onclick="Auth.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v3.0.1 
+                                CananTyper v3.1.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -95,11 +95,11 @@
                 <div class="table-box">
                     <div class="table-header">
                         <div>
-                            <h3 id="t_hd_rank_races">Rendimiento en Vivo</h3>
-                            <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Últimas marcas en el servidor</small>
+                            <h3 id="t_hd_rank_races">Mejores Marcas</h3>
+                            <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Top 10 Velocidad Absoluta</small>
                         </div>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
-                            <option value="today">Recientes</option>
+                            <option value="today">Hoy</option>
                             <option value="history">Histórico</option>
                         </select>
                     </div>
@@ -115,7 +115,7 @@
                     <div class="table-header">
                         <div>
                             <h3 id="t_hd_rank_avg">Salón de la Fama</h3>
-                            <small id="t_hd_rank_avg_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Constancia y disciplina</small>
+                            <small id="t_hd_rank_avg_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Top 10 Promedios (Min 5)</small>
                         </div>
                         <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
@@ -145,7 +145,14 @@
                     <button id="t-st-hc" class="st-tab-btn st-tab-error" onclick="UI.switchStatsTab('hc')">Hardcore</button>
                 </div>
                 
-                <div style="flex: 1; display: flex; justify-content: flex-end;">
+                <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                    <div class="action-menu-wrapper admin-ctrl">
+                        <button onclick="UI.toggleStatsMenu()" class="btn-outline" style="padding: 8px 12px; font-size: 0.7rem; border-color: var(--p); color: var(--p);">⚙️ WIDGETS</button>
+                        <div id="stats-dropdown" class="action-dropdown hidden custom-scroll" style="width: 250px; max-height: 400px; overflow-y: auto; padding: 10px; right: 0; top: 120%; z-index: 200;">
+                            <div style="font-size: 0.7rem; color: #666; text-align: center; margin-bottom: 10px; letter-spacing: 1px;">MOSTRAR / OCULTAR</div>
+                            <ul id="stats-menu-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px;"></ul>
+                        </div>
+                    </div>
                     <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
                 </div>
             </header>
@@ -161,43 +168,40 @@
                         <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b></div>
                     </div>
 
-                    <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
-                        <h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Panel Analítico</h3>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="btn-fs-p" onclick="UI.toggleStatsFullscreen('pane-stats-personal', 'btn-fs-p')" class="btn-outline" style="padding: 4px 10px; font-size: 0.7rem;">⛶ AMPLIAR</button>
+                    <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px; border-color: var(--error);">
+                        <div class="table-header" style="justify-content: center; margin-bottom: 10px;">
+                            <div style="text-align:center;">
+                                <h3 id="t_st_p_heat" style="margin-bottom:2px; color: var(--error);">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:center; align-items:center; gap:20px; width:100%;">
+                            <div class="keyboard-container" style="padding:0;">
+                                <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
+                                <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
+                                <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="grid-stats-personal" class="analytics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(240px, auto); gap: 15px; align-content: start;">
+                    <div id="grid-stats-personal" class="analytics-grid">
                         
-                        <div class="analytic-widget w-wide" data-id="w-p-heat" style="border-color: var(--error);">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mapa de Calor: Teclas Críticas <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-heat', 'personal')">⤢</button></div>
-                            <div class="w-body" style="display:flex; justify-content:center; align-items:center;">
-                                <div class="keyboard-container" style="padding:0;">
-                                    <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
-                                    <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
-                                    <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="analytic-widget w-wide" data-id="w-p-trend">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Evolución de Velocidad (Últ. 20) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-trend', 'personal')">⤢</button></div>
-                            <div class="w-body"><canvas id="chart-personal-trend"></canvas></div>
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Evolución de Velocidad (Últ. 20) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-trend')">⤢</button></div>
+                            <div class="w-body" style="position:relative; width:100%; height:100%;"><canvas id="chart-personal-trend"></canvas></div>
                         </div>
 
                         <div class="analytic-widget" data-id="w-p-top">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mis Mejores Carreras <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-top', 'personal')">⤢</button></div>
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mis Mejores Carreras <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-top')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-p-top10"></ul></div>
                         </div>
 
                         <div class="analytic-widget" data-id="w-p-worst-trk" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Textos a Mejorar (Bottom 5) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-trk', 'personal')">⤢</button></div>
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Textos a Mejorar <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-trk')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-tracks"></ul></div>
                         </div>
 
                         <div class="analytic-widget" data-id="w-p-worst-wrd" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Palabras Críticas (Top 30) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-wrd', 'personal')">⤢</button></div>
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Palabras Críticas <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-wrd')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-words"></ul></div>
                         </div>
 
@@ -209,26 +213,19 @@
                     <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
                         <div class="stat-card"><small id="t_st_e_most">DOMINADOR CONSTANTE</small><b id="st-e-most-races-val" class="studio-stat-value studio-stat-small-value">0</b><span id="st-e-most-races-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> Carreras Totales</span></div></div>
                         <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small><b id="st-e-bestavg-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-bestavg-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> CPM (Min 5 car.)</span></div></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--p);">0</b><span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: var(--p);">-</span><div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--p) 70%, transparent); font-size:0.7rem;"> CPM</span></div></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--p);">0</b><span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--p) 70%, transparent);">-</span><div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--p) 70%, transparent); font-size:0.7rem;"> CPM</span></div></div>
                         <div class="stat-card"><small id="t_st_e_speed_king">REY DE LA VELOCIDAD</small><b id="st-e-speed-king-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-speed-king-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> CPM (Normales)</span></div></div>
                     </div>
 
-                    <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
-                        <h3 style="color: var(--p); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Salón de la Fama</h3>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="btn-fs-e" onclick="UI.toggleStatsFullscreen('pane-stats-elite', 'btn-fs-e')" class="btn-outline" style="padding: 4px 10px; font-size: 0.7rem;">⛶ AMPLIAR</button>
-                        </div>
-                    </div>
-
-                    <div id="grid-stats-elite" class="analytics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(240px, auto); gap: 15px; align-content: start;">
+                    <div id="grid-stats-elite" class="analytics-grid">
                         
                         <div class="analytic-widget" data-id="w-e-speed">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 10: Velocidad Absoluta <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-speed', 'elite')">⤢</button></div>
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 15: Velocidad Absoluta <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-speed')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-e-speed"></ul></div>
                         </div>
 
                         <div class="analytic-widget" data-id="w-e-active">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 10: Rendimiento Diario <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active', 'elite')">⤢</button></div>
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 15: Rendimiento Diario <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-e-active"></ul></div>
                         </div>
 
@@ -244,22 +241,15 @@
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">MAYOR TASA DE MORTALIDAD</small><b id="st-hc-danger-val" style="color: var(--error); margin-bottom:5px;">0%</b><span id="st-hc-danger-user" class="st-p-owner">-</span></div>
                     </div>
 
-                    <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
-                        <h3 style="color: var(--error); margin: 0; font-size: 1.1rem; text-transform: uppercase;">Purgatorio</h3>
-                        <div style="display: flex; gap: 10px;">
-                            <button id="btn-fs-hc" onclick="UI.toggleStatsFullscreen('pane-stats-hc', 'btn-fs-hc')" class="btn-outline" style="padding: 4px 10px; font-size: 0.7rem; border-color: var(--error); color: var(--error);">⛶ AMPLIAR</button>
-                        </div>
-                    </div>
-
-                    <div id="grid-stats-hc" class="analytics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(240px, auto); gap: 15px; align-content: start;">
+                    <div id="grid-stats-hc" class="analytics-grid">
                         
                         <div class="analytic-widget" data-id="w-hc-surv" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Sobrevivientes Globales <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-surv', 'hc')">⤢</button></div>
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Sobrevivientes Globales <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-surv')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-surv"></ul></div>
                         </div>
 
                         <div class="analytic-widget" data-id="w-hc-deadly" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Pistas Mortales (Servidor) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-deadly', 'hc')">⤢</button></div>
+                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Pistas Mortales (Servidor) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-deadly')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-deadly"></ul></div>
                         </div>
 
@@ -372,8 +362,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script src="core.js?v=3.0.1"></script>
-    <script src="ui.js?v=3.0.1"></script>
-    <script src="engine.js?v=2.2.0"></script>
+    <script src="core.js?v=3.1.0"></script>
+    <script src="ui.js?v=3.1.0"></script>
+    <script src="engine.js?v=3.1.0"></script>
 </body>
 </html>
