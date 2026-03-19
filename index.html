@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=3.0.0">
+    <link rel="stylesheet" href="style.css?v=3.0.1">
 </head>
 <body>
 
@@ -70,7 +70,7 @@
                             <button id="t_sett_clear" onclick="Auth.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v3.0.0 
+                                CananTyper v3.0.1 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -99,7 +99,7 @@
                             <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Últimas marcas en el servidor</small>
                         </div>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
-                            <option value="today">Hoy</option>
+                            <option value="today">Recientes</option>
                             <option value="history">Histórico</option>
                         </select>
                     </div>
@@ -207,9 +207,10 @@
                 <div id="pane-stats-elite" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
                     
                     <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_st_e_most">DOMINADOR (MÁS CARRERAS)</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" class="st-p-owner">-</span></div>
-                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" class="st-p-owner">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px; color: var(--p);">0</b><span id="st-e-record-user" class="st-p-owner" style="color: var(--p);">-</span></div>
+                        <div class="stat-card"><small id="t_st_e_most">DOMINADOR CONSTANTE</small><b id="st-e-most-races-val" class="studio-stat-value studio-stat-small-value">0</b><span id="st-e-most-races-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> Carreras Totales</span></div></div>
+                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small><b id="st-e-bestavg-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-bestavg-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> CPM (Min 5 car.)</span></div></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--p);">0</b><span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: var(--p);">-</span><div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--p) 70%, transparent); font-size:0.7rem;"> CPM</span></div></div>
+                        <div class="stat-card"><small id="t_st_e_speed_king">REY DE LA VELOCIDAD</small><b id="st-e-speed-king-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-speed-king-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> CPM (Normales)</span></div></div>
                     </div>
 
                     <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
@@ -227,7 +228,7 @@
                         </div>
 
                         <div class="analytic-widget" data-id="w-e-active">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 10: Rendimiento Diario (Hoy) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active', 'elite')">⤢</button></div>
+                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 10: Rendimiento Diario <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active', 'elite')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-e-active"></ul></div>
                         </div>
 
@@ -240,6 +241,7 @@
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small><b id="st-hc-surv" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-surv-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent);"><small style="color: var(--error);">EL MÁS MASACRADO</small><b id="st-hc-deaths" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-deaths-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">MAYOR TASA DE MORTALIDAD</small><b id="st-hc-danger-val" style="color: var(--error); margin-bottom:5px;">0%</b><span id="st-hc-danger-user" class="st-p-owner">-</span></div>
                     </div>
 
                     <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
@@ -370,8 +372,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script src="core.js?v=2.2.0"></script>
-    <script src="ui.js?v=2.2.0"></script>
+    <script src="core.js?v=3.0.1"></script>
+    <script src="ui.js?v=3.0.1"></script>
     <script src="engine.js?v=2.2.0"></script>
 </body>
 </html>
