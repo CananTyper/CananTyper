@@ -1,6 +1,5 @@
 /* ================================================================
-   CANANTYPER - CORE SCRIPT (V3.1.0)
-   Maneja Autenticación, Firebase, Discord RPC y Estado del Jugador.
+   CANANTYPER - CORE SCRIPT (V3.2.0)
    ================================================================ */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -70,7 +69,6 @@ const CT = {
             this.data.shortcuts = snap.exists ? snap.data() : { restart: 'Tab', next: 'Enter', quit: 'Escape' };
         });
 
-        // Escucha en tiempo real el diseño de los Widgets que dicta CananStudio o un Admin
         db.collection('config').doc('stats_layout').onSnapshot(snap => {
             if(snap.exists && snap.data().layout) {
                 CT.data.statsLayout = snap.data().layout;
@@ -107,13 +105,10 @@ const CT = {
 
         const session = JSON.parse(localStorage.getItem('ct_ses'));
         if(session && session.h) {
-            // Documento Personal del Jugador
             db.collection('users').doc(session.h).onSnapshot(doc => {
                 if(doc.exists) {
                     CT.data.u = doc.data();
                     localStorage.setItem('ct_cache_me', JSON.stringify(CT.data.u));
-                    
-                    // Inyectar clase admin para CSS
                     if (CT.data.u.r === 'admin') document.body.classList.add('is-admin');
                     else document.body.classList.remove('is-admin');
 
@@ -136,9 +131,7 @@ const Auth = {
         const hInp = document.getElementById('login-user').value.toLowerCase(); 
         const p = document.getElementById('login-pass').value; 
         const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
-        
         if(!hInp || !p) return alert("Por favor, ingresa usuario y contraseña.");
-
         const btn = document.getElementById('t_btn_login');
         const originalText = btn.innerText;
         btn.innerText = "CONECTANDO..."; btn.disabled = true;
@@ -146,7 +139,6 @@ const Auth = {
         try { 
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists && docRef.data().p === p) { 
-                if(docRef.data().sb === true) console.warn("Shadowban activo.");
                 localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                 CT.data.u = docRef.data();
                 location.reload(); 
@@ -155,67 +147,58 @@ const Auth = {
                 btn.innerText = originalText; btn.disabled = false;
             } 
         } catch(e) { 
-            console.error("Error en DB:", e); 
             btn.innerText = "REINTENTAR";
             setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
         }
     },
-
     register: async () => { 
         const n = document.getElementById('reg-display').value; 
         const hRaw = document.getElementById('reg-user').value.toLowerCase(); 
         const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; 
         const p = document.getElementById('reg-pass').value; 
-        
         if(!n || !hRaw || !p) return alert("Completa todos los campos"); 
         if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); 
-        
         try { 
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists) return alert("Ese usuario ya está en uso"); 
             const role = 'usuario'; 
             const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [], sb: false, hc_deaths: 0, hc_track_deaths: {} }; 
             await db.collection('users').doc(handle).set(newUser); 
-            UI.toggleAuth(true); 
-            alert("Cuenta creada con éxito."); 
+            UI.toggleAuth(true); alert("Cuenta creada con éxito."); 
         } catch(e) { alert("Error al conectar con la Nube"); } 
     },
-    
-    logout: () => { 
-        localStorage.removeItem('ct_ses'); 
-        localStorage.removeItem('ct_cache_me');
-        location.reload(); 
-    },
-
-    clearCache: () => {
-        if(confirm("¿Seguro que deseas limpiar la caché local?")) {
-            localStorage.removeItem('ct_cache_p'); localStorage.removeItem('ct_cache_c');
-            localStorage.removeItem('ct_cache_ui'); localStorage.removeItem('ct_cache_me');
-            location.reload();
-        }
-    }
+    logout: () => { localStorage.removeItem('ct_ses'); localStorage.removeItem('ct_cache_me'); location.reload(); },
+    clearCache: () => { if(confirm("¿Seguro que deseas limpiar la caché local?")) { localStorage.removeItem('ct_cache_p'); localStorage.removeItem('ct_cache_c'); localStorage.removeItem('ct_cache_ui'); localStorage.removeItem('ct_cache_me'); location.reload(); } }
 };
 
 const App = {
-    // Descarga la élite para el Salón de la Fama
-    loadLeaderboards: async () => {
-        try {
-            const eliteReq = await db.collection('users').where('sb', '==', false).limit(50).get();
-            CT.data.eliteUsers = eliteReq.docs.map(d => d.data());
-        } catch(e) { CT.data.eliteUsers = []; }
+    // Restaurados los listeners ultraligeros de tiempo real para las carreras de "Hoy" y el "Histórico".
+    loadLeaderboards: () => {
+        const todayAR = CT.getARDate();
+        
+        // Carreras de Hoy EN VIVO (Limit 15 para cuidar cuota)
+        db.collection('scores').where('d', '==', todayAR).where('sb', '==', false).orderBy('c', 'desc').limit(15).onSnapshot(snap => {
+            CT.data.s_recent = snap.docs.map(d => d.data());
+            if(typeof UI !== 'undefined') UI.renderGlobal();
+        });
 
+        // Carreras Históricas EN VIVO
+        db.collection('scores').where('hc', '==', false).where('sb', '==', false).orderBy('c', 'desc').limit(15).onSnapshot(snap => {
+            CT.data.s_top = snap.docs.map(d => d.data());
+            if(typeof UI !== 'undefined') UI.renderGlobal();
+        });
+
+        // Promedios: Escaneo silencioso cada 30 segundos
+        App.fetchEliteUsers();
+        setInterval(App.fetchEliteUsers, 30000); 
+    },
+
+    fetchEliteUsers: async () => {
         try {
-            const topReq = await db.collection('scores').where('hc', '==', false).where('sb', '==', false).orderBy('c', 'desc').limit(50).get();
-            CT.data.s_top = topReq.docs.map(d => d.data());
-        } catch(e) { CT.data.s_top = []; }
-        
-        try {
-            // Descargamos las recientes para siempre tener data
-            const recReq = await db.collection('scores').where('sb', '==', false).orderBy('id', 'desc').limit(50).get();
-            CT.data.s_recent = recReq.docs.map(d => d.data());
-        } catch(e) { CT.data.s_recent = []; }
-        
-        if(typeof UI !== 'undefined') UI.refreshActiveViews();
+            const eliteReq = await db.collection('users').where('sb', '==', false).get();
+            CT.data.eliteUsers = eliteReq.docs.map(d => d.data());
+            if(typeof UI !== 'undefined') { UI.renderGlobal(); UI.refreshActiveViews(); }
+        } catch(e) {}
     },
 
     getUserScores: async (handle) => {
