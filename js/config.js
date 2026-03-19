@@ -26,6 +26,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 window.db = firebase.firestore();
+
+// Nueva sintaxis v10 para evitar warnings en consola
 window.db.settings({
     localCache: firebase.firestore.persistentLocalCache()
 });
