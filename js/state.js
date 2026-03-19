@@ -3,7 +3,7 @@
    ================================================================ */
 
 window.CT = {
-    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {}, statsLayout: null }, 
+    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {} }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
@@ -52,20 +52,6 @@ window.CT = {
                 if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('maintenance').set(this.data.maint);
             }
             window.UI.checkMaintenance();
-        });
-
-        window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
-            if(snap.exists) { 
-                this.data.statsLayout = snap.data(); 
-            } else {
-                this.data.statsLayout = {
-                    personal: [{id:'w-p-summary', v:true, s:4}, {id:'w-p-cpm', v:true, s:2}, {id:'w-p-heat', v:true, s:2}, {id:'w-p-top', v:true, s:1}, {id:'w-p-worst', v:true, s:1}, {id:'w-p-words', v:true, s:1}],
-                    ranking: [{id:'w-r-summary', v:true, s:4}, {id:'w-r-texts', v:true, s:2}, {id:'w-r-cats', v:true, s:2}],
-                    hc: [{id:'w-hc-summary', v:true, s:4}, {id:'w-hc-top', v:true, s:2}, {id:'w-hc-worst', v:true, s:2}]
-                };
-                if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('stats_layout').set(this.data.statsLayout);
-            }
-            window.UI.applyStatsLayout();
         });
 
         window.db.collection('config').doc('info_page').onSnapshot(snap => {
