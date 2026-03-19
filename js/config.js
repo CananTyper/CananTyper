@@ -14,7 +14,6 @@ if (window.isDesktopEnv) {
     } catch(e) { console.warn("Aviso: Ejecutando en entorno sin variables nativas completas."); }
 }
 
-// Conexión con CananStudio (Mantenida y Global)
 window.updateDiscordStatus = function(details, state, showTimer = true) {
     if (window.ipcRenderer) window.ipcRenderer.send('update-discord', { details, state, showTimer });
 }
