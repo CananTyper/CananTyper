@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - CORE SCRIPT (V3.2.0)
+   CANANTYPER - CORE SCRIPT (V3.2.1)
    Maneja Autenticación, Firebase, Discord RPC y Estado del Jugador.
    ================================================================ */
 
@@ -36,8 +36,14 @@ const CT = {
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
     
-    // REPARADO: Búsqueda exacta del usuario logueado dentro del array global
-    ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (CT.data.u || []).find(x => x.h === s.h) : null; },
+    // Función de sesión robusta (Funciona independientemente de si CT.data.u es array u objeto)
+    ses: () => { 
+        const s = JSON.parse(localStorage.getItem('ct_ses')); 
+        if(!s) return null;
+        if(Array.isArray(CT.data.u)) { return CT.data.u.find(x => x.h === s.h); }
+        else if (CT.data.u && CT.data.u.h === s.h) { return CT.data.u; }
+        return null;
+    },
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
@@ -102,7 +108,7 @@ const CT = {
             }
         });
 
-        // REPARADO: Volvemos a escuchar a todos los usuarios para armar los Rankings (El volumen es manejable)
+        // Escucha a todos los usuarios para Rankings exactos
         db.collection('users').onSnapshot(snap => {
             CT.data.u = snap.docs.map(d => d.data());
             localStorage.setItem('ct_cache_u', JSON.stringify(CT.data.u));
@@ -174,7 +180,6 @@ const Auth = {
 };
 
 const App = {
-    // REPARADO: Consultas simples que NO rompen sin índices compuestos. El filtrado de Shadowban se hace en ui.js localmente.
     loadLeaderboards: async () => {
         try {
             const topReq = await db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
@@ -182,7 +187,6 @@ const App = {
         } catch(e) { CT.data.s_top = []; }
         
         try {
-            // Descargamos las últimas 50 sin importar fecha, para que siempre haya algo en Recientes.
             const recReq = await db.collection('scores').orderBy('id', 'desc').limit(50).get();
             CT.data.s_recent = recReq.docs.map(d => d.data());
         } catch(e) { CT.data.s_recent = []; }
