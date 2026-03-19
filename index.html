@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=3.1.0">
+    <link rel="stylesheet" href="style.css?v=3.2.0">
 </head>
 <body>
 
@@ -70,7 +70,7 @@
                             <button id="t_sett_clear" onclick="Auth.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v3.1.0 
+                                CananTyper v3.2.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -95,8 +95,8 @@
                 <div class="table-box">
                     <div class="table-header">
                         <div>
-                            <h3 id="t_hd_rank_races">Mejores Marcas</h3>
-                            <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Top 10 Velocidad Absoluta</small>
+                            <h3 id="t_hd_rank_races">Ranking | Carreras</h3>
+                            <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Los más veloces</small>
                         </div>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="today">Hoy</option>
@@ -114,8 +114,8 @@
                 <div class="table-box">
                     <div class="table-header">
                         <div>
-                            <h3 id="t_hd_rank_avg">Salón de la Fama</h3>
-                            <small id="t_hd_rank_avg_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Top 10 Promedios (Min 5)</small>
+                            <h3 id="t_hd_rank_avg">Ranking | Promedios</h3>
+                            <small id="t_hd_rank_avg_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Constancia y disciplina</small>
                         </div>
                         <select id="ranking-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="last10">Últimas 10</option>
@@ -187,7 +187,7 @@
                         
                         <div class="analytic-widget w-wide" data-id="w-p-trend">
                             <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Evolución de Velocidad (Últ. 20) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-trend')">⤢</button></div>
-                            <div class="w-body" style="position:relative; width:100%; height:100%;"><canvas id="chart-personal-trend"></canvas></div>
+                            <div class="w-body" style="position:relative; width:100%; height:100%; padding-bottom: 25px;"><canvas id="chart-personal-trend"></canvas></div>
                         </div>
 
                         <div class="analytic-widget" data-id="w-p-top">
@@ -235,7 +235,7 @@
                 <div id="pane-stats-hc" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
                     
                     <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
-                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" class="val-blurrable" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small><b id="st-hc-surv" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-surv-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent);"><small style="color: var(--error);">EL MÁS MASACRADO</small><b id="st-hc-deaths" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-deaths-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">MAYOR TASA DE MORTALIDAD</small><b id="st-hc-danger-val" style="color: var(--error); margin-bottom:5px;">0%</b><span id="st-hc-danger-user" class="st-p-owner">-</span></div>
@@ -362,8 +362,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script src="core.js?v=3.1.0"></script>
-    <script src="ui.js?v=3.1.0"></script>
-    <script src="engine.js?v=3.1.0"></script>
+    <script src="core.js?v=3.2.0"></script>
+    <script src="ui.js?v=3.2.0"></script>
+    <script src="engine.js?v=3.2.0"></script>
 </body>
 </html>
