@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - MÓDULO UI (V3.2.0 - COMPETITIVO GLOBAL)
+   CANANTYPER - MÓDULO UI (V3.2.1 - UNIDADES Y RANKINGS CORREGIDOS)
    ================================================================ */
 
 const UI = {
@@ -163,8 +163,15 @@ const UI = {
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         
-        UI.applyUITexts(); UI.updateUnitVisuals(CT.currentUnit); UI.updateFastModeVisuals(); UI.applySavedTheme();
-        this.renderGlobal(); UI.renderTrainDropdown(); this.show('home-screen'); UI.checkAnnouncements(); 
+        UI.applyUITexts(); 
+        UI.updateUnitVisuals(CT.currentUnit); // Inicia el estilo ZEN/WPM/CPM
+        UI.updateFastModeVisuals(); 
+        UI.applySavedTheme();
+        
+        this.renderGlobal(); 
+        UI.renderTrainDropdown(); 
+        this.show('home-screen'); 
+        UI.checkAnnouncements(); 
     },
 
     showLobby() { this.initLobby(); },
@@ -216,6 +223,44 @@ const UI = {
         });
     },
 
+    // LA SOLUCIÓN DEFINITIVA AL BOTÓN CPM/WPM/ZEN
+    setUnit: (unit) => {
+        if(CT.currentUnit === unit) return;
+        localStorage.removeItem('ct_custom_theme');
+        
+        // Try/Catch blindado para que no congele el botón si falla Firebase
+        try {
+            const u = CT.ses(); 
+            if(u && u.theme) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        } catch(e) { console.error("Aviso Theme DB:", e); }
+
+        document.documentElement.removeAttribute('data-custom-theme');
+        CT.currentUnit = unit; 
+        localStorage.setItem('ct_unit_pref', unit); 
+        UI.updateUnitVisuals(unit); 
+        UI.refreshActiveViews(); // Obliga a reescribir los números
+    },
+
+    updateUnitVisuals: (unit) => {
+        // 1. Cambia el estilo del botón y el CSS Global
+        document.documentElement.setAttribute('data-theme', unit);
+        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
+        const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
+        
+        // 2. Transforma los textos universales (Clase maestra)
+        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
+        document.querySelectorAll('.dynamic-unit-lbl').forEach(el => {
+            el.innerText = label;
+        });
+
+        // 3. Ajustes de Tablas Fijas
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-st-e-t-vel', 'th-unit-rank'];
+        thIds.forEach(id => { 
+            const el = document.getElementById(id);
+            if(el) { el.innerText = id.includes('rank') ? `PROMEDIO (${label})` : `VEL. (${label})`; } 
+        });
+    },
+
     renderPersonalStats() {
         const u = CT.ses(); if(!u) return;
         const userScores = (CT.data.userScores[u.h] || []).filter(s => !s.hc); 
@@ -234,7 +279,6 @@ const UI = {
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
 
-        // WIDGET: Evolución de Velocidad
         if(UI.isWidgetActive('w-p-trend') && typeof Chart !== 'undefined') {
             const canvasEl = document.getElementById('chart-personal-trend');
             if(canvasEl) {
@@ -253,7 +297,6 @@ const UI = {
             }
         }
 
-        // WIDGET: Teclado Heatmap
         if(UI.isWidgetActive('w-p-heat')) {
             const bk = u.bad_keys || {};
             const maxErr = Math.max(...Object.values(bk), 1); 
@@ -288,7 +331,7 @@ const UI = {
     },
 
     renderHardcoreStats() {
-        const eliteUsers = CT.data.u || []; // Ahora tenemos todos los usuarios
+        const eliteUsers = CT.data.u || []; 
         let rG = 0; let mG = 0; let dG = 0; let dnG = 0;
         let rU = "-", sU = "-", dU = "-", dnU = "-";
 
@@ -328,7 +371,7 @@ const UI = {
     },
 
     renderEliteStats() {
-        const eliteUsers = CT.data.u || []; // Todos los usuarios disponibles de nuevo
+        const eliteUsers = CT.data.u || []; 
         if (eliteUsers.length === 0) return;
         
         const cleanUsers = eliteUsers.filter(u => !u.sb);
@@ -399,36 +442,19 @@ const UI = {
         if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) UI.renderEliteStats(); else UI.renderHardcoreStats(); }
     },
 
-    updateUnitVisuals: (unit) => {
-        document.documentElement.setAttribute('data-theme', unit);
-        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
-        const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
-        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
-        const thIds = ['th-unit-times', 'th-unit-hist', 'th-st-e-t-vel'];
-        thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; } });
-        const subIds = ['t_st_e_record_sub', 't_st_e_bestavg_sub', 't_st_e_sk_sub'];
-        subIds.forEach(id => { 
-            const el = document.getElementById(id);
-            if(el) {
-                if(id === 't_st_e_bestavg_sub') el.innerText = ` ${label} (Min 5 car.)`;
-                else if(id === 't_st_e_sk_sub') el.innerText = ` ${label} (Normales)`;
-                else el.innerText = ` ${label}`;
-            }
-        });
-    },
-
     updateFastModeVisuals: () => { const btn = document.getElementById('btn-fast-mode'); if(btn) btn.innerText = `⚡ Modo Rápido: ${CT.fastMode ? 'SI' : 'NO'}`; },
     toggleFastMode: () => { CT.fastMode = !CT.fastMode; localStorage.setItem('ct_fast_mode', CT.fastMode); UI.updateFastModeVisuals(); },
     renderTrainDropdown() { /* Intacto */ },
 
-    // REPARADO: Búsqueda histórica sin límites de fechas y usando CT.data.u.
+    // RANKINGS DE INICIO RESTAURADOS EXACTOS Y MODO ZEN INTEGRADO
     renderGlobal() {
         const typeEl = document.getElementById('leaderboard-type'); if(!typeEl) return;
+        const todayAR = CT.getARDate();
 
-        let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb);
-        let histScores = (CT.data.s_top || []).filter(s => !s.sb);
+        // Filtro local estricto para "Hoy" vs "Histórico" (Ignorando Shadowban y Hardcore)
+        let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb && !s.hc && s.d === todayAR);
+        let histScores = (CT.data.s_top || []).filter(s => !s.sb && !s.hc);
 
-        // "today" busca los más recientes. "history" busca los mejores absolutos descargados.
         let filtered = typeEl.value === 'today' ? vivoScores : histScores;
         filtered.sort((a,b) => b.c - a.c);
         
@@ -442,19 +468,20 @@ const UI = {
             }).join('');
         }
 
+        // Promedios: "Últimas 10" vs "General" (De todos los usuarios, ignorando Baneados)
         const rankingMode = document.getElementById('ranking-type').value;
-        const allUsers = CT.data.u || []; // Usar el array global COMPLETO
+        const allUsers = CT.data.u || []; 
         
         let playerStats = allUsers.filter(u => !u.sb).map(u => {
             let arr = u.hi || []; let scores = rankingMode === 'last10' ? arr.slice(-10) : arr;
             let avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
             return { h: u.h, n: u.n, a: u.a, avg: avg, total: arr.length };
-        }).filter(p => p.total > 0) // Todos los que hayan jugado aparecen
+        }).filter(p => p.total > 0) // No exigimos 5 aquí para no matar la moral inicial, solo que hayan jugado
           .sort((a,b) => b.avg - a.avg);
 
         const targetPlayers = document.getElementById('global-rank-players');
         if (playerStats.length === 0) {
-            targetPlayers.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa; padding:20px;">No hay promedios suficientes.</td></tr>';
+            targetPlayers.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa; padding:20px;">No hay promedios registrados.</td></tr>';
         } else {
             targetPlayers.innerHTML = playerStats.slice(0, 10).map((p, idx) => {
                 const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
