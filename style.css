@@ -59,7 +59,7 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
     transition: box-shadow 0.3s ease, border-color 0.3s; 
 }
 
-.screen { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
+.screen { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; width: 100%; max-width: 1400px; margin: 0 auto; }
 .hidden { display: none !important; }
 
 /* SCROLLBARS GLOBALES */
@@ -92,9 +92,11 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 .btn-error { background: color-mix(in srgb, var(--error) 15%, transparent); border: 1px solid var(--error); color: var(--error); padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; transition: all 0.2s ease; }
 .btn-error:hover { background: var(--error); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--error) 40%, transparent); }
 
+/* BOTÓN SALIR PRO AISLADO */
 .btn-logout-pro { background: color-mix(in srgb, var(--error) 10%, transparent) !important; color: var(--error) !important; border: 1px solid color-mix(in srgb, var(--error) 30%, transparent) !important; padding: 6px 15px; border-radius: 8px; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; outline: none; margin-left: 8px; }
 .btn-logout-pro:hover { background: var(--error) !important; color: #000 !important; box-shadow: 0 5px 15px color-mix(in srgb, var(--error) 40%, transparent) !important; border-color: var(--error) !important; transform: translateY(-2px); }
 
+/* NAVEGACIÓN ICÓNICA Y TOOLTIPS PRO (GLASSMORPHISM) */
 .nav-icon-btn { background: color-mix(in srgb, var(--surface-light) 60%, transparent) !important; border: 1px solid var(--border) !important; font-size: 1.4rem; cursor: pointer; padding: 8px 12px; border-radius: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; color: var(--text-main); outline: none; backdrop-filter: blur(4px); margin-left: 8px; }
 .nav-icon-btn:hover { background: var(--surface) !important; border-color: var(--p) !important; color: var(--p) !important; transform: translateY(-3px); box-shadow: 0 8px 20px color-mix(in srgb, var(--p) 20%, transparent); }
 
@@ -114,6 +116,7 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 [data-tooltip]:hover::after { opacity: 1; visibility: visible; bottom: -35px; border-color: var(--p); color: var(--p); }
 [data-tooltip]:hover::before { opacity: 1; visibility: visible; bottom: -16px; border-bottom-color: var(--p); }
 
+/* AISLAMIENTO DE TOOLTIP SALIR (ROJO PERMANENTE) */
 [data-tooltip-exit] { position: relative; }
 [data-tooltip-exit]::after {
     content: attr(data-tooltip-exit); position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
