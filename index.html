@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.19">
+    <link rel="stylesheet" href="style.css?v=2.0.0">
     <style>
         .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
@@ -74,7 +74,7 @@
                             <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.19
+                                CananTyper v2.0.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -147,73 +147,58 @@
             <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
         </section>
 
-        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0; background: #080808;">
-            <header class="stats-top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid #222; background: #0d0d0d; flex-shrink: 0;">
-                <div class="stats-title-group" style="display:flex; align-items:center;">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0zIDNoMTh2MmIzIDhoLTN2MmgzIDRoLTE4di0yaDMgdi0yaC0zdi0yaDMgdi0yaC0zdi0yaDMgdi0yaC0zVjNoMHoiLz48L3N2Zz4=" style="width:20px; height:20px; margin-right:10px; filter: drop-shadow(0 0 5px rgba(166,255,0,0.4));">
-                    <h2 id="t_hd_stats" style="color:var(--p); font-size:1.1rem; text-transform:uppercase; letter-spacing:2px; text-shadow:0 0 10px rgba(166,255,0,0.3); margin:0;">Estadísticas</h2>
+        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0; background: var(--bg);">
+            
+            <header class="st-topbar">
+                <div class="st-brand">
+                    <span class="st-brand-icon">📊</span>
+                    <h2>TELEMETRÍA</h2>
                 </div>
                 
-                <div class="stats-tabs-pro" style="display:flex; gap:5px;">
-                    <button id="t-st-pe" class="stats-tab-btn active" onclick="window.UI.switchStatsTab('personal')">INDIVIDUALES</button>
-                    <button id="t-st-ra" class="stats-tab-btn" onclick="window.UI.switchStatsTab('ranking')">RANKING</button>
-                    <button id="t-st-hc" class="stats-tab-btn" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error);">HARDCORE</button>
+                <div class="st-tabs">
+                    <button id="t-st-pe" class="st-tab-btn active" onclick="window.UI.switchStatsTab('personal')">INDIVIDUALES</button>
+                    <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">ÉLITE</button>
+                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')">HARDCORE</button>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: #000; border: 1px solid #333; border-radius: 6px; display: flex; overflow: hidden; height: 28px;">
-                        <button onclick="window.UI.setDashboardZoom(-0.1)" class="btn-outline" style="border: none; border-radius: 0; padding: 0 10px; font-size: 1rem; font-weight: bold; display: flex; align-items: center; color: #aaa;">-</button>
-                        <span id="zoom-level-display" style="color: #ccc; font-size: 0.75rem; padding: 0 10px; border-left: 1px solid #222; border-right: 1px solid #222; display: flex; align-items: center; font-weight: bold;">100%</span>
-                        <button onclick="window.UI.setDashboardZoom(0.1)" class="btn-outline" style="border: none; border-radius: 0; padding: 0 10px; font-size: 1rem; font-weight: bold; display: flex; align-items: center; color: #aaa;">+</button>
-                    </div>
-
-                    <div class="action-menu-wrapper" style="position: relative;">
-                        <button id="btn-stats-widgets" onclick="window.UI.toggleWidgetsMenu()" class="btn-outline admin-only hidden" style="padding: 6px 12px; font-size: 0.7rem; border-color: #ffd700; color: #ffd700; height: 28px; display:flex; align-items:center; gap:5px;">⚙️ WIDGETS</button>
-                        <div id="widgets-menu" class="action-dropdown hidden custom-scroll" style="position:absolute; width: 250px; max-height: 400px; overflow-y: auto; padding: 10px; right: 0; top: 120%; background: #111; border: 1px solid #333; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
-                            <div style="font-size: 0.7rem; color: #888; text-align: center; margin-bottom: 10px; letter-spacing: 1px; border-bottom:1px solid #222; padding-bottom:5px;">GESTIONAR PANELES</div>
-                            <div id="widgets-menu-list" style="display: flex; flex-direction: column; gap: 5px;"></div>
-                        </div>
-                    </div>
-                    
-                    <button onclick="window.UI.showLobby()" class="btn-outline" style="border:none; color:var(--text-muted); font-size: 0.75rem; height: 28px; display:flex; align-items:center;">SALIR ➔</button>
+                <div class="st-actions">
+                    <button id="btn-stats-widgets" class="st-btn-widget hidden">⚙ WIDGETS</button>
+                    <button class="st-btn-volver" onclick="window.UI.showLobby()">VOLVER ➔</button>
                 </div>
             </header>
             
-            <div id="telemetry-analytics-container" class="custom-scroll" style="flex-grow:1; padding: 25px; overflow-y: auto; transition: transform 0.3s ease; transform-origin: top center;">
+            <div class="st-dashboard custom-scroll">
                 
-                <div id="pane-stats-personal" class="pane">
-                    <div class="stats-grid-container" id="grid-stats-personal">
+                <div id="pane-stats-personal" class="st-pane">
+                    <div class="st-grid">
                         
-                        <div class="db-panel" data-id="w-p-summary">
-                            <header class="panel-header">
-                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> RESUMEN GENERAL</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-summary')" title="Ajustar Tamaño">⤢</button></div>
-                            </header>
-                            <div class="panel-content" style="display: flex; justify-content: space-around; align-items: center; padding: 25px;">
-                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">PROM. HISTÓRICO</small><b id="st-p-best-avg" class="val-blurrable" style="font-size:2rem; color:#fff;">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="font-size:2rem; color:#fff;">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="font-size:1.4rem; color:#fff;">-</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--p); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">CARRERAS COMPLETADAS</small><b id="st-p-total-races" style="font-size:2.2rem; color:var(--p); text-shadow:0 0 15px rgba(166,255,0,0.2);">0</b></div>
-                            </div>
+                        <div class="st-card st-col-3">
+                            <div class="st-card-title">Promedio Histórico</div>
+                            <div class="st-card-val val-blurrable" id="st-p-best-avg">0</div>
+                        </div>
+                        <div class="st-card st-col-3">
+                            <div class="st-card-title">Promedio (Últimas 10)</div>
+                            <div class="st-card-val val-blurrable" id="st-p-last10-avg">0</div>
+                        </div>
+                        <div class="st-card st-col-3">
+                            <div class="st-card-title">Categoría Dominante</div>
+                            <div class="st-card-val" id="st-p-best-cat" style="font-size:1.5rem; line-height:2.5rem;">-</div>
+                        </div>
+                        <div class="st-card st-col-3 st-card-highlight">
+                            <div class="st-card-title" style="color:var(--p);">Carreras Finalizadas</div>
+                            <div class="st-card-val" id="st-p-total-races" style="color:var(--p);">0</div>
                         </div>
 
-                        <div class="db-panel" data-id="w-p-graph">
-                            <header class="panel-header">
-                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> RENDIMIENTO GLOBAL (ÚLTIMAS 15)</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-graph')">⤢</button></div>
-                            </header>
-                            <div class="panel-content" style="position:relative; height: 220px; padding: 15px 15px 0 15px;">
-                                <div id="st-p-svg-container" style="width: 100%; height: 100%;"></div>
-                            </div>
+                        <div class="st-card st-col-12" style="height: 300px; display:flex; flex-direction:column;">
+                            <div class="st-card-title">Rendimiento Técnico Global (Últimas 15)</div>
+                            <div id="st-p-svg-container" class="st-chart-wrapper">
+                                </div>
                         </div>
 
-                        <div class="db-panel db-panel-err" data-id="w-p-heat">
-                            <header class="panel-header">
-                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MAPA DE CALOR: TECLAS CRÍTICAS</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-heat')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll" style="display:flex; justify-content:center; align-items:center; padding: 20px 0; min-height: 220px;">
-                                <div class="keyboard-container heatmap-cananstudio" style="transform: scale(0.9);">
+                        <div class="st-card st-col-4 st-card-error" style="display:flex; flex-direction:column;">
+                            <div class="st-card-title" style="color:var(--error);">Mapa de Calor (Teclas Críticas)</div>
+                            <div class="st-heatmap-wrapper custom-scroll">
+                                <div class="keyboard-container" style="transform: scale(0.85); margin-top:-10px;">
                                     <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
@@ -221,97 +206,86 @@
                             </div>
                         </div>
 
-                        <div class="db-panel" data-id="w-p-top">
-                            <header class="panel-header">
-                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MEJORES CARRERAS (TOP 10)</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-top')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro" id="st-p-top10-races" style="max-height: 280px;"></div>
+                        <div class="st-card st-col-4" style="display:flex; flex-direction:column;">
+                            <div class="st-card-title">Récord Personal (Top 10)</div>
+                            <div class="st-list-wrapper custom-scroll" id="st-p-top10-races"></div>
                         </div>
 
-                        <div class="db-panel db-panel-err" data-id="w-p-worst">
-                            <header class="panel-header">
-                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> PISTAS A MEJORAR (BOTTOM 5)</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-worst')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-p-worst-tracks" style="max-height: 280px;"></div>
+                        <div class="st-card st-col-4 st-card-error" style="display:flex; flex-direction:column;">
+                            <div class="st-card-title" style="color:var(--error);">Déficit de Consistencia (Bottom 5)</div>
+                            <div class="st-list-wrapper error-scroll custom-scroll st-list-error" id="st-p-worst-tracks"></div>
                         </div>
 
-                        <div class="db-panel db-panel-err" data-id="w-p-words">
-                            <header class="panel-header">
-                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> PALABRAS CRÍTICAS (TOP 30)</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-words')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-p-worst-words" style="max-height: 280px;"></div>
-                        </div>
                     </div>
                 </div>
 
-                <div id="pane-stats-ranking" class="pane hidden">
-                    <div class="stats-grid-container" id="grid-stats-ranking">
+                <div id="pane-stats-elite" class="st-pane hidden">
+                    <div class="st-grid">
                         
-                        <div class="db-panel" data-id="w-r-summary">
-                            <header class="panel-header">
-                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÉTRICAS DE ÉLITE GLOBALES</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('ranking', 'w-r-summary')">⤢</button></div>
-                            </header>
-                            <div class="panel-content" style="display: flex; justify-content: space-around; align-items: center; padding: 25px;">
-                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MÁS CARRERAS</small><b id="st-e-most-races-val" style="font-size:2rem; color:#fff;">0</b><span id="st-e-most-races-user" style="display:block; font-size:0.75rem; color:#aaa; font-weight:bold;">-</span></div>
-                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="font-size:2rem; color:#fff;">0</b><span id="st-e-top1-user" style="display:block; font-size:0.75rem; color:#aaa; font-weight:bold;">-</span></div>
-                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="font-size:2rem; color:#fff;">0</b><span id="st-e-bestavg-user" style="display:block; font-size:0.75rem; color:#aaa; font-weight:bold;">-</span></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--p); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable" style="font-size:2.2rem; color:var(--p); text-shadow:0 0 15px rgba(166,255,0,0.2);">0</b><span id="st-e-record-user" style="display:block; font-size:0.75rem; color:var(--p); font-weight:bold;">-</span></div>
-                            </div>
+                        <div class="st-card st-col-3">
+                            <div class="st-card-title">Mayor Volumen (Carreras)</div>
+                            <div class="st-card-val" id="st-e-most-races-val">0</div>
+                            <div class="st-card-sub" id="st-e-most-races-user">-</div>
+                        </div>
+                        <div class="st-card st-col-3">
+                            <div class="st-card-title">Dominio Absoluto (Top 1)</div>
+                            <div class="st-card-val" id="st-e-top1-val">0</div>
+                            <div class="st-card-sub" id="st-e-top1-user">-</div>
+                        </div>
+                        <div class="st-card st-col-3">
+                            <div class="st-card-title">Mejor Promedio Global</div>
+                            <div class="st-card-val val-blurrable" id="st-e-bestavg-val">0</div>
+                            <div class="st-card-sub" id="st-e-bestavg-user">-</div>
+                        </div>
+                        <div class="st-card st-col-3 st-card-highlight">
+                            <div class="st-card-title" style="color:var(--p);">Récord de Velocidad Server</div>
+                            <div class="st-card-val val-blurrable" id="st-e-record-val" style="color:var(--p);">0</div>
+                            <div class="st-card-sub" id="st-e-record-user" style="color:var(--p);">-</div>
                         </div>
 
-                        <div class="db-panel" data-id="w-r-texts">
-                            <header class="panel-header">
-                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÁXIMA VELOCIDAD POR PISTA</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('ranking', 'w-r-texts')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro" id="st-e-table-texts" style="max-height: 400px;"></div>
+                        <div class="st-card st-col-6" style="display:flex; flex-direction:column; height: 500px;">
+                            <div class="st-card-title">Máxima Velocidad Registrada por Pista</div>
+                            <div class="st-list-wrapper custom-scroll" id="st-e-table-texts"></div>
                         </div>
 
-                        <div class="db-panel" data-id="w-r-cats">
-                            <header class="panel-header">
-                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÁXIMA VELOCIDAD POR CATEGORÍA</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('ranking', 'w-r-cats')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro" id="st-e-table-cats" style="max-height: 400px;"></div>
+                        <div class="st-card st-col-6" style="display:flex; flex-direction:column; height: 500px;">
+                            <div class="st-card-title">Máxima Velocidad Registrada por Categoría</div>
+                            <div class="st-list-wrapper custom-scroll" id="st-e-table-cats"></div>
                         </div>
+
                     </div>
                 </div>
 
-                <div id="pane-stats-hc" class="pane hidden">
-                    <div class="stats-grid-container" id="grid-stats-hc">
+                <div id="pane-stats-hc" class="st-pane hidden">
+                    <div class="st-grid">
                         
-                        <div class="db-panel db-panel-err" data-id="w-hc-summary">
-                            <header class="panel-header">
-                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÉTRICAS DE SUPERVIVENCIA</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('hc', 'w-hc-summary')">⤢</button></div>
-                            </header>
-                            <div class="panel-content" style="display: flex; justify-content: space-around; align-items: center; padding: 25px;">
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">RÉCORD HARDCORE</small><b id="st-hc-record" style="font-size:2rem; color:var(--error);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">SUPERS VIVIDAS</small><b id="st-hc-surv" style="font-size:2rem; color:var(--error);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="font-size:2rem; color:var(--error);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="font-size:2.2rem; color:var(--error); text-shadow:0 0 15px rgba(244,67,54,0.3);">0%</b></div>
-                            </div>
+                        <div class="st-card st-col-3 st-card-error">
+                            <div class="st-card-title" style="color:var(--error);">Récord Supervivencia</div>
+                            <div class="st-card-val" id="st-hc-record" style="color:var(--error);">0</div>
+                        </div>
+                        <div class="st-card st-col-3 st-card-error">
+                            <div class="st-card-title" style="color:var(--error);">Pistas Superadas</div>
+                            <div class="st-card-val" id="st-hc-surv" style="color:var(--error);">0</div>
+                        </div>
+                        <div class="st-card st-col-3 st-card-error">
+                            <div class="st-card-title" style="color:var(--error);">Muertes Súbitas (Errores)</div>
+                            <div class="st-card-val" id="st-hc-deaths" style="color:var(--error);">0</div>
+                        </div>
+                        <div class="st-card st-col-3 st-card-error" style="box-shadow: inset 0 0 20px rgba(244,67,54,0.1);">
+                            <div class="st-card-title" style="color:var(--error);">Tasa de Mortalidad</div>
+                            <div class="st-card-val" id="st-hc-rate" style="color:var(--error);">0%</div>
                         </div>
 
-                        <div class="db-panel db-panel-err" data-id="w-hc-top">
-                            <header class="panel-header">
-                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MEJORES SOBREVIVIDAS (TOP 10)</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('hc', 'w-hc-top')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-hc-top10" style="max-height: 350px;"></div>
+                        <div class="st-card st-col-6 st-card-error" style="display:flex; flex-direction:column; height: 500px;">
+                            <div class="st-card-title" style="color:var(--error);">Hall of Fame: Mejores Sobrevividas</div>
+                            <div class="st-list-wrapper error-scroll custom-scroll st-list-error" id="st-hc-top10"></div>
                         </div>
 
-                        <div class="db-panel db-panel-err" data-id="w-hc-worst">
-                            <header class="panel-header">
-                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> PISTAS MÁS MORTALES (TOP 10)</div>
-                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('hc', 'w-hc-worst')">⤢</button></div>
-                            </header>
-                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-hc-worst" style="max-height: 350px;"></div>
+                        <div class="st-card st-col-6 st-card-error" style="display:flex; flex-direction:column; height: 500px;">
+                            <div class="st-card-title" style="color:var(--error);">Cementerio: Pistas más Mortales</div>
+                            <div class="st-list-wrapper error-scroll custom-scroll st-list-error" id="st-hc-worst"></div>
                         </div>
+
                     </div>
                 </div>
 
