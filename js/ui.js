@@ -6,7 +6,7 @@ window.UI = {
     listLayout: 'layout-list',
     trackPage: 0, activeTrackCat: null, filterFavs: false,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
-    activeStatsTab: 'personal',
+    activeStatsTab: 'personal', dashboardZoom: 1,
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
 
     initSortable: (containerId, type, pageContext = 0) => {
@@ -17,7 +17,6 @@ window.UI = {
 
         if (type === 'track' && !window.UI.filterFavs) return;
 
-        // Init grid for stats if admin
         if (type.startsWith('widgets-')) {
             container._sortable = Sortable.create(container, {
                 handle: '.drag-handle',
@@ -138,7 +137,17 @@ window.UI = {
         if(u && u.r === 'admin') {
             document.getElementById('btn-stats-widgets').classList.remove('hidden');
             window.UI.renderWidgetsMenu();
+        } else {
+            document.getElementById('btn-stats-widgets').classList.add('hidden');
         }
+    },
+
+    setDashboardZoom: (delta) => {
+        window.UI.dashboardZoom += delta;
+        if(window.UI.dashboardZoom < 0.5) window.UI.dashboardZoom = 0.5;
+        if(window.UI.dashboardZoom > 1.5) window.UI.dashboardZoom = 1.5;
+        document.getElementById('zoom-level-display').innerText = Math.round(window.UI.dashboardZoom * 100) + '%';
+        document.getElementById('telemetry-analytics-container').style.transform = `scale(${window.UI.dashboardZoom})`;
     },
 
     applyStatsLayout() {
@@ -188,15 +197,47 @@ window.UI = {
         
         let html = '';
         arr.forEach(w => {
-            const el = document.querySelector(`[data-id="${w.id}"] h3`);
-            const title = el ? el.innerText : w.id;
+            const el = document.querySelector(`[data-id="${w.id}"] .panel-title`);
+            const title = el ? el.innerText.replace('☰', '').trim() : w.id;
             html += `
-            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #2a2a2a;">
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #2a2a2a; align-items:center;">
                 <span style="color:var(--text-main); font-size:0.75rem;">${title}</span>
-                <input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')" style="width:16px; height:16px; cursor:pointer;">
+                <input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')" style="width:14px; height:14px; cursor:pointer;">
             </div>`;
         });
         document.getElementById('widgets-menu-list').innerHTML = html;
+    },
+
+    generateSVGChart: (dataArray) => {
+        if(!dataArray || dataArray.length < 2) return '';
+        const max = Math.max(...dataArray, 10); 
+        const width = 1000;
+        const height = 220; 
+        const stepX = width / (dataArray.length - 1);
+
+        let points = dataArray.map((val, i) => {
+            const x = i * stepX;
+            const y = height - ((val / max) * (height - 20)) - 10; 
+            return `${x},${y}`;
+        }).join(' ');
+
+        let pathD = `M0,${height} L0,${height - ((dataArray[0] / max) * (height - 20)) - 10} ` + 
+                    dataArray.map((val, i) => `L${i*stepX},${height - ((val/max)*(height-20)) - 10}`).join(' ') + 
+                    ` L${width},${height} Z`;
+
+        let circles = dataArray.map((val, i) => {
+            const x = i * stepX;
+            const y = height - ((val / max) * (height - 20)) - 10;
+            return `<circle cx="${x}" cy="${y}" r="4" class="chart-point" style="stroke:var(--p);"></circle>`;
+        }).join('');
+
+        return `
+        <svg class="chart-line-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+            <defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:0" /></linearGradient></defs>
+            <path class="chart-area" d="${pathD}" style="fill:url(#grad-p);"></path>
+            <polyline class="chart-line" points="${points}" style="stroke:var(--p);"></polyline>
+            ${circles}
+        </svg>`;
     },
     
     applyUITexts: () => {
@@ -216,7 +257,7 @@ window.UI = {
     renderPersonalStats() {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-        const userScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc); 
+        const userScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc).sort((a,b) => a.id - b.id); // Cronológico para gráfico
         
         // Summary
         const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = userScores.length;
@@ -224,7 +265,7 @@ window.UI = {
         const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
         const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
         
-        const last10Arr = [...userScores].sort((a,b)=>b.id - a.id).slice(0, 10);
+        const last10Arr = [...userScores].slice(-10);
         const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
         const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
         
@@ -234,7 +275,12 @@ window.UI = {
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
         
-        const elGraph = document.getElementById('st-p-graph-val'); if(elGraph) elGraph.innerText = window.UI.formatValue(avgLast10);
+        // Graph
+        const last15Scores = [...userScores].slice(-15).map(s => window.UI.formatValue(s.c));
+        const svgContainer = document.getElementById('st-p-svg-container');
+        if(svgContainer) {
+            svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateSVGChart(last15Scores) : '<div style="color:#555; text-align:center; margin-top:80px;">Juega más partidas para generar la gráfica</div>';
+        }
 
         // Heatmap
         const bk = userDoc.bad_keys || {};
@@ -260,12 +306,13 @@ window.UI = {
         });
 
         // Top 10
-        const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        const userScoresDesc = [...userScores].sort((a,b) => b.c - a.c);
+        const top10 = userScoresDesc.slice(0, 10);
         const elTop10 = document.getElementById('st-p-top10-races');
         if(elTop10) elTop10.innerHTML = top10.map((s, i) => `
             <div class="data-list-item">
                 <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${s.track}</div>
+                <div class="data-list-name" style="color:var(--text-main); font-weight:bold;">${s.track}</div>
                 <div class="data-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </div>`).join('');
 
@@ -279,8 +326,8 @@ window.UI = {
         if(elBottom) elBottom.innerHTML = bottom5.map((tr, i) => `
             <div class="data-list-item">
                 <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${tr.t}</div>
-                <div class="data-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
+                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${tr.t}</div>
+                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
             </div>`).join('');
 
         // Bad Words
@@ -290,8 +337,8 @@ window.UI = {
         if(elWords) elWords.innerHTML = badWordsList.map((bwItem, i) => `
             <div class="data-list-item">
                 <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${bwItem.w}</div>
-                <div class="data-list-val">${bwItem.errs} err</div>
+                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${bwItem.w}</div>
+                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;">${bwItem.errs} err</div>
             </div>`).join('');
 
         window.UI.applyStatsLayout();
@@ -316,9 +363,9 @@ window.UI = {
         const elHcTop = document.getElementById('st-hc-top10');
         if(elHcTop) elHcTop.innerHTML = top10.map((s, i) => `
             <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${s.track}</div>
-                <div class="data-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
+                <div class="data-list-rank" style="color:var(--error);">#${i+1}</div>
+                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${s.track}</div>
+                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(s.c)}</div>
             </div>`).join('');
         
         let trackDeaths = userDoc.hc_track_deaths || {};
@@ -326,9 +373,9 @@ window.UI = {
         const elHcWorst = document.getElementById('st-hc-worst');
         if(elHcWorst) elHcWorst.innerHTML = deathList.map((td, i) => `
             <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${td.t}</div>
-                <div class="data-list-val">${td.d} x_x</div>
+                <div class="data-list-rank" style="color:var(--error);">#${i+1}</div>
+                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${td.t}</div>
+                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;">${td.d} x_x</div>
             </div>`).join('');
 
         window.UI.applyStatsLayout();
@@ -373,9 +420,9 @@ window.UI = {
             return `
             <div class="data-list-item">
                 <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${tr}</div>
-                <div class="data-list-meta">${trMax.n}</div>
-                <div class="data-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
+                <div class="data-list-name" style="color:var(--text-main); font-weight:bold;">${tr}</div>
+                <div style="color:var(--text-muted); font-size:0.75rem;">${trMax.n}</div>
+                <div style="color:var(--p); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(trMax.c)}</div>
             </div>`; 
         }).join('');
         
@@ -388,9 +435,9 @@ window.UI = {
             return `
             <div class="data-list-item">
                 <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name">${cat}</div>
-                <div class="data-list-meta">${catMax.n}</div>
-                <div class="data-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
+                <div class="data-list-name" style="color:var(--text-main); font-weight:bold;">${cat}</div>
+                <div style="color:var(--text-muted); font-size:0.75rem;">${catMax.n}</div>
+                <div style="color:var(--p); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(catMax.c)}</div>
             </div>`; 
         }).join('');
 
@@ -436,8 +483,8 @@ window.UI = {
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
-        if(document.getElementById('t_lbl_st_p_best_avg')) document.getElementById('t_lbl_st_p_best_avg').innerText = 'Rendimiento Técnico (' + label + ')';
-        if(document.getElementById('t_lbl_st_p_last10_avg')) document.getElementById('t_lbl_st_p_last10_avg').innerText = 'PROM. ÚLT. 10 ' + label;
+        if(document.getElementById('t_lbl_st_p_best_avg')) document.getElementById('t_lbl_st_p_best_avg').innerText = 'PROM. HISTÓRICO';
+        if(document.getElementById('t_lbl_st_p_last10_avg')) document.getElementById('t_lbl_st_p_last10_avg').innerText = 'PROM. ÚLT. 10';
         if(document.getElementById('lbl-st-g-avg')) document.getElementById('lbl-st-g-avg').innerText = 'PROMEDIO SERVIDOR ' + label;
         if(document.getElementById('lbl-st-g-record')) document.getElementById('lbl-st-g-record').innerText = 'RÉCORD ABSOLUTO ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
