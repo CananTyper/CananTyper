@@ -31,7 +31,7 @@ const db = firebase.firestore();
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
 const CT = {
-    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {}, adminScores: [] }, 
+    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {} }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
@@ -89,7 +89,6 @@ const CT = {
 
         db.collection('config').doc('shortcuts').onSnapshot(snap => {
             if(snap.exists) { this.data.shortcuts = snap.data(); } else { this.data.shortcuts = { restart: 'Tab', next: 'Enter', quit: 'Escape' }; }
-            UI.renderAdminShortcuts();
         });
 
         if(this.ses()) { UI.initLobby(); } 
@@ -220,8 +219,8 @@ const CT = {
 
 const UI = {
     listLayout: 'layout-list',
-    trackPage: 0, adminRacePage: 0, adminPhrasePage: 0, activeAdminCat: null, activeTrackCat: null, lexiconPage: 0, filterFavs: false,
-    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeTrnCat: null,
+    trackPage: 0, activeTrackCat: null, filterFavs: false,
+    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     initSortable: (containerId, type, pageContext = 0) => {
@@ -230,7 +229,6 @@ const UI = {
         if (!container) return;
         if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
 
-        if (type === 'phrases' && document.getElementById('admin-phrase-search') && document.getElementById('admin-phrase-search').value) return;
         if (type === 'track' && !UI.filterFavs) return;
 
         container._sortable = Sortable.create(container, {
@@ -239,7 +237,7 @@ const UI = {
             ghostClass: 'sortable-ghost',
             onEnd: (evt) => {
                 if (evt.oldIndex === evt.newIndex) return;
-                App.handleDragReorder(type === 'track' ? 'favs' : type, evt.oldIndex, evt.newIndex, pageContext);
+                App.handleDragReorder('favs', evt.oldIndex, evt.newIndex, pageContext);
             }
         });
     },
@@ -273,14 +271,6 @@ const UI = {
         } else {
             if(!document.getElementById('maintenance-screen').classList.contains('hidden')) { if(u) UI.showLobby(); else UI.show('auth-screen'); }
         }
-        
-        const toggleBtn = document.getElementById('btn-maint-toggle');
-        if(toggleBtn) {
-            const txtOn = CT.data.ui && CT.data.ui['t_adm_btn_maint_on'] ? CT.data.ui['t_adm_btn_maint_on'].v : "⛔ MANTENIMIENTO: ACTIVADO";
-            const txtOff = CT.data.ui && CT.data.ui['t_adm_btn_maint_off'] ? CT.data.ui['t_adm_btn_maint_off'].v : "✅ MANTENIMIENTO: DESACTIVADO";
-            if(m.active) { toggleBtn.innerText = txtOn; toggleBtn.style.borderColor = "var(--error)"; toggleBtn.style.color = "var(--error)"; } 
-            else { toggleBtn.innerText = txtOff; toggleBtn.style.borderColor = "var(--success)"; toggleBtn.style.color = "var(--success)"; }
-        }
 
         const infoEnabled = m.info !== false;
         const themeEnabled = m.theme !== false;
@@ -295,21 +285,6 @@ const UI = {
         if(themeBtn) {
             if(!themeEnabled && !isAdmin) themeBtn.classList.add('hidden');
             else themeBtn.classList.remove('hidden');
-        }
-
-        const fInfoBtn = document.getElementById('btn-feat-info');
-        if(fInfoBtn) {
-            const lblInfo = CT.data.ui && CT.data.ui['t_adm_srv_feat_info'] ? CT.data.ui['t_adm_srv_feat_info'].v : "ℹ️ INFO";
-            fInfoBtn.innerText = `${lblInfo}: ${infoEnabled ? 'ON' : 'OFF'}`;
-            fInfoBtn.style.borderColor = infoEnabled ? 'var(--success)' : 'var(--error)';
-            fInfoBtn.style.color = infoEnabled ? 'var(--success)' : 'var(--error)';
-        }
-        const fThemeBtn = document.getElementById('btn-feat-theme');
-        if(fThemeBtn) {
-            const lblTheme = CT.data.ui && CT.data.ui['t_adm_srv_feat_theme'] ? CT.data.ui['t_adm_srv_feat_theme'].v : "🎨 TEMAS";
-            fThemeBtn.innerText = `${lblTheme}: ${themeEnabled ? 'ON' : 'OFF'}`;
-            fThemeBtn.style.borderColor = themeEnabled ? 'var(--success)' : 'var(--error)';
-            fThemeBtn.style.color = themeEnabled ? 'var(--success)' : 'var(--error)';
         }
     },
     
@@ -326,9 +301,6 @@ const UI = {
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
         
-        const adminBtn = document.getElementById('btn-nav-admin'); 
-        if(adminBtn) adminBtn.classList.toggle('hidden', u.r !== 'admin');
-        
         UI.updateUnitVisuals(CT.currentUnit); 
         this.renderGlobal(); 
         UI.renderTrainDropdown();
@@ -337,7 +309,6 @@ const UI = {
     },
 
     showLobby() { this.initLobby(); },
-    showAdmin() { this.switchTab('announcements'); UI.updateUnitVisuals(CT.currentUnit); this.show('admin-screen'); },
     
     async showStats() { 
         const u = CT.ses();
@@ -527,22 +498,12 @@ const UI = {
         if(!CT.data.info) return;
         document.getElementById('info-display-title').innerText = CT.data.info.title || "Información";
         document.getElementById('info-display-content').innerHTML = CT.data.info.content || "";
-        document.getElementById('info-title-input').value = CT.data.info.title || "";
-        document.getElementById('info-msg-input').innerHTML = CT.data.info.content || "";
-    },
-
-    renderAdminShortcuts() {
-        if(!CT.data.shortcuts) return;
-        document.getElementById('sc-restart').value = CT.data.shortcuts.restart || 'Tab';
-        document.getElementById('sc-next').value = CT.data.shortcuts.next || 'Enter';
-        document.getElementById('sc-quit').value = CT.data.shortcuts.quit || 'Escape';
     },
 
     refreshActiveViews: () => {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
-        if(!document.getElementById('admin-screen').classList.contains('hidden')) { UI.renderAdminAnn(); UI.renderAdminLexicon(); UI.renderAdminP(); UI.renderAdminR(); UI.renderAdminU(); UI.renderAdminServerConfig(); UI.renderAdminTrn(); }
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(UI.activeTrackCat || UI.filterFavs) UI.renderTrackList(); else UI.showTrackCategorySelect(); }
         if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-general').classList.contains('hidden')) UI.renderGlobalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) UI.renderEliteStats(); else UI.renderHardcoreStats(); }
     },
@@ -594,13 +555,7 @@ const UI = {
     },
 
     updateCategorySelects() {
-        const cats = CT.dbLocal('c'); const options = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        
-        const createSel = document.getElementById('new-phrase-category'); const editSel = document.getElementById('phrase-category'); const deleteSel = document.getElementById('delete-cat-select');
-        if(createSel) createSel.innerHTML = options;
-        if(editSel) { const currentVal = editSel.value; editSel.innerHTML = options; editSel.value = currentVal || (cats[0] ? cats[0].name : ''); }
-        if(deleteSel) { deleteSel.innerHTML = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).map(c => `<option value="${c.name}">${c.name}</option>`).join(''); }
-
+        const cats = CT.dbLocal('c');
         const trnCats = cats.filter(c => c.name.startsWith('[TRN]'));
         const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
         const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
@@ -708,47 +663,6 @@ const UI = {
     },
     changeProfPage(delta) { const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); } },
 
-    switchTab(tab) {
-        document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden')); document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`pane-${tab}`).classList.remove('hidden');
-        let btnId = 't-' + tab.substring(0,2); if (tab === 'create') btnId = 't-cr'; if (tab === 'announcements') btnId = 't_tab_ann'; if (tab === 'lexicon') btnId = 't_tab_lex'; if (tab === 'server') btnId = 't_tab_srv'; if (tab === 'users') btnId = 't_tab_usr'; if (tab === 'races') btnId = 't_tab_rac'; if (tab === 'phrases') btnId = 't_tab_txt'; if (tab === 'create') btnId = 't_tab_cre'; if (tab === 'training') btnId = 't_tab_trn'; if (tab === 'shortcuts') btnId = 't_tab_sc'; if (tab === 'info') btnId = 't_tab_info';
-        const activeTabBtn = document.getElementById(btnId); if(activeTabBtn) activeTabBtn.classList.add('active');
-        if(tab === 'announcements') { UI.renderAdminAnn(); } if(tab === 'lexicon') { UI.lexiconPage = 0; UI.renderAdminLexicon(); } if(tab === 'server') { UI.renderAdminServerConfig(); } if(tab === 'phrases') { UI.showAdminPhraseCategories(); } if(tab === 'races') { UI.adminRacePage = 0; App.loadAdminRaces(); } if(tab === 'users') { this.renderAdminU(); } if(tab === 'create') { this.toggleCreateForm('text'); } if(tab === 'training') { UI.switchTrnTab('crear'); } if(tab === 'info') { UI.renderInfoPage(); }
-    },
-
-    switchTrnTab(tab) {
-        document.getElementById('pane-trn-crear').classList.add('hidden'); 
-        document.getElementById('pane-trn-editar').classList.add('hidden'); 
-        document.getElementById('pane-trn-cat').classList.add('hidden');
-        document.querySelectorAll('#pane-training .tab-btn').forEach(b => b.classList.remove('active'));
-        
-        if(tab==='crear') { 
-            document.getElementById('pane-trn-crear').classList.remove('hidden'); 
-            document.getElementById('t_trn_tab_cre').classList.add('active'); 
-        }
-        if(tab==='editar') { 
-            document.getElementById('pane-trn-editar').classList.remove('hidden'); 
-            document.getElementById('t_trn_tab_ed').classList.add('active'); 
-            UI.showAdminTrnCategories(); 
-        }
-        if(tab==='categorias') { 
-            document.getElementById('pane-trn-cat').classList.remove('hidden'); 
-            document.getElementById('t_trn_tab_cat').classList.add('active'); 
-        }
-    },
-
-    showAdminTrnCategories() { 
-        UI.activeTrnCat = null; 
-        document.getElementById('admin-trn-categories').classList.remove('hidden'); 
-        document.getElementById('admin-trn-list-view').classList.add('hidden'); 
-        UI.renderAdminTrn(); 
-    },
-    selectAdminTrnCategory(cat) { 
-        UI.activeTrnCat = cat; 
-        document.getElementById('admin-trn-categories').classList.add('hidden'); 
-        document.getElementById('admin-trn-list-view').classList.remove('hidden'); 
-        UI.renderAdminTrn(); 
-    },
-
     checkAnnouncements: () => {
         const anns = CT.dbLocal('a').filter(x => x.active);
         if (anns.length > 0) {
@@ -759,150 +673,6 @@ const UI = {
             }
         }
     },
-
-    renderAdminAnn() {
-        const list = CT.dbLocal('a');
-        document.getElementById('admin-ann-list').innerHTML = list.map(a => `<tr><td style="font-size: 1.5rem; text-align: center;">${a.icon}</td><td><span style="color: ${a.active ? 'var(--p)' : 'var(--text-muted)'}; font-weight: bold; font-size: 0.8rem;">${a.active ? 'VIGENTE' : 'FINALIZADO'}</span></td><td style="white-space: nowrap; font-size: 0.75rem; color: var(--text-muted); text-align: center;">${a.date}</td><td><div style="display: flex; gap: 5px; justify-content: center;">${a.active ? `<button onclick="App.cancelAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px; border-color: var(--error); color: var(--error);" title="Anular">❌</button>` : `<span style="display: inline-block; width: 30px;"></span>`}<button onclick="App.deleteAnnouncement('${a.id}')" class="btn-outline" style="padding: 4px 8px;" title="Eliminar del Historial">🗑️</button></div></td></tr>`).join('');
-    },
-    
-    renderAdminLexicon() {
-        if(!CT.data.ui) return; const query = (document.getElementById('lexicon-search').value || "").toLowerCase(); const listEl = document.getElementById('admin-lexicon-list');
-        let filtered = Object.keys(CT.data.ui).filter(k => { const item = CT.data.ui[k]; return item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query); });
-        const start = UI.lexiconPage * 20; const pageData = filtered.slice(start, start + 20);
-        let html = ''; pageData.forEach(k => { const item = CT.data.ui[k]; html += `<li class="admin-list-item" style="border-left: 4px solid var(--p); border-radius: 4px;"><div style="display: flex; flex-direction: column; gap: 4px; text-align: left;"><small style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; text-transform: uppercase;">${item.l}</small><span><b style="color:var(--text-main); font-size:1rem;">${item.v}</b></span></div><button onclick="App.editUIText('${k}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button></li>`; });
-        listEl.innerHTML = html; document.getElementById('admin-le-prev').disabled = UI.lexiconPage === 0; document.getElementById('admin-le-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-le-page-num').innerText = `Página ${UI.lexiconPage + 1}`;
-    },
-    changeAdminLexiconPage(delta) { const query = (document.getElementById('lexicon-search').value || "").toLowerCase(); let filtered = Object.keys(CT.data.ui).filter(k => { const item = CT.data.ui[k]; return item.l.toLowerCase().includes(query) || item.v.toLowerCase().includes(query); }); const nextStart = (UI.lexiconPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.lexiconPage += delta; this.renderAdminLexicon(); } },
-
-    renderAdminServerConfig() { if(!CT.data.maint) return; document.getElementById('maint-icon-input').value = CT.data.maint.icon || '🛠️'; document.getElementById('maint-title-input').value = CT.data.maint.title || 'Mantenimiento'; document.getElementById('maint-msg-input').value = CT.data.maint.msg || ''; },
-
-    toggleCreateForm(type) {
-        document.getElementById('create-text-form').classList.add('hidden'); document.getElementById('create-cat-form').classList.add('hidden');
-        const btnText = document.getElementById('btn-create-text'); const btnCat = document.getElementById('btn-create-cat');
-        if(type === 'text') { UI.updateCategorySelects(); document.getElementById('create-text-form').classList.remove('hidden'); btnText.className = 'btn-primary btn-admin-mode active'; btnCat.className = 'btn-primary btn-alt btn-admin-mode'; } 
-        else { UI.updateCategorySelects(); document.getElementById('create-cat-form').classList.remove('hidden'); btnCat.className = 'btn-primary btn-alt btn-admin-mode active'; btnText.className = 'btn-primary btn-alt btn-admin-mode'; }
-    },
-
-    showAdminPhraseCategories() { UI.activeAdminCat = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden'); document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-search').value = ''; UI.renderAdminP(); },
-    selectAdminPhraseCategory(cat) { UI.activeAdminCat = cat; UI.adminPhrasePage = 0; document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden'); UI.renderAdminP(); },
-    
-    renderAdminP() {
-        const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let tracks = CT.dbLocal('p');
-        
-        const listContainer = document.getElementById('admin-phrases-list');
-        listContainer.className = 'custom-scroll admin-list ' + UI.listLayout;
-
-        if (query) {
-            document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.add('hidden');
-            let filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
-            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
-            const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">[${(t.c || 'General').trim()}]</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
-            document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
-        } else if (!UI.activeAdminCat) {
-            document.getElementById('admin-phrase-categories').classList.remove('hidden'); document.getElementById('admin-phrase-list-view').classList.add('hidden');
-            let cats = CT.dbLocal('c').filter(c => !c.name.startsWith('[TRN]')); let catCounts = {}; tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
-            cats.sort((a,b) => (a.order || 0) - (b.order || 0));
-            document.getElementById('admin-phrase-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminPhraseCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
-        } else {
-            document.getElementById('admin-phrase-categories').classList.add('hidden'); document.getElementById('admin-phrase-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-admin').classList.remove('hidden');
-            let filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeAdminCat.trim());
-            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
-            const start = UI.adminPhrasePage * 20; const pageData = filtered.slice(start, start + 20);
-            listContainer.innerHTML = pageData.map((t, i) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted); margin-right:15px;" title="Arrastrar para ordenar">⠿</span><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
-            document.getElementById('admin-ph-prev').disabled = UI.adminPhrasePage === 0; document.getElementById('admin-ph-next').disabled = (start + 20) >= filtered.length; document.getElementById('admin-ph-page-num').innerText = `Página ${UI.adminPhrasePage + 1}`;
-        }
-        
-        setTimeout(() => {
-            if (!query && !UI.activeAdminCat) UI.initSortable('admin-phrase-categories', 'categories', 0);
-            else if (!query && UI.activeAdminCat) UI.initSortable('admin-phrases-list', 'phrases', UI.adminPhrasePage);
-        }, 50);
-    },
-    changeAdminPhrasePage(delta) { const query = (document.getElementById('admin-phrase-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeAdminCat.trim()); } const nextStart = (UI.adminPhrasePage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.adminPhrasePage += delta; this.renderAdminP(); } },
-    prepEdit(idStr) { const pList = CT.dbLocal('p'); const track = pList.find(t => t.id.toString() === idStr.toString()); if(!track) return; UI.updateCategorySelects(); document.getElementById('phrase-title').value = track.title; document.getElementById('phrase-category').value = track.c || 'General'; document.getElementById('phrase-input').value = track.text; CT.editIdx = track.id.toString(); document.getElementById('admin-phrase-form').classList.remove('hidden'); },
-    cancelEditP() { CT.editIdx = null; document.getElementById('admin-phrase-form').classList.add('hidden'); document.getElementById('phrase-title').value = ''; document.getElementById('phrase-input').value = ''; },
-    delP: (idStr) => { 
-        if(confirm("¿Eliminar texto?")) { 
-            CT.data.p = CT.data.p.filter(t => t.id.toString() !== idStr.toString());
-            UI.renderAdminP(); UI.renderAdminTrn();
-            db.collection('phrases').doc(idStr.toString()).delete(); 
-        }
-    },
-
-    renderAdminTrn() {
-        let tracks = CT.dbLocal('p').filter(t => t.c && t.c.startsWith('[TRN]'));
-        const listContainer = document.getElementById('admin-trn-list');
-        listContainer.className = 'custom-scroll admin-list ' + UI.listLayout;
-
-        if (!UI.activeTrnCat) {
-            document.getElementById('admin-trn-categories').classList.remove('hidden');
-            document.getElementById('admin-trn-list-view').classList.add('hidden');
-            let cats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
-            let catCounts = {}; tracks.forEach(t => { const c = (t.c || '').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
-            document.getElementById('admin-trn-categories').innerHTML = cats.map(cat => `<div class="cat-card" onclick="UI.selectAdminTrnCategory('${cat.name}')"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span></span><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted);" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span></div><h3 style="margin-top:0;">${cat.name.replace('[TRN] ', '')}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
-        } else {
-            let filtered = tracks.filter(t => (t.c || '').trim() === UI.activeTrnCat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
-            listContainer.innerHTML = filtered.map((t) => `<li class="admin-list-item"><div style="display:flex; flex-direction:column; gap:4px; max-width:65%;"><span><b style="color:var(--p)">#${t.title}</b> <small style="color:var(--text-muted); margin-left:10px;">${t.c.replace('[TRN] ','').trim()}</small></span><span style="font-size:0.8rem; color:var(--text-main); opacity:0.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.text}</span></div><div style="display:flex; gap:10px; align-items:center;"><span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:var(--text-muted); margin-right:15px;" title="Arrastrar para ordenar">⠿</span><button onclick="UI.prepEdit('${t.id}')" class="btn-outline">EDITAR</button><button onclick="UI.delP('${t.id}')" class="btn-error">BORRAR</button></div></li>`).join('');
-        }
-        
-        setTimeout(() => {
-            if (!UI.activeTrnCat) UI.initSortable('admin-trn-categories', 'categories_trn', 0);
-            else UI.initSortable('admin-trn-list', 'phrases_trn', 0);
-        }, 50);
-    },
-
-    renderAdminR() {
-        const scores = CT.data.adminScores || [];
-        document.getElementById('admin-races-list').innerHTML = scores.map((s) => `<tr><td><b>${s.n}</b></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td>${s.d}</td><td><div class="action-buttons"><button onclick="UI.editRace('${s.id}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button><button onclick="UI.delRace('${s.id}')" class="btn-error">ELIMINAR</button></div></td></tr>`).join('');
-    },
-    changeAdminRacePage(delta) { },
-    
-    editRace: (raceId) => { 
-        let scores = CT.data.adminScores || []; 
-        const idx = scores.findIndex(s => s.id.toString() === raceId.toString()); 
-        if(idx === -1) return alert("Carrera no encontrada localmente."); 
-        const oldCPM = Number(scores[idx].c); 
-        const newCPM = prompt("Nuevo CPM para esta carrera:", oldCPM); 
-        if(!newCPM || isNaN(newCPM)) return; 
-        const targetCPM = parseInt(newCPM); 
-        
-        scores[idx].c = targetCPM; 
-        UI.renderAdminR();
-
-        db.collection('scores').doc(raceId.toString()).update({ c: targetCPM }); 
-        const u = CT.dbLocal('u').find(u => u.h === scores[idx].h); 
-        if(u) { 
-            let hi = u.hi || []; 
-            const hIdx = hi.indexOf(oldCPM); 
-            if(hIdx !== -1) { hi[hIdx] = targetCPM; db.collection('users').doc(u.h).update({ hi: hi }); } 
-        } 
-    },
-    delRace: (raceId) => { 
-        if(!confirm("¿Seguro que deseas eliminar esta carrera del servidor?")) return; 
-        let scores = CT.data.adminScores || []; 
-        const idx = scores.findIndex(s => s.id.toString() === raceId.toString()); 
-        if(idx === -1) return alert("Carrera no encontrada localmente."); 
-        const raceData = scores[idx]; 
-        
-        scores.splice(idx, 1);
-        UI.renderAdminR();
-
-        db.collection('scores').doc(raceId.toString()).delete(); 
-        const u = CT.dbLocal('u').find(u => u.h === raceData.h); 
-        if(u) { 
-            let hi = u.hi || []; 
-            const hIdx = hi.indexOf(Number(raceData.c)); 
-            if(hIdx !== -1) { hi.splice(hIdx, 1); db.collection('users').doc(u.h).update({ hi: hi }); } 
-        } 
-    },
-
-    renderAdminU() {
-        const query = (document.getElementById('user-search').value || "").toLowerCase(); let filtered = CT.dbLocal('u').filter(u => u.n.toLowerCase().includes(query) || u.h.toLowerCase().includes(query));
-        document.getElementById('admin-users-list').innerHTML = filtered.map((u, i) => `<tr><td><div style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="avatar-xs"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div></td><td>${u.h}</td><td><span class="role-badge">${u.r}</span></td><td><div class="action-buttons"><button onclick="UI.adminEditUserName('${u.h}')" class="btn-outline" style="color:var(--p); border-color:var(--p);">EDITAR</button><button onclick="UI.adminResetUserPic('${u.h}')" class="btn-outline">IMAGEN</button><button onclick="UI.delU('${u.h}')" class="btn-error">ELIMINAR</button></div></td></tr>`).join('');
-    },
-    adminEditUserName: async (handle) => { const u = CT.dbLocal('u').find(x => x.h === handle); if(!u) return; const newName = prompt(`Nuevo nombre visible para ${handle}:`, u.n); if(newName && newName.trim() !== '' && newName.trim() !== u.n) { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); await db.collection('users').doc(handle).update({ n: newName.trim() }); const q = await db.collection('scores').where('h', '==', handle).get(); const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName.trim() }); }); await batch.commit(); } },
-    adminResetUserPic: async (handle) => { if(confirm(`¿Eliminar la foto de perfil de ${handle}?`)) { await db.collection('users').doc(handle).update({ a: '' }); const q = await db.collection('scores').where('h', '==', handle).get(); const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: '' }); }); await batch.commit(); } },
-    delU: (handle) => { if(confirm(`¿Eliminar al usuario ${handle} por completo?`)) { db.collection('users').doc(handle).delete(); }},
 
     showTrackSelect() { document.getElementById('track-search').value = ''; UI.activeTrackCat = null; UI.filterFavs = false; UI.showTrackCategorySelect(); this.show('track-screen'); },
     showTrackCategorySelect() {
@@ -1004,65 +774,6 @@ const App = {
             userDoc.favs = favs;
             db.collection('users').doc(u.h).update({ favs: favs });
         }
-        else if (type === 'categories' || type === 'categories_trn') {
-            let isTrn = type === 'categories_trn';
-            let items = CT.data.c.filter(c => isTrn ? c.name.startsWith('[TRN]') : (!c.name.startsWith('[TRN]') && c.name !== 'General')).sort((a,b) => (a.order || 0) - (b.order || 0));
-
-            let actualOldIdx = domOldIdx;
-            let actualNewIdx = domNewIdx;
-
-            if(actualOldIdx < 0 || actualOldIdx >= items.length || actualNewIdx < 0 || actualNewIdx >= items.length) return;
-
-            const movedData = items[actualOldIdx];
-            items.splice(actualOldIdx, 1);
-            items.splice(actualNewIdx, 0, movedData);
-
-            let prevOrder = actualNewIdx > 0 ? Number(items[actualNewIdx - 1].order || 0) : null;
-            let nextOrder = actualNewIdx < items.length - 1 ? Number(items[actualNewIdx + 1].order || 0) : null;
-
-            let newOrder;
-            if (prevOrder === null && nextOrder === null) newOrder = Date.now();
-            else if (prevOrder === null) newOrder = nextOrder - 1000;
-            else if (nextOrder === null) newOrder = prevOrder + 1000;
-            else newOrder = prevOrder + (nextOrder - prevOrder) / 2;
-
-            movedData.order = newOrder;
-            let catItem = CT.data.c.find(c => c.name === movedData.name);
-            if(catItem) catItem.order = newOrder;
-
-            db.collection('categories').doc(movedData.name).update({order: newOrder});
-        }
-        else if (type === 'phrases' || type === 'phrases_trn') {
-            let isTrn = type === 'phrases_trn';
-            let cat = isTrn ? UI.activeTrnCat : UI.activeAdminCat;
-            if(!cat) return;
-
-            let items = CT.data.p.filter(t => (t.c || 'General').trim() === cat.trim()).sort((a,b) => (a.order || 0) - (b.order || 0));
-
-            let actualOldIdx = (pageContext * 20) + domOldIdx;
-            let actualNewIdx = (pageContext * 20) + domNewIdx;
-
-            if(actualOldIdx < 0 || actualOldIdx >= items.length || actualNewIdx < 0 || actualNewIdx >= items.length) return;
-
-            const movedData = items[actualOldIdx];
-            items.splice(actualOldIdx, 1);
-            items.splice(actualNewIdx, 0, movedData);
-
-            let prevOrder = actualNewIdx > 0 ? Number(items[actualNewIdx - 1].order || 0) : null;
-            let nextOrder = actualNewIdx < items.length - 1 ? Number(items[actualNewIdx + 1].order || 0) : null;
-
-            let newOrder;
-            if (prevOrder === null && nextOrder === null) newOrder = Date.now();
-            else if (prevOrder === null) newOrder = nextOrder - 1000;
-            else if (nextOrder === null) newOrder = prevOrder + 1000;
-            else newOrder = prevOrder + (nextOrder - prevOrder) / 2;
-
-            movedData.order = newOrder;
-            let tItem = CT.data.p.find(p => p.id === movedData.id);
-            if(tItem) tItem.order = newOrder;
-
-            db.collection('phrases').doc(movedData.id.toString()).update({order: newOrder});
-        }
     },
 
     loadDashboardData: async () => {
@@ -1094,22 +805,6 @@ const App = {
             CT.data.userScores[handle] = scores;
             return scores;
         } catch(e) { return []; }
-    },
-
-    loadAdminRaces: async (queryStr = "") => {
-        try {
-            let req;
-            if(queryStr && queryStr.startsWith('@')) {
-                req = await db.collection('scores').where('h', '==', queryStr.toLowerCase()).limit(100).get();
-                let res = req.docs.map(d=>d.data());
-                res.sort((a,b) => b.id - a.id);
-                CT.data.adminScores = res.slice(0, 50);
-            } else {
-                req = await db.collection('scores').orderBy('id', 'desc').limit(50).get();
-                CT.data.adminScores = req.docs.map(d => d.data());
-            }
-            UI.renderAdminR();
-        } catch(e) { console.error(e); }
     },
     
     startRandomRace: () => { 
@@ -1189,11 +884,6 @@ const App = {
         UI.renderTrackList(); 
     },
 
-    toggleFeature: (feat) => {
-        const current = CT.data.maint ? CT.data.maint[feat] !== false : true;
-        db.collection('config').doc('maintenance').set({ [feat]: !current }, {merge: true});
-    },
-
     saveTheme: (themeName) => {
         let themeObj;
         if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
@@ -1211,20 +901,6 @@ const App = {
         UI.applySavedTheme(); UI.closeThemeModal();
     },
 
-    saveInfoPage: () => {
-        const title = document.getElementById('info-title-input').value.trim();
-        const content = document.getElementById('info-msg-input').innerHTML.trim();
-        if(!title || !content) return alert("Rellena todos los campos.");
-        db.collection('config').doc('info_page').set({ title, content }).then(() => alert("Información guardada."));
-    },
-
-    saveShortcuts: () => {
-        const restart = document.getElementById('sc-restart').value;
-        const next = document.getElementById('sc-next').value;
-        const quit = document.getElementById('sc-quit').value;
-        db.collection('config').doc('shortcuts').set({ restart, next, quit }).then(() => alert("Atajos guardados."));
-    },
-    
     listenShortcutInput: (e, id) => { e.preventDefault(); document.getElementById(id).value = e.key; },
 
     handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(ipcRenderer) ipcRenderer.send('apply-update'); } },
@@ -1244,68 +920,6 @@ const App = {
             location.reload();
         }
     },
-
-    toggleMaintenance: () => { const current = CT.data.maint ? CT.data.maint.active : false; const next = !current; const confirmMsg = next ? "⚠️ ¿Seguro que deseas ACTIVAR el mantenimiento? Todos los usuarios no administradores serán expulsados." : "✅ ¿Seguro que deseas DESACTIVAR el mantenimiento? La web volverá a ser pública."; if(confirm(confirmMsg)) { db.collection('config').doc('maintenance').update({ active: next }).catch(e => alert("Error al cambiar estado.")); } },
-    saveMaintenanceInfo: () => { const icon = document.getElementById('maint-icon-input').value; const title = document.getElementById('maint-title-input').value.trim(); const msg = document.getElementById('maint-msg-input').value.trim(); if(!title || !msg) return alert("Completa los datos del cartel de mantenimiento."); db.collection('config').doc('maintenance').update({ icon, title, msg }).then(() => alert("Cartel de mantenimiento actualizado con éxito.")).catch(() => alert("Error al guardar el cartel.")); },
-
-    publishAnnouncement: async () => { const title = document.getElementById('ann-title').value.trim(); const msg = document.getElementById('ann-msg').innerHTML.trim(); const icon = document.getElementById('ann-icon').value; if(!title || !msg || msg === '<br>') return alert("Rellena el título y el mensaje del anuncio."); if(confirm("¿Seguro que deseas lanzar este Pop-Up a todos los jugadores?")) { const annId = Date.now().toString(); const timeStr = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit', timeZone: 'America/Argentina/Buenos_Aires'}); const dateStr = CT.getARDate() + " - " + timeStr; try { const activeDocs = await db.collection('announcements').where('active', '==', true).get(); const batch = db.batch(); activeDocs.forEach(d => { batch.update(d.ref, { active: false }); }); const newAnn = { id: annId, title: title, msg: msg, icon: icon, date: dateStr, active: true }; batch.set(db.collection('announcements').doc(annId), newAnn); await batch.commit(); alert("Anuncio publicado con éxito."); document.getElementById('ann-title').value = ''; document.getElementById('ann-msg').innerHTML = ''; } catch(e) { alert("Error al publicar el anuncio."); console.error(e); } } },
-    cancelAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas anular este anuncio? Dejará de aparecerle a los nuevos usuarios.")) { try { await db.collection('announcements').doc(idStr.toString()).update({ active: false }); } catch(e) { alert("Error al anular anuncio."); } } },
-    deleteAnnouncement: async (idStr) => { if(confirm("¿Seguro que deseas eliminar permanentemente este anuncio del historial?")) { try { await db.collection('announcements').doc(idStr.toString()).delete(); } catch(e) { alert("Error al eliminar anuncio."); } } },
-    
-    editUIText: async (key) => { 
-        if(!CT.data.ui || !CT.data.ui[key]) return; 
-        const currentVal = CT.data.ui[key].v; 
-        const newVal = prompt(`Editar [${CT.data.ui[key].l}]:`, currentVal); 
-        if(newVal && newVal.trim() !== currentVal) { 
-            try {
-                await db.collection('config').doc('ui_texts').set({ 
-                    [key]: { l: CT.data.ui[key].l, v: newVal.trim() } 
-                }, { merge: true });
-            } catch(e) {
-                alert("Error al conectar con la base de datos: " + e.message);
-            }
-        } 
-    },
-
-    createNewCategory: () => { const nameInp = document.getElementById('new-cat-name'); const catName = nameInp.value.trim(); if(!catName) return alert("Falta el nombre de la categoría."); db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); CT.data.c.push({name: catName, order: Date.now()}); UI.updateCategorySelects(); nameInp.value = ''; UI.toggleCreateForm('text'); },
-    
-    deleteCategory: () => { 
-        const sel = document.getElementById('delete-cat-select'); 
-        const catName = sel.value; 
-        if(!catName) return; 
-        if(catName === 'General') return alert("No puedes eliminar la categoría predeterminada 'General'."); 
-        if(confirm(`¿Seguro que deseas eliminar la categoría "${catName}"? Los textos dentro de ella pasarán a "General".`)) { 
-            CT.data.c = CT.data.c.filter(c => c.name !== catName);
-            let pList = CT.data.p; 
-            pList.forEach(p => { 
-                if (p.c === catName) { 
-                    p.c = 'General'; 
-                    db.collection('phrases').doc(p.id.toString()).update({c: 'General'}); 
-                } 
-            }); 
-            UI.updateCategorySelects();
-            UI.showAdminPhraseCategories();
-            db.collection('categories').doc(catName).delete(); 
-        } 
-    },
-    
-    createNewPhrase: () => { const titleInp = document.getElementById('new-phrase-title'); const catInp = document.getElementById('new-phrase-category'); const textInp = document.getElementById('new-phrase-input'); if(!titleInp.value.trim() || !textInp.value.trim()) return alert("Faltan datos del texto."); const idStr = titleInp.value.trim(); const catValue = catInp.value.trim() || 'General'; const newPhrase = { id: Number(idStr) || Date.now(), title: idStr, c: catValue, text: textInp.value.trim(), order: Date.now() }; db.collection('phrases').doc(idStr).set(newPhrase); CT.data.p.push(newPhrase); UI.renderAdminP(); titleInp.value = ''; textInp.value = ''; },
-
-    createTrnCategory: () => { const nameInp = document.getElementById('trn-new-cat-name'); const baseName = nameInp.value.trim(); if(!baseName) return alert("Falta el nombre."); const catName = `[TRN] ${baseName}`; db.collection('categories').doc(catName).set({ name: catName, order: Date.now() }); CT.data.c.push({name: catName, order: Date.now()}); UI.updateCategorySelects(); UI.renderAdminTrn(); nameInp.value = ''; },
-    
-    deleteTrnCategory: () => { 
-        const sel = document.getElementById('trn-delete-cat-select'); 
-        const catName = sel.value; 
-        if(!catName) return; 
-        if(confirm(`¿Eliminar modalidad "${catName}"?`)) { 
-            CT.data.c = CT.data.c.filter(c => c.name !== catName);
-            UI.updateCategorySelects();
-            UI.showAdminTrnCategories();
-            db.collection('categories').doc(catName).delete(); 
-        } 
-    },
-    
-    createTrnPhrase: () => { const titleInp = document.getElementById('trn-new-title'); const catInp = document.getElementById('trn-new-cat'); const textInp = document.getElementById('trn-new-input'); if(!titleInp.value.trim() || !textInp.value.trim()) return alert("Faltan datos."); const idStr = titleInp.value.trim(); const catValue = catInp.value.trim() || '[TRN] Pistas Extremas'; const newPhrase = { id: Number(idStr) || Date.now(), title: idStr, c: catValue, text: textInp.value.trim(), order: Date.now() }; db.collection('phrases').doc(idStr).set(newPhrase); CT.data.p.push(newPhrase); UI.renderAdminTrn(); titleInp.value = ''; textInp.value = ''; },
 
     editDisplayName: () => { const u = CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); db.collection('users').doc(u.h).update({ n: newName }); db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     
@@ -1366,28 +980,6 @@ const App = {
     },
 
     register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await db.collection('users').doc(handle).set(newUser); UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
-    
-    savePhrase: () => { 
-        const catInp = document.getElementById('phrase-category'); 
-        const textInp = document.getElementById('phrase-input'); 
-        if(!textInp.value) return alert("Faltan datos"); 
-        if(CT.editIdx !== null) { 
-            const idStr = CT.editIdx;
-            const catValue = catInp.value.trim() || 'General'; 
-            const newText = textInp.value.trim();
-
-            let track = CT.data.p.find(t => t.id.toString() === idStr);
-            if(track) {
-                track.c = catValue;
-                track.text = newText;
-            }
-            UI.renderAdminP();
-            UI.renderAdminTrn();
-
-            db.collection('phrases').doc(idStr).update({ c: catValue, text: newText }); 
-            UI.cancelEditP(); 
-        } 
-    },
     
     logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
 
