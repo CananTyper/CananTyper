@@ -2,12 +2,12 @@
     CANANTYPER - GESTIÓN DE ESTADO (STATE)
    ================================================================ */
 
-const CT = {
+window.CT = {
     data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {} }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    dbLocal: (k) => CT.data[k] || [], 
+    dbLocal: (k) => window.CT.data[k] || [], 
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
@@ -16,7 +16,7 @@ const CT = {
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
         this.fastMode = localStorage.getItem('ct_fast_mode') === 'true';
-        UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
+        window.UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
 
         const cU = localStorage.getItem('ct_cache_u'); 
         const cP = localStorage.getItem('ct_cache_p'); const cC = localStorage.getItem('ct_cache_c');
@@ -24,65 +24,65 @@ const CT = {
         
         if(cU) this.data.u = JSON.parse(cU); 
         if(cP) this.data.p = JSON.parse(cP); if(cC) this.data.c = JSON.parse(cC);
-        if(cUi) { this.data.ui = JSON.parse(cUi); UI.applyUITexts(); }
+        if(cUi) { this.data.ui = JSON.parse(cUi); window.UI.applyUITexts(); }
 
-        UI.updateUnitVisuals(this.currentUnit);
-        UI.updateFastModeVisuals();
-        UI.applySavedTheme();
+        window.UI.updateUnitVisuals(this.currentUnit);
+        window.UI.updateFastModeVisuals();
+        window.UI.applySavedTheme();
         
-        setTimeout(() => { if(UI.setLayout) UI.setLayout(UI.listLayout); }, 100);
+        setTimeout(() => { if(window.UI.setLayout) window.UI.setLayout(window.UI.listLayout); }, 100);
         
-        if (!isDesktopEnv) {
+        if (!window.isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
             if (dlBtn) dlBtn.classList.remove('hidden');
         }
 
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-            if (!App.activeEngine) return;
-            const sc = CT.data.shortcuts || { restart: 'Tab', next: 'Enter', quit: 'Escape' };
-            if (e.key === sc.restart) { e.preventDefault(); App.retryRace(); }
-            else if (e.key === sc.next) { e.preventDefault(); App.nextRace(); }
-            else if (e.key === sc.quit) { e.preventDefault(); App.quitRace(); }
+            if (!window.App.activeEngine) return;
+            const sc = window.CT.data.shortcuts || { restart: 'Tab', next: 'Enter', quit: 'Escape' };
+            if (e.key === sc.restart) { e.preventDefault(); window.App.retryRace(); }
+            else if (e.key === sc.next) { e.preventDefault(); window.App.nextRace(); }
+            else if (e.key === sc.quit) { e.preventDefault(); window.App.quitRace(); }
         });
         
-        db.collection('config').doc('maintenance').onSnapshot(snap => {
+        window.db.collection('config').doc('maintenance').onSnapshot(snap => {
             if(snap.exists) { this.data.maint = snap.data(); } else {
                 this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Actualizando.', info: true, theme: true };
-                if(this.ses() && this.ses().r === 'admin') db.collection('config').doc('maintenance').set(this.data.maint);
+                if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('maintenance').set(this.data.maint);
             }
-            UI.checkMaintenance();
+            window.UI.checkMaintenance();
         });
 
-        db.collection('config').doc('info_page').onSnapshot(snap => {
+        window.db.collection('config').doc('info_page').onSnapshot(snap => {
             if(snap.exists) { this.data.info = snap.data(); } else { this.data.info = { title: "Información", content: "Bienvenido a CananTyper." }; }
-            UI.renderInfoPage();
+            window.UI.renderInfoPage();
         });
 
-        db.collection('config').doc('shortcuts').onSnapshot(snap => {
+        window.db.collection('config').doc('shortcuts').onSnapshot(snap => {
             if(snap.exists) { this.data.shortcuts = snap.data(); } else { this.data.shortcuts = { restart: 'Tab', next: 'Enter', quit: 'Escape' }; }
         });
 
-        if(this.ses()) { UI.initLobby(); } 
-        else { UI.show('auth-screen'); updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
+        if(this.ses()) { window.UI.initLobby(); } 
+        else { window.UI.show('auth-screen'); window.updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
 
-        db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); UI.refreshActiveViews(); });
+        window.db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); window.UI.refreshActiveViews(); });
         
-        App.loadDashboardData();
+        window.App.loadDashboardData();
 
-        db.collection('phrases').onSnapshot(snap => { 
+        window.db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
-            if(this.data.p.length === 0) { db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: Date.now() }); }
-            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); UI.refreshActiveViews(); 
+            if(this.data.p.length === 0) { window.db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: Date.now() }); }
+            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); window.UI.refreshActiveViews(); 
         });
-        db.collection('categories').onSnapshot(snap => { 
+        window.db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
-            if(this.data.c.length === 0) { db.collection('categories').doc("General").set({name: "General", order: Date.now()}); }
-            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); UI.updateCategorySelects(); UI.renderTrainDropdown(); UI.refreshActiveViews(); 
+            if(this.data.c.length === 0) { window.db.collection('categories').doc("General").set({name: "General", order: Date.now()}); }
+            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); window.UI.updateCategorySelects(); window.UI.renderTrainDropdown(); window.UI.refreshActiveViews(); 
         });
-        db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); UI.checkAnnouncements(); UI.refreshActiveViews(); });
+        window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); window.UI.checkAnnouncements(); window.UI.refreshActiveViews(); });
 
-        db.collection('config').doc('ui_texts').onSnapshot(snap => {
+        window.db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
                 't_auth_title': { l: 'Título', v: 'CananTyper' }, 't_auth_sub': { l: 'Subtítulo', v: 'Mecanografía' },
                 't_btn_login': { l: 'Login', v: 'Iniciar sesión' }, 't_btn_register': { l: 'Registro', v: 'CREAR CUENTA' },
@@ -168,23 +168,23 @@ const CT = {
                 't_nav_logout_tt': { l: 'Nav Logout Tooltip', v: 'Cerrar Sesión' }, 't_nav_settings_tt': { l: 'Nav Settings Tooltip', v: 'Ajustes' }
             };
             
-            if (!snap.exists && CT.data.ui && Object.keys(CT.data.ui).length > 0) return;
+            if (!snap.exists && window.CT.data.ui && Object.keys(window.CT.data.ui).length > 0) return;
 
-            CT.data.ui = CT.data.ui || {};
+            window.CT.data.ui = window.CT.data.ui || {};
             const snapData = snap.exists ? snap.data() : {};
             
             Object.keys(defaults).forEach(k => {
                 if (snapData[k] && typeof snapData[k] === 'object' && snapData[k].v !== undefined) {
-                    CT.data.ui[k] = { l: snapData[k].l || defaults[k].l, v: snapData[k].v };
+                    window.CT.data.ui[k] = { l: snapData[k].l || defaults[k].l, v: snapData[k].v };
                 } else if (typeof snapData[k] === 'string') {
-                    CT.data.ui[k] = { l: defaults[k].l, v: snapData[k] };
+                    window.CT.data.ui[k] = { l: defaults[k].l, v: snapData[k] };
                 } else {
-                    CT.data.ui[k] = { l: defaults[k].l, v: defaults[k].v };
+                    window.CT.data.ui[k] = { l: defaults[k].l, v: defaults[k].v };
                 }
             });
-            localStorage.setItem('ct_cache_ui', JSON.stringify(CT.data.ui));
-            UI.applyUITexts(); UI.refreshActiveViews();
+            localStorage.setItem('ct_cache_ui', JSON.stringify(window.CT.data.ui));
+            window.UI.applyUITexts(); window.UI.refreshActiveViews();
         });
     },
-    ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (CT.data.u || []).find(x => x.h === s.h) : null; }
+    ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (window.CT.data.u || []).find(x => x.h === s.h) : null; }
 };
