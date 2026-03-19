@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.15">
+    <link rel="stylesheet" href="style.css?v=1.1.16">
     <style>
-        /* Estilos inyectados para el Drag & Drop (SortableJS) */
         .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
     </style>
@@ -75,7 +74,7 @@
                             <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.15 
+                                CananTyper v1.1.16
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -149,52 +148,52 @@
         </section>
 
         <section id="stats-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
-                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
-                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
+            <div class="stats-top-bar">
+                <div class="stats-header-title">
+                    <h2 id="t_hd_stats">Estadísticas</h2>
+                    <span class="online-dot" style="margin-left:15px; width: 6px; height: 6px; box-shadow: 0 0 10px var(--p); background: var(--p);"></span>
                 </div>
-                <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
-            <div class="admin-tabs">
-                <button id="t-st-pe" class="tab-btn active" onclick="window.UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Personales</span></button>
-                <button id="t-st-ge" class="tab-btn" onclick="window.UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
-                <button id="t-st-el" class="tab-btn" onclick="window.UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
-                <button id="t-st-hc" class="tab-btn" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Hardcore 💀</span></button>
+                <div class="stats-tabs">
+                    <button id="t-st-pe" class="stats-tab-btn active" onclick="window.UI.switchStatsTab('personal')">Individuales</button>
+                    <button id="t-st-ra" class="stats-tab-btn" onclick="window.UI.switchStatsTab('ranking')">Ranking</button>
+                    <button id="t-st-hc" class="stats-tab-btn hc-tab" onclick="window.UI.switchStatsTab('hc')">Hardcore 💀</button>
+                </div>
+                <button onclick="window.UI.showLobby()" class="btn-outline" style="font-size: 0.7rem; padding: 6px 15px;">VOLVER</button>
             </div>
             
-            <div class="admin-content-area" style="padding: 15px; display: flex; flex-direction: column;">
-                <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+            <div class="stats-dashboard-area custom-scroll">
+                
+                <div id="pane-stats-personal" class="pane">
+                    <div class="profile-stats" style="margin-bottom: 20px; flex-shrink: 0;">
+                        <div class="tech-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="tech-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="tech-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-size:1.3rem;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="tech-card stat-highlight" style="border-color: color-mix(in srgb, var(--p) 50%, transparent); box-shadow: inset 0 0 15px color-mix(in srgb, var(--p) 10%, transparent);"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
                     </div>
                     
-                    <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px; border-color: var(--error);">
-                        <div class="table-header" style="justify-content: center; margin-bottom: 10px;">
+                    <div class="tech-card tech-card-hc" style="margin-bottom: 20px; flex-shrink: 0; padding:20px;">
+                        <div class="table-header" style="justify-content: center; margin-bottom: 10px; border-bottom: none;">
                             <div style="text-align:center;">
-                                <h3 id="t_st_p_heat" style="margin-bottom:2px; color: var(--error);">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
+                                <h3 id="t_st_p_heat" style="margin-bottom:2px; color: var(--error); font-size:0.9rem; letter-spacing:1px;">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
                             </div>
                         </div>
-                        <div style="display:flex; justify-content:center; align-items:center; gap:20px; width:100%;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:25px; width:100%;">
                             <div class="keyboard-container" style="padding:0;">
                                 <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                                 <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                 <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
                             </div>
-                            <div class="heatmap-legend" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding-left:20px; border-left:1px solid color-mix(in srgb, var(--error) 30%, transparent);">
+                            <div class="heatmap-legend" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding-left:25px; border-left:1px solid color-mix(in srgb, var(--error) 20%, transparent);">
                                 <small style="color:var(--error); font-weight:bold; font-size:0.65rem;">+ Errores</small>
-                                <div style="width:12px; height:80px; background:linear-gradient(to bottom, var(--error), color-mix(in srgb, var(--error) 10%, transparent)); border-radius:6px; margin:5px 0;"></div>
+                                <div style="width:8px; height:80px; background:linear-gradient(to bottom, var(--error), color-mix(in srgb, var(--error) 5%, transparent)); border-radius:4px; margin:8px 0; box-shadow: 0 0 10px color-mix(in srgb, var(--error) 30%, transparent);"></div>
                                 <small style="color:var(--text-muted); font-weight:bold; font-size:0.65rem;">0 Errores</small>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 200px;">
-                        <div class="table-box" style="margin: 0; padding: 15px;">
-                            <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; flex-grow: 1; min-height: 250px;">
+                        <div class="tech-card" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 id="t_st_box_top10" style="font-size:0.8rem; letter-spacing:0.5px;">Mejores Carreras (TOP 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper">
                                 <table class="data-table">
                                     <thead><tr><th width="15%" id="t_lbl_st_top10_num">N°</th><th id="t_lbl_st_top10_txt">Texto</th><th width="25%" id="th_st_p_top10_vel">VEL.</th></tr></thead>
@@ -202,53 +201,81 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_st_box_w_trk" style="color: var(--error) !important;">Textos a Mejorar (Bottom 5)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Texto</th><th id="th_st_p_avg" style="color: var(--error);">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
+                        <div class="tech-card tech-card-hc" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 id="t_st_box_w_trk" style="color: var(--error) !important; font-size:0.8rem; letter-spacing:0.5px;">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper">
+                                <table class="data-table table-strict-error">
+                                    <thead><tr><th>#</th><th>Texto</th><th id="th_st_p_avg">PROM.</th></tr></thead>
+                                    <tbody id="st-p-worst-tracks"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_st_box_w_wrd" style="color: var(--error) !important;">Palabras Críticas (Top 30)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Palabra</th><th id="th_st_p_err" style="color: var(--error);">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
+                        <div class="tech-card tech-card-hc" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 id="t_st_box_w_wrd" style="color: var(--error) !important; font-size:0.8rem; letter-spacing:0.5px;">Palabras Críticas (Top 30)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper">
+                                <table class="data-table table-strict-error">
+                                    <thead><tr><th>#</th><th>Palabra</th><th id="th_st_p_err">ERRORES</th></tr></thead>
+                                    <tbody id="st-p-worst-words"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="pane-stats-general" class="pane hidden">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_st_g_users">USUARIOS REGISTRADOS</small><b id="st-g-users-val">0</b></div>
-                        <div class="stat-card"><small id="t_st_g_races">CARRERAS GLOBALES</small><b id="st-g-races-val">0</b></div>
-                        <div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg" class="val-blurrable">0</b></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD DE VELOCIDAD</small><b id="st-g-record" class="val-blurrable">0</b></div>
+                <div id="pane-stats-ranking" class="pane hidden">
+                    <div class="profile-stats" style="margin-bottom: 20px; flex-shrink: 0;">
+                        <div class="tech-card"><small id="t_st_e_most">MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="tech-card"><small id="t_st_e_top1">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="tech-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="tech-card stat-highlight" style="border-color: color-mix(in srgb, var(--p) 50%, transparent); box-shadow: inset 0 0 15px color-mix(in srgb, var(--p) 10%, transparent);"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.75rem; font-weight:bold; display:block;">-</span></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_st_g_top_txt">Textos Más Jugados (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Texto</th><th>Veces Jugado</th></tr></thead><tbody id="st-g-top-texts"></tbody></table></div></div>
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_st_g_top_cat">Categorías Más Jugadas (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Categoría</th><th>Veces Jugada</th></tr></thead><tbody id="st-g-top-cats"></tbody></table></div></div>
-                    </div>
-                </div>
-
-                <div id="pane-stats-elite" class="pane hidden">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;"><div class="stat-card"><small id="t_st_e_most">MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="t_st_e_top1">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div></div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Textos</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead><tbody id="st-e-table-texts"></tbody></table></div></div>
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Categorías</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead><tbody id="st-e-table-cats"></tbody></table></div></div>
-                    </div>
-                </div>
-
-                <div id="pane-stats-hc" class="pane hidden table-strict-error">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE</small><b id="st-hc-record" style="color: var(--error);">0</b></div>
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_surv" style="color: var(--error);">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv" style="color: var(--error);">0</b></div>
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_death" style="color: var(--error);">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="color: var(--error);">0</b></div>
-                        <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate" style="color: var(--error);">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="color: var(--error);">0%</b></div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_hc_box_surv" style="color: var(--error) !important;">Mejores Sobrevividas (Top 10)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; min-height: 0;">
+                        <div class="tech-card" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 style="font-size:0.8rem; letter-spacing:0.5px;">Máxima Velocidad en Top Textos</h3></div>
+                            <div class="custom-scroll table-body-wrapper">
+                                <table class="data-table">
+                                    <thead><tr><th width="15%">N°</th><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead>
+                                    <tbody id="st-e-table-texts"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_hc_box_dead" style="color: var(--error) !important;">Pistas más Mortales (Top 10)</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div>
+                        <div class="tech-card" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 style="font-size:0.8rem; letter-spacing:0.5px;">Máxima Velocidad en Top Categorías</h3></div>
+                            <div class="custom-scroll table-body-wrapper">
+                                <table class="data-table">
+                                    <thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead>
+                                    <tbody id="st-e-table-cats"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pane-stats-hc" class="pane hidden">
+                    <div class="profile-stats" style="margin-bottom: 20px; flex-shrink: 0;">
+                        <div class="tech-card tech-card-hc"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE</small><b id="st-hc-record" style="color: var(--error);">0</b></div>
+                        <div class="tech-card tech-card-hc"><small id="t_lbl_hc_surv" style="color: var(--error);">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv" style="color: var(--error);">0</b></div>
+                        <div class="tech-card tech-card-hc"><small id="t_lbl_hc_death" style="color: var(--error);">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="color: var(--error);">0</b></div>
+                        <div class="tech-card tech-card-hc stat-highlight" style="border-color: color-mix(in srgb, var(--error) 50%, transparent); box-shadow: inset 0 0 15px color-mix(in srgb, var(--error) 10%, transparent);"><small id="t_lbl_hc_rate" style="color: var(--error);">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="color: var(--error);">0%</b></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; min-height: 0;">
+                        <div class="tech-card tech-card-hc" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 id="t_hc_box_surv" style="color: var(--error) !important; font-size:0.8rem; letter-spacing:0.5px;">Mejores Sobrevividas (Top 10)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper">
+                                <table class="data-table table-strict-error">
+                                    <thead><tr><th width="15%">N°</th><th>Texto</th><th>VEL.</th></tr></thead>
+                                    <tbody id="st-hc-top10"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tech-card tech-card-hc" style="padding: 15px; display:flex; flex-direction:column;">
+                            <div class="table-header" style="margin-bottom:10px;"><h3 id="t_hc_box_dead" style="color: var(--error) !important; font-size:0.8rem; letter-spacing:0.5px;">Pistas más Mortales (Top 10)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper">
+                                <table class="data-table table-strict-error">
+                                    <thead><tr><th width="15%">N°</th><th>Texto</th><th>MUERTES</th></tr></thead>
+                                    <tbody id="st-hc-worst"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
