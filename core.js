@@ -1,7 +1,5 @@
 /* ================================================================
-   CANANTYPER - CORE SCRIPT (V2.0)
-   Maneja Autenticación, Firebase, Discord RPC y Estado del Jugador.
-   (Libre de código administrativo - Cliente Puro)
+   CANANTYPER - CORE SCRIPT (V2.2)
    ================================================================ */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -31,12 +29,12 @@ const db = firebase.firestore();
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
 const CT = {
-    data: { u: null, p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: [], s_recent: [], userScores: {} }, 
+    data: { u: null, p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: [], s_recent: [], userScores: {}, eliteUsers: [] }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, activeProfHandle: null, fastMode: false,
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    ses: () => { return CT.data.u; }, // Ahora ses() devuelve directamente el usuario en memoria
+    ses: () => { return CT.data.u; }, 
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
@@ -57,7 +55,6 @@ const CT = {
             if (dlBtn) dlBtn.classList.remove('hidden');
         }
         
-        // Listeners Globales (Órdenes de CananStudio)
         db.collection('config').doc('maintenance').onSnapshot(snap => {
             this.data.maint = snap.exists ? snap.data() : { active: false, info: true, theme: true };
             if(typeof UI !== 'undefined') UI.checkMaintenance();
@@ -97,30 +94,22 @@ const CT = {
             }
         });
 
-        // Verificación de Sesión
         const session = JSON.parse(localStorage.getItem('ct_ses'));
         if(session && session.h) {
-            // SOLO DESCARGAMOS EL DOCUMENTO DEL JUGADOR ACTUAL (Ahorro Masivo de Cuota)
+            // Documento Personal
             db.collection('users').doc(session.h).onSnapshot(doc => {
                 if(doc.exists) {
                     CT.data.u = doc.data();
                     localStorage.setItem('ct_cache_me', JSON.stringify(CT.data.u));
                     if(typeof UI !== 'undefined') {
-                        if(document.getElementById('auth-screen') && !document.getElementById('auth-screen').classList.contains('hidden')) {
-                            UI.initLobby();
-                        }
+                        if(document.getElementById('auth-screen') && !document.getElementById('auth-screen').classList.contains('hidden')) { UI.initLobby(); }
                         UI.refreshActiveViews();
                     }
-                } else {
-                    Auth.logout(); // Si el documento no existe (fue borrado por admin)
-                }
+                } else { Auth.logout(); }
             });
-            App.loadDashboardData();
+            App.loadLeaderboards();
         } else {
-            if(typeof UI !== 'undefined') {
-                UI.show('auth-screen'); 
-                updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false);
-            }
+            if(typeof UI !== 'undefined') { UI.show('auth-screen'); updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
         }
     }
 };
@@ -140,9 +129,10 @@ const Auth = {
         try { 
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists && docRef.data().p === p) { 
+                if(docRef.data().sb === true) console.warn("Shadowban flag detected.");
                 localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                 CT.data.u = docRef.data();
-                location.reload(); // Recargar para enganchar el onSnapshot del Core
+                location.reload(); 
             } else { 
                 alert("Usuario o contraseña incorrectos"); 
                 btn.innerText = originalText; btn.disabled = false;
@@ -167,7 +157,7 @@ const Auth = {
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists) return alert("Ese usuario ya está en uso"); 
             const role = 'usuario'; 
-            const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [], sb: false }; 
+            const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [], sb: false, hc_deaths: 0, hc_track_deaths: {} }; 
             await db.collection('users').doc(handle).set(newUser); 
             UI.toggleAuth(true); 
             alert("Cuenta creada con éxito."); 
@@ -190,19 +180,23 @@ const Auth = {
 };
 
 const App = {
-    loadDashboardData: async () => {
+    // Descarga la élite para el Salón de la Fama
+    loadLeaderboards: async () => {
         try {
-            const topReq = await db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
+            // Bajamos los 50 perfiles con más carreras para el Élite Stats (sin tocar a los sb=true)
+            const eliteReq = await db.collection('users').where('sb', '==', false).limit(50).get();
+            CT.data.eliteUsers = eliteReq.docs.map(d => d.data());
+        } catch(e) { CT.data.eliteUsers = []; }
+
+        try {
+            const topReq = await db.collection('scores').where('hc', '==', false).where('sb', '==', false).orderBy('c', 'desc').limit(50).get();
             CT.data.s_top = topReq.docs.map(d => d.data());
-        } catch(e) {
-            try {
-                const topReqFb = await db.collection('scores').orderBy('c', 'desc').limit(50).get();
-                CT.data.s_top = topReqFb.docs.map(d => d.data()).filter(x => !x.hc);
-            } catch(err) { CT.data.s_top = []; }
-        }
+        } catch(e) { CT.data.s_top = []; }
         
         try {
-            const recReq = await db.collection('scores').orderBy('id', 'desc').limit(100).get();
+            const todayAR = CT.getARDate();
+            // Bajamos las de hoy para el "Vivo"
+            const recReq = await db.collection('scores').where('d', '==', todayAR).where('sb', '==', false).orderBy('id', 'desc').limit(50).get();
             CT.data.s_recent = recReq.docs.map(d => d.data());
         } catch(e) { CT.data.s_recent = []; }
         
@@ -227,8 +221,6 @@ const App = {
         if(newName && newName.trim() !== '') { 
             if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); 
             db.collection('users').doc(u.h).update({ n: newName }); 
-            
-            // Actualizar nombre en carreras en segundo plano
             db.collection('scores').where('h', '==', u.h).get().then(q => { 
                 const batch = db.batch(); 
                 q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); 
@@ -244,19 +236,6 @@ const App = {
         else { favs.push(idStr.toString()); }
         db.collection('users').doc(u.h).update({ favs: favs });
         setTimeout(() => { if(typeof UI !== 'undefined') UI.renderTrackList(); }, 200); 
-    },
-
-    toggleFullscreen: () => { 
-        if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } 
-        else { if (document.exitFullscreen) document.exitFullscreen(); } 
-        if(typeof UI !== 'undefined') UI.toggleSettings(); 
-    },
-    
-    downloadSetup: () => {
-        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
-        const link = document.createElement('a'); link.href = directUrl; link.download = 'CananTyper_Setup.exe';
-        document.body.appendChild(link); link.click(); document.body.removeChild(link); 
-        if(typeof UI !== 'undefined') UI.toggleSettings();
     },
 
     handleUpdateClick: () => { 
