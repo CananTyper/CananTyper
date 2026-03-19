@@ -1,5 +1,6 @@
 /* ================================================================
-   CANANTYPER - CORE SCRIPT (V2.2)
+   CANANTYPER - CORE SCRIPT (V3.0)
+   Maneja Autenticación, Firebase, Discord RPC y Estado del Jugador.
    ================================================================ */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -29,7 +30,7 @@ const db = firebase.firestore();
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
 const CT = {
-    data: { u: null, p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: [], s_recent: [], userScores: {}, eliteUsers: [] }, 
+    data: { u: null, p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: [], s_recent: [], userScores: {}, eliteUsers: [], statsLayout: [] }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, activeProfHandle: null, fastMode: false,
     
@@ -69,6 +70,16 @@ const CT = {
             this.data.shortcuts = snap.exists ? snap.data() : { restart: 'Tab', next: 'Enter', quit: 'Escape' };
         });
 
+        // NUEVO: Escuchador del Layout Global de Estadísticas (dictado por Admins)
+        db.collection('config').doc('stats_layout').onSnapshot(snap => {
+            if(snap.exists && snap.data().layout) {
+                CT.data.statsLayout = snap.data().layout;
+            } else {
+                CT.data.statsLayout = [];
+            }
+            if(typeof UI !== 'undefined' && UI.applyStatsLayout) UI.applyStatsLayout();
+        });
+
         db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
             localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); 
@@ -101,6 +112,11 @@ const CT = {
                 if(doc.exists) {
                     CT.data.u = doc.data();
                     localStorage.setItem('ct_cache_me', JSON.stringify(CT.data.u));
+                    
+                    // Inyectar clase de administrador globalmente para el CSS
+                    if (CT.data.u.r === 'admin') document.body.classList.add('is-admin');
+                    else document.body.classList.remove('is-admin');
+
                     if(typeof UI !== 'undefined') {
                         if(document.getElementById('auth-screen') && !document.getElementById('auth-screen').classList.contains('hidden')) { UI.initLobby(); }
                         UI.refreshActiveViews();
@@ -109,6 +125,7 @@ const CT = {
             });
             App.loadLeaderboards();
         } else {
+            document.body.classList.remove('is-admin');
             if(typeof UI !== 'undefined') { UI.show('auth-screen'); updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
         }
     }
@@ -180,10 +197,8 @@ const Auth = {
 };
 
 const App = {
-    // Descarga la élite para el Salón de la Fama
     loadLeaderboards: async () => {
         try {
-            // Bajamos los 50 perfiles con más carreras para el Élite Stats (sin tocar a los sb=true)
             const eliteReq = await db.collection('users').where('sb', '==', false).limit(50).get();
             CT.data.eliteUsers = eliteReq.docs.map(d => d.data());
         } catch(e) { CT.data.eliteUsers = []; }
@@ -195,7 +210,6 @@ const App = {
         
         try {
             const todayAR = CT.getARDate();
-            // Bajamos las de hoy para el "Vivo"
             const recReq = await db.collection('scores').where('d', '==', todayAR).where('sb', '==', false).orderBy('id', 'desc').limit(50).get();
             CT.data.s_recent = recReq.docs.map(d => d.data());
         } catch(e) { CT.data.s_recent = []; }
@@ -236,6 +250,19 @@ const App = {
         else { favs.push(idStr.toString()); }
         db.collection('users').doc(u.h).update({ favs: favs });
         setTimeout(() => { if(typeof UI !== 'undefined') UI.renderTrackList(); }, 200); 
+    },
+
+    toggleFullscreen: () => { 
+        if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } 
+        else { if (document.exitFullscreen) document.exitFullscreen(); } 
+        if(typeof UI !== 'undefined') UI.toggleSettings(); 
+    },
+    
+    downloadSetup: () => {
+        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
+        const link = document.createElement('a'); link.href = directUrl; link.download = 'CananTyper_Setup.exe';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); 
+        if(typeof UI !== 'undefined') UI.toggleSettings();
     },
 
     handleUpdateClick: () => { 
