@@ -178,38 +178,60 @@
             <div class="admin-content-area custom-scroll" style="padding: 15px; display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; width: 100%;">
                 
                 <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                    </div>
                     
-                    <div class="table-box" style="margin-bottom: 15px; flex-shrink: 0; padding:15px;">
-                        <div class="table-header" style="margin-bottom: 10px;">
-                            <h3 style="color: var(--text-main);">Evolución de Velocidad (Últimas 20 carreras)</h3>
-                        </div>
-                        <div style="height: 200px; width: 100%;">
-                            <canvas id="personal-trend-chart"></canvas>
+                    <div id="keyboard-heat-map-container" class="stat-studio-container" style="margin-bottom: 15px;">
+                        <div class="studio-stat-box studio-stat-box-full studio-stat-box-error">
+                            <div class="studio-box-header">
+                                <h3 id="t_st_p_heat" style="color: var(--error);">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
+                                <p id="t_st_p_heat_sub" style="color: var(--text-muted); font-size: 0.75rem;">Foco de error basado en tu historial</p>
+                            </div>
+                            <div class="studio-box-content" style="display:flex; justify-content:center; align-items:center; padding-top:10px;">
+                                <div class="keyboard-container" style="padding:0;">
+                                    <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
+                                    <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
+                                    <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px; border-color: var(--error);">
-                        <div class="table-header" style="justify-content: center; margin-bottom: 10px;">
-                            <div style="text-align:center;">
-                                <h3 id="t_st_p_heat" style="margin-bottom:2px; color: var(--error);">MAPA DE CALOR: TECLAS CRÍTICAS</h3>
-                            </div>
+                    <div id="personal-analytic-cards" class="stats-grid-studio" style="margin-bottom: 15px; flex-shrink: 0;">
+                        
+                        <div class="studio-stat-box">
+                            <div class="studio-box-header"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><span class="st-p-owner studio-meta-p">-</span></div>
+                            <b id="st-p-best-avg" class="val-blurrable studio-stat-value">0</b>
+                            <div class="studio-box-footer"><span id="t_st_p_best_avg_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM</span></div>
                         </div>
-                        <div style="display:flex; justify-content:center; align-items:center; gap:20px; width:100%;">
-                            <div class="keyboard-container" style="padding:0;">
-                                <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
-                                <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
-                                <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
-                            </div>
+
+                        <div class="studio-stat-box">
+                            <div class="studio-box-header"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><span class="st-p-owner studio-meta-p">-</span></div>
+                            <b id="st-p-last10-avg" class="val-blurrable studio-stat-value">0</b>
+                            <div class="studio-box-footer"><span id="t_st_p_last10_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM</span></div>
                         </div>
+
+                        <div class="studio-stat-box">
+                            <div class="studio-box-header"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small></div>
+                            <b id="st-p-best-cat" class="studio-stat-value studio-stat-text-value">-</b>
+                            <div class="studio-box-footer"><span id="t_st_p_best_cat_sub" style="color:var(--text-muted); font-size:0.7rem;"> Mayor Promedio</span></div>
+                        </div>
+
+                        <div class="studio-stat-box studio-stat-box-active">
+                            <div class="studio-box-header"><small id="t_lbl_st_p_tot" style="color: var(--bg);">CARRERAS TOTALES</small></div>
+                            <b id="st-p-total-races" class="studio-stat-value" style="color: var(--bg);">0</b>
+                            <div class="studio-box-footer"><span id="t_st_p_tot_sub" style="color:color-mix(in srgb, var(--bg) 70%, transparent); font-size:0.7rem;"> Normales</span></div>
+                        </div>
+
                     </div>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; flex-grow: 1; min-height: 200px;">
+                        
+                        <div class="studio-stat-box studio-stat-box-medium">
+                            <div class="studio-box-header"><h3 style="color: var(--text-main);">Evolución de Velocidad (Últimas 20)</h3></div>
+                            <div class="studio-box-content" style="height: 200px; padding: 10px;">
+                                <canvas id="personal-trend-chart"></canvas>
+                            </div>
+                        </div>
+
                         <div class="table-box" style="margin: 0; padding: 15px;">
                             <div class="table-header"><h3 id="t_st_box_top10">Mis Mejores Carreras (TOP 10)</h3></div>
                             <div class="custom-scroll table-body-wrapper">
@@ -231,27 +253,80 @@
                 </div>
 
                 <div id="pane-stats-elite" class="pane hidden">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_st_e_most">DOMINADOR CONSTANTE (MÁS CARRERAS)</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO GLOBAL (MIN 5)</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD ABSOLUTO DEL SERVIDOR</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                    <div id="elite-analytic-cards" class="stats-grid-studio" style="margin-bottom: 15px; flex-shrink: 0;">
+                        
+                        <div class="studio-stat-box">
+                            <div class="studio-box-header"><small id="t_st_e_most">DOMINADOR CONSTANTE</small></div>
+                            <b id="st-e-most-races-val" class="studio-stat-value studio-stat-small-value">0</b>
+                            <span id="st-e-most-races-user" class="studio-meta-p" style="margin-top:2px;">-</span>
+                            <div class="studio-box-footer"><span id="t_st_e_most_sub" style="color:var(--text-muted); font-size:0.7rem;"> Carreras Totales</span></div>
+                        </div>
+
+                        <div class="studio-stat-box">
+                            <div class="studio-box-header"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small></div>
+                            <b id="st-e-bestavg-val" class="val-blurrable studio-stat-value">0</b>
+                            <span id="st-e-bestavg-user" class="studio-meta-p" style="margin-top:2px;">-</span>
+                            <div class="studio-box-footer"><span id="t_st_e_bestavg_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM (Min 5 car.)</span></div>
+                        </div>
+
+                        <div class="studio-stat-box studio-stat-box-active">
+                            <div class="studio-box-header"><small id="lbl-st-e-record" style="color: var(--bg);">RÉCORD ABSOLUTO DEL SERVIDOR</small></div>
+                            <b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--bg);">0</b>
+                            <span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--bg) 70%, transparent);">-</span>
+                            <div class="studio-box-footer"><span id="t_st_e_record_sub" style="color:color-mix(in srgb, var(--bg) 70%, transparent); font-size:0.7rem;"> CPM</span></div>
+                        </div>
+                        
+                        <div class="studio-stat-box">
+                            <div class="studio-box-header"><small id="t_st_e_speed_king">REY DE LA VELOCIDAD</small></div>
+                            <b id="st-e-speed-king-val" class="val-blurrable studio-stat-value">0</b>
+                            <span id="st-e-speed-king-user" class="studio-meta-p" style="margin-top:2px;">-</span>
+                            <div class="studio-box-footer"><span id="t_st_e_sk_sub" style="color:var(--text-muted); font-size:0.7rem;"> CPM (Normales)</span></div>
+                        </div>
+
                     </div>
+                    
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; flex-grow: 1; min-height: 0;">
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Top 10: Velocidad Absoluta</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead><tbody id="st-e-table-speed"></tbody></table></div></div>
-                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Top 10: Los Más Activos (Rendimiento Diario)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Jugador</th><th>CARRERAS HOY</th></tr></thead><tbody id="st-e-table-active"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Top 10: Velocidad Absoluta (Máxima CPM)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Jugador</th><th id="th-st-e-t-vel">MÁX. VELOCIDAD</th></tr></thead><tbody id="st-e-table-speed"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Top 10: Récord Hardcore Global</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Jugador</th><th>RÉCORD HC</th></tr></thead><tbody id="st-e-table-active"></tbody></table></div></div>
                     </div>
                 </div>
 
                 <div id="pane-stats-hc" class="pane hidden table-strict-error">
-                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" style="color: var(--error);">0</b><span id="st-hc-record-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_surv" style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small><b id="st-hc-surv" style="color: var(--error);">0</b><span id="st-hc-surv-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
-                        <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_death" style="color: var(--error);">EL MÁS MASACRADO</small><b id="st-hc-deaths" style="color: var(--error);">0</b><span id="st-hc-deaths-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                    <div id="hc-analytic-cards" class="stats-grid-studio" style="margin-bottom: 15px; flex-shrink: 0;">
+                        
+                        <div class="studio-stat-box studio-stat-box-error">
+                            <div class="studio-box-header"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small></div>
+                            <b id="st-hc-record" class="studio-stat-value" style="color: var(--error);">0</b>
+                            <span id="st-hc-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--error) 70%, transparent);">-</span>
+                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--error) 70%, transparent); font-size:0.7rem;"> CPM</span></div>
+                        </div>
+
+                        <div class="studio-stat-box studio-stat-box-error">
+                            <div class="studio-box-header"><small id="t_lbl_hc_surv" style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small></div>
+                            <b id="st-hc-surv" class="studio-stat-value" style="color: var(--error);">0</b>
+                            <span id="st-hc-surv-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--error) 70%, transparent);">-</span>
+                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--error) 70%, transparent); font-size:0.7rem;"> Carreras Supervividas</span></div>
+                        </div>
+
+                        <div class="studio-stat-box studio-stat-box-error-active">
+                            <div class="studio-box-header"><small id="t_lbl_hc_death" style="color: var(--bg);">EL MÁS MASACRADO (GLOBAL)</small></div>
+                            <b id="st-hc-deaths" class="studio-stat-value" style="color: var(--bg);">0</b>
+                            <span id="st-hc-deaths-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--bg) 70%, transparent);">-</span>
+                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--bg) 70%, transparent); font-size:0.7rem;"> Muertes Súbitas</span></div>
+                        </div>
+                        
+                        <div class="studio-stat-box studio-stat-box-error">
+                            <div class="studio-box-header"><small id="t_st_hc_danger" style="color: var(--error);">MAYOR TASA DE MORTALIDAD (MIN 3)</small></div>
+                            <b id="st-hc-danger-val" class="studio-stat-value" style="color: var(--error);">0%</b>
+                            <span id="st-hc-danger-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--error) 70%, transparent);">-</span>
+                            <div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--error) 70%, transparent); font-size:0.7rem;"> Veces Muerto</span></div>
+                        </div>
+
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; flex-grow: 1; min-height: 0;">
                         <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
-                            <div class="table-header"><h3 id="t_hc_box_surv" style="color: var(--error) !important;">Top 10 Sobrevivientes Globales</h3></div>
-                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Jugador</th><th style="color: var(--error);">VICTORIAS</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div>
+                            <div class="table-header"><h3 id="t_hc_box_surv" style="color: var(--error) !important;">Top 10 Sobrevivientes del Purgatorio</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Jugador</th><th style="color: var(--error);">VICTORIAS HC</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div>
                         </div>
                         <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
                             <div class="table-header"><h3 id="t_hc_box_dead" style="color: var(--error) !important;">Pistas más Mortales (Top 10 Servidor)</h3></div>
@@ -265,23 +340,7 @@
         <section id="profile-screen" class="screen hidden">
             <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none; max-width: 1000px; margin-left: auto; margin-right: auto; width: 100%;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
             <div class="profile-top-area" style="max-width: 1000px; margin: 0 auto 20px auto;">
-                <div class="profile-identity">
-                    <div class="avatar-md"><img id="prof-img" src="" alt=""></div>
-                    <input type="file" id="img-input" accept="image/*" hidden onchange="UI.handleImageUpload(event)">
-                    <div class="identity-info" style="align-items: center;">
-                        <div class="name-edit-group">
-                            <h2 id="prof-name"></h2>
-                            <div class="edit-menu-wrapper">
-                                <span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span>
-                                <div id="edit-dropdown" class="edit-dropdown hidden">
-                                    <button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button>
-                                    <button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button>
-                                </div>
-                            </div>
-                        </div>
-                        <span id="prof-role" class="role-badge"></span>
-                    </div>
-                </div>
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden onchange="UI.handleImageUpload(event)"><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
                 <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
             </div>
             <div class="profile-history-area" style="max-width: 1000px; margin: 0 auto; width: 100%;">
@@ -291,25 +350,32 @@
         </section>
 
         <section id="game-screen" class="screen hidden">
-            <div class="game-container" style="width: 100%;">
+            <div class="game-container">
+                
                 <div class="game-hud">
                     <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
-                <div class="progress-container" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto;">
+
+                <div class="progress-container" style="max-width: 900px;">
                     <div id="race-progress" class="progress-bar"></div>
                     <div id="ghost-progress" class="ghost-bar hidden"></div>
                 </div>
-                <div id="target-text" class="game-text-display custom-scroll" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto; height: 35vh; min-height: 250px;"></div>
-                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="width: 60%; max-width: 1000px; margin: 0 auto 20px auto;">
+
+                <div id="target-text" class="game-text-display custom-scroll" style="max-width: 1000px; height: 35vh; min-height: 250px;"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="max-width: 800px;">
+                
                 <div id="in-game-controls" class="game-controls">
                     <button id="t_btn_back" onclick="EngineControl.quitRace()" class="btn-outline">Volver</button>
                     <button id="t_btn_retry" onclick="EngineControl.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
                     <button id="t_btn_new" onclick="EngineControl.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
-                <div id="game-result-modal" class="game-result hidden" style="width: 60%; max-width: 1000px; margin: 20px auto 0 auto;">
+
+                <div id="game-result-modal" class="game-result hidden" style="max-width: 800px;">
                     <h2 id="final-speed-display" class="result-score">0 CPM</h2>
+                    
                     <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
+                    
                     <div class="result-actions" style="margin-top: 25px;">
                         <button id="t_btn_retry2" onclick="EngineControl.retryRace()" class="btn-outline">Repetir</button>
                         <button id="t_btn_cont" onclick="EngineControl.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
@@ -350,6 +416,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script src="core.js?v=2.2.0"></script>
     <script src="ui.js?v=2.2.0"></script>
