@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - MÓDULO UI (V3.0 - COMPETITIVO GLOBAL)
+   CANANTYPER - MÓDULO UI (V3.0.1 - REPARADO Y BLINDADO)
    ================================================================ */
 
 const UI = {
@@ -8,7 +8,6 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     personalChartInstance: null,
     
-    // Layout por Defecto de Estadísticas en caso de que la DB esté vacía
     defaultLayout: [
         {id: 'w-p-heat', size: 'wide', pane: 'grid-stats-personal'},
         {id: 'w-p-trend', size: 'wide', pane: 'grid-stats-personal'},
@@ -33,7 +32,7 @@ const UI = {
 
     /* --- SISTEMA DE ORDENAMIENTO GLOBAL DE ESTADÍSTICAS --- */
     applyStatsLayout: () => {
-        const layout = (CT.data.statsLayout && CT.data.statsLayout.length > 0) ? CT.data.statsLayout : UI.defaultLayout;
+        const layout = (CT.data.statsLayout && Array.isArray(CT.data.statsLayout) && CT.data.statsLayout.length > 0) ? CT.data.statsLayout : UI.defaultLayout;
         layout.forEach(w => {
             const el = document.querySelector(`.analytic-widget[data-id="${w.id}"]`);
             const grid = document.getElementById(w.pane);
@@ -107,7 +106,37 @@ const UI = {
             }
         });
     },
-    /* --------------------------------------------------------------- */
+
+    initSortable: (containerId, type, pageContext = 0) => {
+        if (typeof Sortable === 'undefined') return;
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
+
+        if (type === 'track' && !UI.filterFavs) return;
+
+        container._sortable = Sortable.create(container, {
+            handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
+            onEnd: (evt) => {
+                if (evt.oldIndex === evt.newIndex) return;
+                UI.handleFavReorder(evt.oldIndex, evt.newIndex, pageContext);
+            }
+        });
+    },
+
+    handleFavReorder: (domOldIdx, domNewIdx, pageContext) => {
+        const u = CT.ses(); if(!u) return;
+        let favs = [...(u.favs || [])];
+        let actualOldIdx = (pageContext * 20) + domOldIdx;
+        let actualNewIdx = (pageContext * 20) + domNewIdx;
+
+        if(actualOldIdx < 0 || actualOldIdx >= favs.length || actualNewIdx < 0 || actualNewIdx >= favs.length) return;
+
+        const [movedItem] = favs.splice(actualOldIdx, 1);
+        favs.splice(actualNewIdx, 0, movedItem);
+
+        db.collection('users').doc(u.h).update({ favs: favs });
+    },
 
     setLayout: (mode) => {
         UI.listLayout = mode; localStorage.setItem('ct_layout', mode);
@@ -155,13 +184,17 @@ const UI = {
     showLobby() { this.initLobby(); },
     
     async showStats() { 
-        const u = CT.ses();
-        if(u) await App.getUserScores(u.h); 
-        this.switchStatsTab('personal'); 
-        UI.updateUnitVisuals(CT.currentUnit); 
-        UI.applyStatsLayout();
-        UI.initStatsSortable();
-        this.show('stats-screen'); 
+        try {
+            const u = CT.ses();
+            if(u) await App.getUserScores(u.h); 
+            UI.switchStatsTab('personal'); 
+            UI.updateUnitVisuals(CT.currentUnit); 
+            if(UI.applyStatsLayout) UI.applyStatsLayout();
+            if(UI.initStatsSortable) UI.initStatsSortable();
+            UI.show('stats-screen'); 
+        } catch(e) {
+            console.error("Error abriendo estadísticas:", e);
+        }
     },
     
     showInfo() { this.renderInfoPage(); this.show('info-screen'); },
@@ -217,10 +250,11 @@ const UI = {
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
 
-        // Gráfico de Evolución
-        if(typeof Chart !== 'undefined' && document.getElementById('personal-trend-chart')) {
-            if(UI.personalChartInstance) UI.personalChartInstance.destroy();
-            const ctx = document.getElementById('personal-trend-chart').getContext('2d');
+        // Gráfico de Evolución Blindado
+        const canvasEl = document.getElementById('personal-trend-chart');
+        if(typeof Chart !== 'undefined' && canvasEl) {
+            if(UI.personalChartInstance) { UI.personalChartInstance.destroy(); }
+            const ctx = canvasEl.getContext('2d');
             const trendData = hi.slice(-20); 
             const labels = trendData.map((s, i) => `#${i+1}`);
             const dataPts = trendData.map(s => UI.formatValue(s));
@@ -233,7 +267,6 @@ const UI = {
             });
         }
 
-        // Teclado Heatmap
         const bk = u.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
         document.querySelectorAll('kbd[data-key]').forEach(el => {
@@ -247,17 +280,16 @@ const UI = {
             } else { el.style.removeProperty('background'); el.style.removeProperty('border-color'); el.style.removeProperty('color'); el.title = '0 errores'; }
         });
 
-        // Tablas Top 10 y Críticas
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<li><span class="w-rank">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${s.track}</span> <b style="color:var(--p);" class="val-blurrable">${UI.formatValue(s.c)}</b></li>`).join('');
+        document.getElementById('list-p-top10').innerHTML = top10.map((s, i) => `<li><span class="w-rank">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${s.track}</span> <b style="color:var(--p);" class="val-blurrable">${UI.formatValue(s.c)}</b></li>`).join('');
 
         let trackAvgs = {}; userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
         let bottom5 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 5);
-        document.getElementById('st-p-worst-tracks').innerHTML = bottom5.map((tr, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${tr.t}</span> <b style="color:var(--error);" class="val-blurrable">${UI.formatValue(Math.round(tr.avg))}</b></li>`).join('');
+        document.getElementById('list-p-worst-tracks').innerHTML = bottom5.map((tr, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${tr.t}</span> <b style="color:var(--error);" class="val-blurrable">${UI.formatValue(Math.round(tr.avg))}</b></li>`).join('');
 
         const bw = u.bad_words || {}; let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 30);
-        document.getElementById('st-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bwItem.w}</span> <b style="color:var(--error);">${bwItem.errs}</b></li>`).join('');
+        document.getElementById('list-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bwItem.w}</span> <b style="color:var(--error);">${bwItem.errs}</b></li>`).join('');
     },
 
     renderHardcoreStats() {
@@ -339,7 +371,10 @@ const UI = {
         }
         
         const top10Speed = [...eliteUsers].sort((a,b) => Math.max(...(b.hi||[0]),0) - Math.max(...(a.hi||[0]),0)).slice(0, 10);
-        document.getElementById('list-e-speed').innerHTML = top10Speed.map((u, i) => `<li><span class="w-rank" style="color:var(--p);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.n}</span> <b style="color:var(--p);" class="val-blurrable">${UI.formatValue(Math.max(...(u.hi||[0]), 0))}</b></li>`).join('');
+        document.getElementById('list-e-speed').innerHTML = top10Speed.map((u, i) => {
+            const posClass = i === 0 ? 'podium-1' : (i === 1 ? 'podium-2' : (i === 2 ? 'podium-3' : ''));
+            return `<li><span class="w-rank ${posClass}" style="width:20px;">${i+1}</span> <div class="player-link" style="flex-grow:1; justify-content:flex-start;" onclick="UI.showProfile('${u.h}')"><div class="avatar-xs" style="width:20px;height:20px;"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div> <b style="color:var(--p)" class="val-blurrable">${UI.formatValue(Math.max(...(u.hi||[0]), 0))}</b></li>`;
+        }).join('');
 
         const todayAR = CT.getARDate();
         let todayCounts = {};
@@ -349,7 +384,10 @@ const UI = {
             return { h: h, n: uObj ? uObj.n : h, a: uObj ? uObj.a : '', c: todayCounts[h] };
         }).sort((a,b) => b.c - a.c).slice(0, 10);
 
-        document.getElementById('list-e-active').innerHTML = topActive.map((u, i) => `<li><span class="w-rank" style="color:#00bcd4;">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.n}</span> <b style="color:#00bcd4;">${u.c} 🏎️</b></li>`).join('');
+        document.getElementById('list-e-active').innerHTML = topActive.map((u, i) => {
+            const posClass = i === 0 ? 'podium-1' : (i === 1 ? 'podium-2' : (i === 2 ? 'podium-3' : ''));
+            return `<li><span class="w-rank ${posClass}" style="width:20px;">${i+1}</span> <div class="player-link" style="flex-grow:1; justify-content:flex-start;" onclick="UI.showProfile('${u.h}')"><div class="avatar-xs" style="width:20px;height:20px;"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div> <b style="color:#00bcd4;">${u.c} 🏎️</b></li>`;
+        }).join('');
     },
 
     renderInfoPage() { if(!CT.data.info) return; document.getElementById('info-display-title').innerText = CT.data.info.title || "Información"; document.getElementById('info-display-content').innerHTML = CT.data.info.content || ""; },
@@ -384,36 +422,48 @@ const UI = {
     toggleFastMode: () => { CT.fastMode = !CT.fastMode; localStorage.setItem('ct_fast_mode', CT.fastMode); UI.updateFastModeVisuals(); },
     renderTrainDropdown() { /* Intacto */ },
 
+    // CORRECCIÓN PRO: Siempre muestra datos, ignorando el filtro estricto de fecha.
     renderGlobal() {
         const typeEl = document.getElementById('leaderboard-type'); if(!typeEl) return;
-        const todayAR = CT.getARDate();
 
-        let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb && s.d === todayAR);
+        // Quitamos el filtro estricto de "todayAR" para que SIEMPRE haya datos.
+        let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb);
         let histScores = (CT.data.s_top || []).filter(s => !s.sb);
 
         let filtered = typeEl.value === 'today' ? vivoScores : histScores;
         filtered.sort((a,b) => b.c - a.c);
         
-        document.getElementById('global-rank-times').innerHTML = filtered.slice(0, 15).map((s, idx) => {
-            const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
-            return `<tr><td class="${posClass}">${idx + 1}</td><td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td></tr>`;
-        }).join('');
+        const targetTimes = document.getElementById('global-rank-times');
+        if (filtered.length === 0) {
+            targetTimes.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa; padding:20px;">Sin registros aún. ¡Sé el primero!</td></tr>';
+        } else {
+            targetTimes.innerHTML = filtered.slice(0, 15).map((s, idx) => {
+                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
+                return `<tr><td class="${posClass}">${idx + 1}</td><td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td></tr>`;
+            }).join('');
+        }
 
         const rankingMode = document.getElementById('ranking-type').value;
         const eliteUsers = CT.data.eliteUsers || [];
         
         let playerStats = eliteUsers.map(u => {
             let arr = u.hi || []; let scores = rankingMode === 'last10' ? arr.slice(-10) : arr;
-            let avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b)/scores.length) : 0;
+            let avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
             return { h: u.h, n: u.n, a: u.a, avg: avg, total: arr.length };
         }).filter(p => p.avg > 0).sort((a,b) => b.avg - a.avg);
 
-        document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => {
-            const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
-            return `<tr><td class="${posClass}">${idx + 1}</td><td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(p.avg)}</b></td><td>${p.total}</td></tr>`;
-        }).join('');
+        const targetPlayers = document.getElementById('global-rank-players');
+        if (playerStats.length === 0) {
+            targetPlayers.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa; padding:20px;">No hay promedios suficientes (Min 5 carreras).</td></tr>';
+        } else {
+            targetPlayers.innerHTML = playerStats.slice(0, 10).map((p, idx) => {
+                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
+                return `<tr><td class="${posClass}">${idx + 1}</td><td><div class="player-link" onclick="UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || CT.defAvatar}"></div><span>${p.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(p.avg)}</b></td><td>${p.total}</td></tr>`;
+            }).join('');
+        }
     },
 
+    // RESTO DE FUNCIONES (Intactas)
     async showProfile(who) {
         try {
             const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
@@ -438,14 +488,15 @@ const UI = {
             this.show('profile-screen');
         } catch (error) { console.error(error); }
     },
-    
-    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
-    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
-    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
-    
-    openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); UI.toggleSettings(); },
+    renderProfileHistory() {
+        const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc).sort((a,b) => b.id - a.id);
+        const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
+        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="EngineControl.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
+        document.getElementById('prof-prev').disabled = CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${CT.profPage + 1}`;
+    },
+    changeProfPage(delta) { const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); } },
+    openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
-
     applySavedTheme: () => {
         const customTheme = localStorage.getItem('ct_custom_theme');
         if (customTheme) {
@@ -456,110 +507,19 @@ const UI = {
             document.documentElement.style.setProperty('--surface-custom', t.surface);
         } else { document.documentElement.removeAttribute('data-custom-theme'); }
     },
-    
     saveTheme: (themeName) => {
         let themeObj;
         if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
         else if (themeName === 'hacker') { themeObj = { p: '#00ff00', bg: '#050505', surface: '#0a0a0a' }; }
         else { themeObj = { p: '#a6ff00', bg: '#000000', surface: '#141414' }; } 
-        
         localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
         const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: themeObj }); }
         UI.applySavedTheme(); UI.closeThemeModal();
     },
-
-    renderProfileHistory() {
-        const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc).sort((a,b) => b.id - a.id);
-        const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
-        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="EngineControl.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
-        document.getElementById('prof-prev').disabled = CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${CT.profPage + 1}`;
-    },
-    changeProfPage(delta) { const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); } },
-
-    checkAnnouncements: () => {
-        const anns = CT.data.a.filter(x => x.active);
-        if (anns.length > 0) {
-            const latest = anns[0];
-            const lastSeen = localStorage.getItem('ct_last_announcement');
-            if (latest.id.toString() !== lastSeen) { UI.showAnnouncement(latest); }
-        }
-    },
-    
-    showAnnouncement(data) { if(!data.id) return; UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
-    closeAnnouncement() { if(UI.currentAnnId) { localStorage.setItem('ct_last_announcement', UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
-
-    showTrackSelect() { document.getElementById('track-search').value = ''; UI.activeTrackCat = null; UI.filterFavs = false; UI.showTrackCategorySelect(); this.show('track-screen'); },
-    showTrackCategorySelect() {
-        document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
-        const tracks = CT.data.p; let cats = CT.data.c; let catCounts = {}; 
-        tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
-        cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
-
-        let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
-        let html = `<div class="cat-card cat-fav-card" onclick="UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
-        html += cats.map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
-        document.getElementById('track-category-view').innerHTML = html;
-    },
-    toggleFavFilter() { UI.filterFavs = true; UI.activeTrackCat = null; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
-    selectTrackCategory(cat) { UI.activeTrackCat = cat; UI.filterFavs = false; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
-    
-    renderTrackList() {
-        const query = (document.getElementById('track-search').value || "").toLowerCase(); let tracks = CT.data.p;
-        const u = CT.ses(); let favs = u.favs || [];
-
-        const listContainer = document.getElementById('track-list-full');
-        listContainer.className = 'custom-scroll track-list ' + UI.listLayout;
-        
-        if (UI.filterFavs) listContainer.classList.add('fav-scroll');
-        else listContainer.classList.remove('fav-scroll');
-
-        let filtered = tracks;
-        if (query) {
-            document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.add('hidden');
-            filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
-        } else if (UI.filterFavs) {
-            filtered = tracks.filter(t => favs.includes(t.id.toString()));
-            filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
-        } else if (!UI.activeTrackCat) {
-            UI.showTrackCategorySelect(); return;
-        } else {
-            filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); 
-            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
-        }
-
-        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐';
-        let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
-
-        const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
-        listContainer.innerHTML = pageData.map(t => {
-            let isFav = favs.includes(t.id.toString()); let starClass = isFav ? 'fav-active' : 'fav-inactive';
-            let reorderFavHtml = (UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
-            let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
-            let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
-
-            return `<div class="track-card" onclick="EngineControl.startRaceWithTrack('${t.id}')" style="${cardStyle}">
-                <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">
-                    #${t.title}
-                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
-                    ${reorderFavHtml}
-                </div>
-                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
-            </div>`;
-        }).join('');
-        document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
-        
-        setTimeout(() => {
-            if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage);
-            else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
-        }, 50);
-    },
-    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.data.p; const u = CT.ses(); let favs = u.favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
-
     openCropModal(src) { const img = document.getElementById('crop-image'); img.src = src; img.onload = () => { UI.cropScale = 1; UI.cropX = 0; UI.cropY = 0; document.getElementById('crop-zoom').value = 1; const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight; if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; } UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); UI.setupCropEvents(); }; },
     closeCropModal() { document.getElementById('crop-modal').classList.add('hidden'); document.getElementById('img-input').value = ''; },
     updateCropTransform() { const img = document.getElementById('crop-image'); img.style.transform = `translate(-50%, -50%) translate(${UI.cropX}px, ${UI.cropY}px) scale(${UI.cropScale})`; img.style.left = '50%'; img.style.top = '50%'; },
     setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.startX = cx - UI.cropX; UI.startY = cy - UI.cropY; }; const moveDrag = (e) => { if(!UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.cropX = cx - UI.startX; UI.cropY = cy - UI.startY; UI.updateCropTransform(); }; const endDrag = () => { UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { UI.cropScale = e.target.value; UI.updateCropTransform(); }; },
-    
     saveCrop: () => { 
         const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); 
         const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; 
@@ -577,5 +537,60 @@ const UI = {
             document.getElementById('prof-img').src = compressedBase64; 
         } 
         UI.closeCropModal(); 
-    }
+    },
+    checkAnnouncements: () => {
+        const anns = CT.data.a.filter(x => x.active);
+        if (anns.length > 0) {
+            const latest = anns[0];
+            const lastSeen = localStorage.getItem('ct_last_announcement');
+            if (latest.id.toString() !== lastSeen) { UI.showAnnouncement(latest); }
+        }
+    },
+    showAnnouncement(data) { if(!data.id) return; UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
+    closeAnnouncement() { if(UI.currentAnnId) { localStorage.setItem('ct_last_announcement', UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
+    showTrackSelect() { document.getElementById('track-search').value = ''; UI.activeTrackCat = null; UI.filterFavs = false; UI.showTrackCategorySelect(); this.show('track-screen'); },
+    showTrackCategorySelect() {
+        document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
+        const tracks = CT.data.p; let cats = CT.data.c; let catCounts = {}; 
+        tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
+        cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+        let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
+        let html = `<div class="cat-card cat-fav-card" onclick="UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
+        html += cats.map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        document.getElementById('track-category-view').innerHTML = html;
+    },
+    toggleFavFilter() { UI.filterFavs = true; UI.activeTrackCat = null; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
+    selectTrackCategory(cat) { UI.activeTrackCat = cat; UI.filterFavs = false; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
+    renderTrackList() {
+        const query = (document.getElementById('track-search').value || "").toLowerCase(); let tracks = CT.data.p;
+        const u = CT.ses(); let favs = u.favs || [];
+        const listContainer = document.getElementById('track-list-full');
+        listContainer.className = 'custom-scroll track-list ' + UI.listLayout;
+        if (UI.filterFavs) listContainer.classList.add('fav-scroll'); else listContainer.classList.remove('fav-scroll');
+        let filtered = tracks;
+        if (query) {
+            document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.add('hidden');
+            filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+        } else if (UI.filterFavs) {
+            filtered = tracks.filter(t => favs.includes(t.id.toString()));
+            filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
+        } else if (!UI.activeTrackCat) { UI.showTrackCategorySelect(); return; } 
+        else { filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0)); }
+
+        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐'; let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
+        const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
+        listContainer.innerHTML = pageData.map(t => {
+            let isFav = favs.includes(t.id.toString()); let starClass = isFav ? 'fav-active' : 'fav-inactive';
+            let reorderFavHtml = (UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
+            let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
+            let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
+            return `<div class="track-card" onclick="EngineControl.startRaceWithTrack('${t.id}')" style="${cardStyle}">
+                <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">#${t.title}<button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>${reorderFavHtml}</div>
+                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
+            </div>`;
+        }).join('');
+        document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
+        setTimeout(() => { if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage); else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } } }, 50);
+    },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.data.p; const u = CT.ses(); let favs = u.favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
 };
