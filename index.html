@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=2.0.0">
+    <link rel="stylesheet" href="style.css?v=2.1.0">
 </head>
 <body>
 
@@ -66,11 +66,11 @@
                             <button id="btn-update-status" class="update-menu-item hidden" onclick="App.handleUpdateClick()"></button>
                             <button id="btn-fast-mode" onclick="UI.toggleFastMode()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⚡ Modo Rápido: NO</button>
                             <button id="t_theme_btn" onclick="UI.openThemeBuilder()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">🎨 Personalizar</button>
-                            <button id="t_sett_full" onclick="UI.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
+                            <button id="t_sett_full" onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
                             <button id="t_sett_clear" onclick="Auth.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
-                            <button id="btn-direct-download" onclick="UI.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
+                            <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v2.0.0 
+                                CananTyper v2.1.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -105,7 +105,7 @@
                     </div>
                     <div class="custom-scroll table-body-wrapper">
                         <table class="data-table">
-                            <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="20%" id="th-unit-times">VEL.</th><th width="30%">Texto</th></tr></thead>
+                            <thead><tr><th width="10%">N°</th><th width="40%">Usuario</th><th width="20%" id="th-unit-times">VEL.</th><th width="30%">Texto</th></tr></thead>
                             <tbody id="global-rank-times"></tbody>
                         </table>
                     </div>
@@ -124,7 +124,7 @@
                     </div>
                     <div class="custom-scroll table-body-wrapper">
                         <table class="data-table">
-                            <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="25%" id="th-unit-rank">PROMEDIO</th><th width="25%">Carreras</th></tr></thead>
+                            <thead><tr><th width="10%">N°</th><th width="40%">Usuario</th><th width="25%" id="th-unit-rank">PROMEDIO</th><th width="25%">Carreras</th></tr></thead>
                             <tbody id="global-rank-players"></tbody>
                         </table>
                     </div>
@@ -158,7 +158,7 @@
                 <div><h2 id="info-display-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Información</h2></div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
-            <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border); max-width: 1000px; margin: 0 auto; width: 100%;"></div>
+            <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border); width: 100%;"></div>
         </section>
 
         <section id="stats-screen" class="screen hidden">
@@ -169,14 +169,15 @@
                 </div>
                 <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
-            <div class="admin-tabs" style="max-width: 1200px; margin: 0 auto 15px auto; width: 100%;">
+            <div class="admin-tabs" style="width: 100%; margin-bottom: 15px;">
                 <button id="t-st-pe" class="tab-btn active" onclick="UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Personales</span></button>
                 <button id="t-st-ge" class="tab-btn" onclick="UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
                 <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
                 <button id="t-st-hc" class="tab-btn" onclick="UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Hardcore 💀</span></button>
             </div>
             
-            <div class="admin-content-area custom-scroll" style="padding: 15px; display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; width: 100%;">
+            <div class="admin-content-area custom-scroll" style="padding: 15px; display: flex; flex-direction: column; width: 100%;">
+                
                 <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
                     <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
                         <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
@@ -264,32 +265,50 @@
         </section>
 
         <section id="profile-screen" class="screen hidden">
-            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none; max-width: 1000px; margin-left: auto; margin-right: auto; width: 100%;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
-            <div class="profile-top-area" style="max-width: 1000px; margin: 0 auto 20px auto;">
-                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="Auth.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
+            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none; width: 100%;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
+            <div class="profile-top-area" style="width: 100%;">
+                <div class="profile-identity">
+                    <div class="avatar-md"><img id="prof-img" src="" alt=""></div>
+                    
+                    <input type="file" id="img-input" accept="image/*" hidden onchange="UI.handleImageUpload(event)">
+                    
+                    <div class="identity-info" style="align-items: center;">
+                        <div class="name-edit-group">
+                            <h2 id="prof-name"></h2>
+                            <div class="edit-menu-wrapper">
+                                <span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span>
+                                <div id="edit-dropdown" class="edit-dropdown hidden">
+                                    <button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button>
+                                    <button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button>
+                                </div>
+                            </div>
+                        </div>
+                        <span id="prof-role" class="role-badge"></span>
+                    </div>
+                </div>
                 <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
             </div>
-            <div class="profile-history-area" style="max-width: 1000px; margin: 0 auto; width: 100%;">
+            <div class="profile-history-area" style="width: 100%;">
                 <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
                 <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button></div>
             </div>
         </section>
 
         <section id="game-screen" class="screen hidden">
-            <div class="game-container">
+            <div class="game-container" style="width: 100%;">
                 
                 <div class="game-hud">
                     <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
                     <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
 
-                <div class="progress-container" style="max-width: 900px;">
+                <div class="progress-container" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto;">
                     <div id="race-progress" class="progress-bar"></div>
                     <div id="ghost-progress" class="ghost-bar hidden"></div>
                 </div>
 
-                <div id="target-text" class="game-text-display custom-scroll" style="max-width: 1000px; height: 35vh; min-height: 250px;"></div>
-                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="max-width: 800px;">
+                <div id="target-text" class="game-text-display custom-scroll" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto; height: 35vh; min-height: 250px;"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="width: 60%; max-width: 1000px; margin: 0 auto 20px auto;">
                 
                 <div id="in-game-controls" class="game-controls">
                     <button id="t_btn_back" onclick="EngineControl.quitRace()" class="btn-outline">Volver</button>
@@ -297,7 +316,7 @@
                     <button id="t_btn_new" onclick="EngineControl.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
 
-                <div id="game-result-modal" class="game-result hidden" style="max-width: 800px;">
+                <div id="game-result-modal" class="game-result hidden" style="width: 60%; max-width: 1000px; margin: 20px auto 0 auto;">
                     <h2 id="final-speed-display" class="result-score">0 CPM</h2>
                     
                     <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
@@ -343,8 +362,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     
-    <script src="core.js?v=2.0.0"></script>
-    <script src="ui.js?v=2.0.0"></script>
-    <script src="engine.js?v=2.0.0"></script>
+    <script src="core.js?v=2.1.0"></script>
+    <script src="ui.js?v=2.1.0"></script>
+    <script src="engine.js?v=2.1.0"></script>
 </body>
 </html>
