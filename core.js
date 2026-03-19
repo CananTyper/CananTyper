@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - CORE SCRIPT (V3.0)
+   CANANTYPER - CORE SCRIPT (V3.1.0)
    Maneja Autenticación, Firebase, Discord RPC y Estado del Jugador.
    ================================================================ */
 
@@ -70,7 +70,7 @@ const CT = {
             this.data.shortcuts = snap.exists ? snap.data() : { restart: 'Tab', next: 'Enter', quit: 'Escape' };
         });
 
-        // NUEVO: Escuchador del Layout Global de Estadísticas (dictado por Admins)
+        // Escucha en tiempo real el diseño de los Widgets que dicta CananStudio o un Admin
         db.collection('config').doc('stats_layout').onSnapshot(snap => {
             if(snap.exists && snap.data().layout) {
                 CT.data.statsLayout = snap.data().layout;
@@ -107,13 +107,13 @@ const CT = {
 
         const session = JSON.parse(localStorage.getItem('ct_ses'));
         if(session && session.h) {
-            // Documento Personal
+            // Documento Personal del Jugador
             db.collection('users').doc(session.h).onSnapshot(doc => {
                 if(doc.exists) {
                     CT.data.u = doc.data();
                     localStorage.setItem('ct_cache_me', JSON.stringify(CT.data.u));
                     
-                    // Inyectar clase de administrador globalmente para el CSS
+                    // Inyectar clase admin para CSS
                     if (CT.data.u.r === 'admin') document.body.classList.add('is-admin');
                     else document.body.classList.remove('is-admin');
 
@@ -146,7 +146,7 @@ const Auth = {
         try { 
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists && docRef.data().p === p) { 
-                if(docRef.data().sb === true) console.warn("Shadowban flag detected.");
+                if(docRef.data().sb === true) console.warn("Shadowban activo.");
                 localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                 CT.data.u = docRef.data();
                 location.reload(); 
@@ -197,6 +197,7 @@ const Auth = {
 };
 
 const App = {
+    // Descarga la élite para el Salón de la Fama
     loadLeaderboards: async () => {
         try {
             const eliteReq = await db.collection('users').where('sb', '==', false).limit(50).get();
@@ -209,8 +210,8 @@ const App = {
         } catch(e) { CT.data.s_top = []; }
         
         try {
-            const todayAR = CT.getARDate();
-            const recReq = await db.collection('scores').where('d', '==', todayAR).where('sb', '==', false).orderBy('id', 'desc').limit(50).get();
+            // Descargamos las recientes para siempre tener data
+            const recReq = await db.collection('scores').where('sb', '==', false).orderBy('id', 'desc').limit(50).get();
             CT.data.s_recent = recReq.docs.map(d => d.data());
         } catch(e) { CT.data.s_recent = []; }
         
