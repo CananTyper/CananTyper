@@ -24,52 +24,6 @@ window.App = {
         }
     },
 
-    // SISTEMA DE REORDENAMIENTO DE WIDGETS
-    handleWidgetDragReorder: (tab, oldIdx, newIdx) => {
-        let layout = window.CT.data.statsLayout;
-        if (!layout || !layout[tab]) return;
-        
-        let arr = layout[tab];
-        if (oldIdx < 0 || oldIdx >= arr.length || newIdx < 0 || newIdx >= arr.length) return;
-
-        const [movedItem] = arr.splice(oldIdx, 1);
-        arr.splice(newIdx, 0, movedItem);
-
-        arr.forEach((w, i) => w.order = i);
-        window.App.saveStatsLayout();
-    },
-
-    toggleWidgetVisibility: (tab, widgetId) => {
-        let layout = window.CT.data.statsLayout;
-        if (!layout || !layout[tab]) return;
-        
-        let w = layout[tab].find(x => x.id === widgetId);
-        if (w) {
-            w.v = !w.v;
-            window.App.saveStatsLayout();
-        }
-    },
-
-    toggleWidgetSize: (tab, widgetId, delta) => {
-        let layout = window.CT.data.statsLayout;
-        if (!layout || !layout[tab]) return;
-        
-        let w = layout[tab].find(x => x.id === widgetId);
-        if (w) {
-            w.s = w.s || 2;
-            w.s += delta;
-            if (w.s < 1) w.s = 1;
-            if (w.s > 4) w.s = 4;
-            window.App.saveStatsLayout();
-        }
-    },
-
-    saveStatsLayout: () => {
-        window.db.collection('config').doc('stats_layout').set(window.CT.data.statsLayout)
-            .then(() => window.UI.applyStatsLayout())
-            .catch(err => console.error("Error guardando layout de widgets", err));
-    },
-
     loadDashboardData: async () => {
         try {
             const topReq = await window.db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
