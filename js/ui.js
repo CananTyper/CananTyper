@@ -107,14 +107,13 @@ window.UI = {
 
     async switchStatsTab(tab) {
         document.querySelectorAll('.pane').forEach(p => { if(p.id.startsWith('pane-stats')) p.classList.add('hidden') });
-        document.querySelectorAll('.tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
+        document.querySelectorAll('.stats-tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
         document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
         
         if (tab === 'personal') this.renderPersonalStats(); 
-        else if (tab === 'general') this.renderGlobalStats(); 
-        else if (tab === 'elite') this.renderEliteStats();
+        else if (tab === 'ranking') this.renderRankingStats();
         else if (tab === 'hc') this.renderHardcoreStats();
     },
     
@@ -212,33 +211,7 @@ window.UI = {
         document.getElementById('st-hc-worst').innerHTML = deathList.map((td, i) => `<tr><td><b>#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${td.t}</div></td><td><b>${td.d}</b></td></tr>`).join('');
     },
 
-    renderGlobalStats() {
-        const users = window.CT.dbLocal('u');
-        document.getElementById('st-g-users-val').innerText = users.length; 
-        
-        let totalRaces = 0; let totalSum = 0; let globalMax = 0;
-        users.forEach(u => {
-            totalRaces += (u.hi || []).length;
-            totalSum += (u.hi || []).reduce((a,b)=>a+b, 0);
-            let uMax = Math.max(...(u.hi || [0]), 0);
-            if(uMax > globalMax) globalMax = uMax;
-        });
-        
-        document.getElementById('st-g-races-val').innerText = totalRaces;
-        document.getElementById('st-g-avg').innerText = window.UI.formatValue(totalRaces ? Math.round(totalSum/totalRaces) : 0);
-        document.getElementById('st-g-record').innerText = window.UI.formatValue(globalMax);
-        
-        let textCounts = {}; (window.CT.data.s_recent || []).forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
-        const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
-        document.getElementById('st-g-top-texts').innerHTML = topTexts.map((tr, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td>${tr.count}</td></tr>`).join('');
-        
-        const phrases = window.CT.dbLocal('p'); let catCounts = {}; 
-        (window.CT.data.s_recent || []).forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; catCounts[cat] = (catCounts[cat] || 0) + 1; });
-        let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
-        document.getElementById('st-g-top-cats').innerHTML = topCats.map((tc, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`).join('');
-    },
-
-    renderEliteStats() {
+    renderRankingStats() {
         const users = window.CT.dbLocal('u'); if (users.length === 0) return;
         
         let mostRacesUser = users.reduce((p, c) => ((c.hi||[]).length > (p.hi||[]).length) ? c : p, users[0]);
@@ -290,7 +263,7 @@ window.UI = {
         if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) window.UI.showProfile(window.CT.activeProfHandle || 'me');
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
-        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-general').classList.contains('hidden')) window.UI.renderGlobalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) window.UI.renderEliteStats(); else window.UI.renderHardcoreStats(); }
+        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-ranking').classList.contains('hidden')) window.UI.renderRankingStats(); else window.UI.renderHardcoreStats(); }
     },
 
     setUnit: (unit) => {
