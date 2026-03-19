@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="style.css?v=3.2.1">
+    <link rel="stylesheet" href="style.css?v=2.0.0">
+    <style>
+        /* Estilos inyectados para el Drag & Drop (SortableJS) */
+        .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
+    </style>
 </head>
 <body>
 
@@ -20,20 +24,20 @@
         </section>
 
         <section id="auth-screen" class="screen">
-            <div class="auth-card" style="margin: auto;">
+            <div class="auth-card">
                 <h1 id="t_auth_title">CananTyper</h1>
                 <p id="t_auth_sub" class="subtitle">Mecanografía</p>
                 <div id="login-form" class="auth-form">
                     <input type="text" id="login-user" placeholder="Usuario">
                     <input type="password" id="login-pass" placeholder="Contraseña">
-                    <button id="t_btn_login" class="btn-primary" onclick="Auth.login()">Iniciar sesión</button>
+                    <button id="t_btn_login" class="btn-primary" onclick="App.login()">Iniciar sesión</button>
                     <p class="switch-text" id="t_txt_new">¿Nuevo? <span onclick="UI.toggleAuth(false)">Registrarse</span></p>
                 </div>
                 <div id="register-form" class="auth-form hidden">
                     <input type="text" id="reg-display" placeholder="Nombre" maxlength="15">
                     <input type="text" id="reg-user" placeholder="Usuario" maxlength="15">
                     <input type="password" id="reg-pass" placeholder="Contraseña">
-                    <button id="t_btn_register" class="btn-primary" onclick="Auth.register()">CREAR CUENTA</button>
+                    <button id="t_btn_register" class="btn-primary" onclick="App.register()">CREAR CUENTA</button>
                     <p class="switch-text" id="t_txt_haveacc">¿Tenés cuenta? <span onclick="UI.toggleAuth(true)">Inicia sesión</span></p>
                 </div>
             </div>
@@ -57,7 +61,7 @@
                 </div>
                 <div class="nav-right">
                     <button id="btn-nav-info" class="nav-icon-btn" onclick="UI.showInfo()" data-tooltip="Información">ℹ️</button>
-                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" data-tooltip="Centro de Rendimiento">📊</button>
+                    <button id="btn-nav-stats" class="nav-icon-btn" onclick="UI.showStats()" data-tooltip="Estadísticas">📊</button>
                     
                     <div style="position: relative; display: inline-block;">
                         <button id="btn-nav-settings" onclick="UI.toggleSettings()" class="nav-icon-btn" data-tooltip="Ajustes">
@@ -68,27 +72,28 @@
                             <button id="btn-fast-mode" onclick="UI.toggleFastMode()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⚡ Modo Rápido: NO</button>
                             <button id="t_theme_btn" onclick="UI.openThemeBuilder()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">🎨 Personalizar</button>
                             <button id="t_sett_full" onclick="App.toggleFullscreen()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⛶ Pantalla Completa</button>
-                            <button id="t_sett_clear" onclick="Auth.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
+                            <button id="t_sett_clear" onclick="App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v3.2.1 
+                                CananTyper v2.0.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
                     </div>
                     
-                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="Auth.logout()" data-tooltip-exit="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
+                    <button id="btn-nav-logout" class="btn-logout-pro" onclick="App.logout()" data-tooltip-exit="Cerrar Sesión"><span id="t_lbl_exit">SALIR</span></button>
                 </div>
             </header>
 
             <div class="mode-selectors" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-                <button id="t_btn_random" onclick="EngineControl.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
-                <button id="t_btn_hardcore" onclick="EngineControl.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
+                <button id="t_btn_random" onclick="App.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
+                <button id="t_btn_hardcore" onclick="App.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
                 <button id="t_btn_custom" onclick="UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PERSONALIZADO</button>
                 
                 <div style="position: relative;">
                     <button id="t_btn_train_menu" onclick="UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);">ENTRENAR 🏋️</button>
-                    <div id="train-dropdown" class="edit-dropdown hidden" style="top:110%; right:0; width:100%;"></div>
+                    <div id="train-dropdown" class="edit-dropdown hidden" style="top:110%; right:0; width:100%;">
+                        </div>
                 </div>
             </div>
 
@@ -97,7 +102,7 @@
                     <div class="table-header">
                         <div>
                             <h3 id="t_hd_rank_races">Ranking | Carreras</h3>
-                            <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Los más veloces</small>
+                            <small id="t_hd_rank_races_sub" style="color:var(--text-muted); font-size:0.7rem; font-weight:bold; display:block; margin-top:2px;">Los más veloces del día</small>
                         </div>
                         <select id="leaderboard-type" class="nitro-select" onchange="UI.renderGlobal()">
                             <option value="today">Hoy</option>
@@ -106,7 +111,7 @@
                     </div>
                     <div class="custom-scroll table-body-wrapper">
                         <table class="data-table">
-                            <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="20%" id="th-unit-times">VEL. (CPM)</th><th width="30%">Texto</th></tr></thead>
+                            <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="20%" id="th-unit-times">VEL.</th><th width="30%">Texto</th></tr></thead>
                             <tbody id="global-rank-times"></tbody>
                         </table>
                     </div>
@@ -125,7 +130,7 @@
                     </div>
                     <div class="custom-scroll table-body-wrapper">
                         <table class="data-table">
-                            <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="25%" id="th-unit-rank">PROMEDIO (CPM)</th><th width="25%">Carreras</th></tr></thead>
+                            <thead><tr><th width="15%">N°</th><th width="35%">Usuario</th><th width="25%" id="th-unit-rank">PROMEDIO</th><th width="25%">Carreras</th></tr></thead>
                             <tbody id="global-rank-players"></tbody>
                         </table>
                     </div>
@@ -133,42 +138,40 @@
             </div>
         </section>
 
-        <section id="stats-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border); position: relative; padding-bottom: 10px; align-items: center;">
-                <div style="flex: 1;">
-                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Centro de Rendimiento</h2>
-                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Analíticas avanzadas y competencia global</p>
+        <section id="info-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 id="info-display-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Información</h2>
                 </div>
-                
-                <div class="stats-tabs-compact" style="flex: 1; display: flex; justify-content: center; gap: 10px;">
-                    <button id="t-st-pe" class="st-tab-btn active" onclick="UI.switchStatsTab('personal')">Individual</button>
-                    <button id="t-st-el" class="st-tab-btn" onclick="UI.switchStatsTab('elite')">Ranking</button>
-                    <button id="t-st-hc" class="st-tab-btn st-tab-error" onclick="UI.switchStatsTab('hc')">Hardcore</button>
-                </div>
-                
-                <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                    <div class="action-menu-wrapper admin-ctrl">
-                        <button onclick="UI.toggleStatsMenu()" class="btn-outline" style="padding: 8px 12px; font-size: 0.7rem; border-color: var(--p); color: var(--p);">⚙️ WIDGETS</button>
-                        <div id="stats-dropdown" class="action-dropdown hidden custom-scroll" style="width: 250px; max-height: 400px; overflow-y: auto; padding: 10px; right: 0; top: 120%; z-index: 200;">
-                            <div style="font-size: 0.7rem; color: #666; text-align: center; margin-bottom: 10px; letter-spacing: 1px;">MOSTRAR / OCULTAR</div>
-                            <ul id="stats-menu-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px;"></ul>
-                        </div>
-                    </div>
-                    <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
-                </div>
+                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
             </header>
+            <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
+        </section>
 
-            <div class="admin-content-area custom-scroll" style="padding: 15px 0; display: flex; flex-direction: column; width: 100%; border: none; background: transparent;">
-                
+        <section id="stats-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
+                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
+                </div>
+                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
+            </header>
+            <div class="admin-tabs">
+                <button id="t-st-pe" class="tab-btn active" onclick="UI.switchStatsTab('personal')"><span id="t_st_tab_pe">Personales</span></button>
+                <button id="t-st-ge" class="tab-btn" onclick="UI.switchStatsTab('general')"><span id="t_st_tab_ge">Servidor</span></button>
+                <button id="t-st-el" class="tab-btn" onclick="UI.switchStatsTab('elite')"><span id="t_st_tab_el">Élite</span></button>
+                <button id="t-st-hc" class="tab-btn" onclick="UI.switchStatsTab('hc')" style="color:var(--error)"><span id="t_st_tab_hc">Hardcore 💀</span></button>
+            </div>
+            
+            <div class="admin-content-area" style="padding: 15px; display: flex; flex-direction: column;">
                 <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    
-                    <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"><span class="dynamic-unit-lbl">CPM</span></span></div></div>
-                        <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"><span class="dynamic-unit-lbl">CPM</span></span></div></div>
-                        <div class="stat-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-size: 1.2rem;">-</b></div>
-                        <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b></div>
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card"><small id="t_lbl_st_p_best_cat">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">-</b><span class="st-p-owner" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
+                        <div class="stat-card stat-highlight"><small id="t_lbl_st_p_tot">CARRERAS TOTALES</small><b id="st-p-total-races" style="margin-bottom:5px;">0</b><span class="st-p-owner" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div>
                     </div>
-
+                    
                     <div class="table-box hc-stat-card table-strict-error" style="margin-bottom: 15px; flex-shrink: 0; padding:15px; border-color: var(--error);">
                         <div class="table-header" style="justify-content: center; margin-bottom: 10px;">
                             <div style="text-align:center;">
@@ -181,67 +184,87 @@
                                 <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                 <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
                             </div>
+                            <div class="heatmap-legend" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding-left:20px; border-left:1px solid color-mix(in srgb, var(--error) 30%, transparent);">
+                                <small style="color:var(--error); font-weight:bold; font-size:0.65rem;">+ Errores</small>
+                                <div style="width:12px; height:80px; background:linear-gradient(to bottom, var(--error), color-mix(in srgb, var(--error) 10%, transparent)); border-radius:6px; margin:5px 0;"></div>
+                                <small style="color:var(--text-muted); font-weight:bold; font-size:0.65rem;">0 Errores</small>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="grid-stats-personal" class="analytics-grid">
-                        <div class="analytic-widget w-wide" data-id="w-p-trend">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Evolución de Velocidad (Últ. 20) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-trend')">⤢</button></div>
-                            <div class="w-body" style="position:relative; width:100%; height:100%; padding-bottom: 25px;"><canvas id="chart-personal-trend"></canvas></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 200px;">
+                        <div class="table-box" style="margin: 0; padding: 15px;">
+                            <div class="table-header"><h3 id="t_st_box_top10">Mejores Carreras (TOP 10)</h3></div>
+                            <div class="custom-scroll table-body-wrapper">
+                                <table class="data-table">
+                                    <thead><tr><th width="15%" id="t_lbl_st_top10_num">N°</th><th id="t_lbl_st_top10_txt">Texto</th><th width="25%" id="th_st_p_top10_vel">VEL.</th></tr></thead>
+                                    <tbody id="st-p-top10-races"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="analytic-widget" data-id="w-p-top">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mis Mejores Carreras <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-top')">⤢</button></div>
-                            <div class="w-body custom-scroll"><ul class="w-list" id="list-p-top10"></ul></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_st_box_w_trk" style="color: var(--error) !important;">Textos a Mejorar (Bottom 5)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Texto</th><th id="th_st_p_avg" style="color: var(--error);">PROM.</th></tr></thead><tbody id="st-p-worst-tracks"></tbody></table></div>
                         </div>
-                        <div class="analytic-widget" data-id="w-p-worst-trk" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Textos a Mejorar <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-trk')">⤢</button></div>
-                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-tracks"></ul></div>
-                        </div>
-                        <div class="analytic-widget" data-id="w-p-worst-wrd" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Palabras Críticas <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-wrd')">⤢</button></div>
-                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-words"></ul></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_st_box_w_wrd" style="color: var(--error) !important;">Palabras Críticas (Top 30)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th style="color: var(--error);">#</th><th style="color: var(--error);">Palabra</th><th id="th_st_p_err" style="color: var(--error);">ERRORES</th></tr></thead><tbody id="st-p-worst-words"></tbody></table></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="pane-stats-elite" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
-                        <div class="stat-card"><small id="t_st_e_most">DOMINADOR CONSTANTE</small><b id="st-e-most-races-val" class="studio-stat-value studio-stat-small-value">0</b><span id="st-e-most-races-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> Carreras Totales</span></div></div>
-                        <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small><b id="st-e-bestavg-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-bestavg-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"><span class="dynamic-unit-lbl">CPM</span> (Min 5 car.)</span></div></div>
-                        <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--p);">0</b><span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--p) 70%, transparent);">-</span><div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--p) 70%, transparent); font-size:0.7rem;"><span class="dynamic-unit-lbl">CPM</span></span></div></div>
-                        <div class="stat-card"><small id="t_st_e_speed_king">REY DE LA VELOCIDAD</small><b id="st-e-speed-king-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-speed-king-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"><span class="dynamic-unit-lbl">CPM</span> (Normales)</span></div></div>
+                <div id="pane-stats-general" class="pane hidden">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card"><small id="t_st_g_users">USUARIOS REGISTRADOS</small><b id="st-g-users-val">0</b></div>
+                        <div class="stat-card"><small id="t_st_g_races">CARRERAS GLOBALES</small><b id="st-g-races-val">0</b></div>
+                        <div class="stat-card"><small id="lbl-st-g-avg">PROMEDIO SERVIDOR</small><b id="st-g-avg" class="val-blurrable">0</b></div>
+                        <div class="stat-card stat-highlight"><small id="lbl-st-g-record">RÉCORD DE VELOCIDAD</small><b id="st-g-record" class="val-blurrable">0</b></div>
                     </div>
-                    <div id="grid-stats-elite" class="analytics-grid">
-                        <div class="analytic-widget" data-id="w-e-speed">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 15: Velocidad Absoluta <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-speed')">⤢</button></div>
-                            <div class="w-body custom-scroll"><ul class="w-list" id="list-e-speed"></ul></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_st_g_top_txt">Textos Más Jugados (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Texto</th><th>Veces Jugado</th></tr></thead><tbody id="st-g-top-texts"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3 id="t_st_g_top_cat">Categorías Más Jugadas (Top 10)</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th>Top</th><th>Categoría</th><th>Veces Jugada</th></tr></thead><tbody id="st-g-top-cats"></tbody></table></div></div>
+                    </div>
+                </div>
+
+                <div id="pane-stats-elite" class="pane hidden">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;"><div class="stat-card"><small id="t_st_e_most">MÁS CARRERAS</small><b id="st-e-most-races-val" style="margin-bottom:5px;">0</b><span id="st-e-most-races-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="t_st_e_top1">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="margin-bottom:5px;">0</b><span id="st-e-top1-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-bestavg-user" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; display:block;">-</span></div><div class="stat-card stat-highlight"><small id="lbl-st-e-record">RÉCORD DE VELOCIDAD</small><b id="st-e-record-val" class="val-blurrable" style="margin-bottom:5px;">0</b><span id="st-e-record-user" style="color:var(--p); font-size:0.8rem; font-weight:bold; display:block;">-</span></div></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Textos</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Texto</th><th>Jugador</th><th id="th-st-e-t-vel">VEL.</th></tr></thead><tbody id="st-e-table-texts"></tbody></table></div></div>
+                        <div class="table-box" style="margin: 0; padding: 15px;"><div class="table-header"><h3>Máxima Velocidad en Top Categorías</h3></div><div class="custom-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%">N°</th><th>Categoría</th><th>Jugador</th><th id="th-st-e-c-vel">VEL.</th></tr></thead><tbody id="st-e-table-cats"></tbody></table></div></div>
+                    </div>
+                </div>
+
+                <div id="pane-stats-hc" class="pane hidden table-strict-error">
+                    <div class="profile-stats" style="margin-bottom: 15px; flex-shrink: 0;">
+                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_rec" style="color: var(--error);">RÉCORD HARDCORE</small><b id="st-hc-record" style="color: var(--error);">0</b></div>
+                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_surv" style="color: var(--error);">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv" style="color: var(--error);">0</b></div>
+                        <div class="stat-card hc-stat-card"><small id="t_lbl_hc_death" style="color: var(--error);">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="color: var(--error);">0</b></div>
+                        <div class="stat-card hc-stat-card stat-highlight" style="box-shadow: inset 0 0 15px rgba(244,67,54,0.1);"><small id="t_lbl_hc_rate" style="color: var(--error);">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="color: var(--error);">0%</b></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-grow: 1; min-height: 0;">
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_hc_box_surv" style="color: var(--error) !important;">Mejores Sobrevividas (Top 10)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">VEL.</th></tr></thead><tbody id="st-hc-top10"></tbody></table></div>
                         </div>
-                        <div class="analytic-widget" data-id="w-e-active">
-                            <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 15: Rendimiento Diario <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active')">⤢</button></div>
-                            <div class="w-body custom-scroll"><ul class="w-list" id="list-e-active"></ul></div>
+                        <div class="table-box hc-stat-card table-strict-error" style="margin: 0; padding: 15px; border-color: var(--error);">
+                            <div class="table-header"><h3 id="t_hc_box_dead" style="color: var(--error) !important;">Pistas más Mortales (Top 10)</h3></div>
+                            <div class="custom-scroll error-scroll table-body-wrapper"><table class="data-table"><thead><tr><th width="15%" style="color: var(--error);">N°</th><th style="color: var(--error);">Texto</th><th style="color: var(--error);">MUERTES</th></tr></thead><tbody id="st-hc-worst"></tbody></table></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="pane-stats-hc" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
-                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" class="val-blurrable" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
-                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small><b id="st-hc-surv" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-surv-user" class="st-p-owner">-</span></div>
-                        <div class="stat-card" style="border-color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent);"><small style="color: var(--error);">EL MÁS MASACRADO</small><b id="st-hc-deaths" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-deaths-user" class="st-p-owner">-</span></div>
-                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">MAYOR TASA DE MORTALIDAD</small><b id="st-hc-danger-val" style="color: var(--error); margin-bottom:5px;">0%</b><span id="st-hc-danger-user" class="st-p-owner">-</span></div>
-                    </div>
-                    <div id="grid-stats-hc" class="analytics-grid">
-                        <div class="analytic-widget" data-id="w-hc-surv" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Sobrevivientes Globales <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-surv')">⤢</button></div>
-                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-surv"></ul></div>
-                        </div>
-                        <div class="analytic-widget" data-id="w-hc-deadly" style="border-color: var(--error);">
-                            <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Pistas Mortales (Servidor) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-deadly')">⤢</button></div>
-                            <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-deadly"></ul></div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </section>
 
+        <section id="profile-screen" class="screen hidden">
+            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
+            <div class="profile-top-area">
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
+                <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
+            </div>
+            <div class="profile-history-area">
+                <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
+                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button></div>
             </div>
         </section>
 
@@ -266,50 +289,37 @@
             </div>
         </section>
 
-        <section id="info-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div><h2 id="info-display-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Información</h2></div>
-                <button onclick="UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
-            <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border); max-width: 1000px; margin: 0 auto; width: 100%;"></div>
-        </section>
-
-        <section id="profile-screen" class="screen hidden">
-            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none; max-width: 1000px; margin-left: auto; margin-right: auto; width: 100%;"><button onclick="UI.showLobby()" class="btn-outline">Volver</button></header>
-            <div class="profile-top-area" style="max-width: 1000px; margin: 0 auto 20px auto;">
-                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div><input type="file" id="img-input" accept="image/*" hidden onchange="UI.handleImageUpload(event)"><div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
-                <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
-            </div>
-            <div class="profile-history-area" style="max-width: 1000px; margin: 0 auto; width: 100%;">
-                <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad (<span class="dynamic-unit-lbl">CPM</span>)</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
-                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="UI.changeProfPage(1)">→</button></div>
-            </div>
-        </section>
-
         <section id="game-screen" class="screen hidden">
-            <div class="game-container" style="width: 100%;">
+            <div class="game-container" style="max-width: 950px; width: 100%;">
+                
                 <div class="game-hud">
                     <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
-                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);"><span class="dynamic-unit-lbl">CPM</span></small><span id="game-speed-display" class="val-blurrable">0</span></div>
+                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
-                <div class="progress-container" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto;">
+
+                <div class="progress-container" style="margin-bottom: 25px; position:relative;">
                     <div id="race-progress" class="progress-bar"></div>
                     <div id="ghost-progress" class="ghost-bar hidden"></div>
                 </div>
-                <div id="target-text" class="game-text-display custom-scroll" style="width: 80%; max-width: 1400px; margin: 0 auto 25px auto; height: 35vh; min-height: 250px;"></div>
-                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off" style="width: 60%; max-width: 1000px; margin: 0 auto 20px auto;">
+
+                <div id="target-text" class="game-text-display"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
+                
                 <div id="in-game-controls" class="game-controls">
-                    <button id="t_btn_back" onclick="EngineControl.quitRace()" class="btn-outline">Volver</button>
-                    <button id="t_btn_retry" onclick="EngineControl.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
-                    <button id="t_btn_new" onclick="EngineControl.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                    <button id="t_btn_back" onclick="App.quitRace()" class="btn-outline">Volver</button>
+                    <button id="t_btn_retry" onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
+                    <button id="t_btn_new" onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
                 </div>
-                <div id="game-result-modal" class="game-result hidden" style="width: 60%; max-width: 1000px; margin: 20px auto 0 auto;">
-                    <h2 id="final-speed-display" class="result-score">0 <span class="dynamic-unit-lbl">CPM</span></h2>
+
+                <div id="game-result-modal" class="game-result hidden">
+                    <h2 id="final-speed-display" class="result-score">0 CPM</h2>
+                    
                     <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
+                    
                     <div class="result-actions" style="margin-top: 25px;">
-                        <button id="t_btn_retry2" onclick="EngineControl.retryRace()" class="btn-outline">Repetir</button>
-                        <button id="t_btn_cont" onclick="EngineControl.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
-                        <button id="t_btn_back2" onclick="EngineControl.quitRace()" class="btn-outline">Volver</button>
+                        <button id="t_btn_retry2" onclick="App.retryRace()" class="btn-outline">Repetir</button>
+                        <button id="t_btn_cont" onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button id="t_btn_back2" onclick="App.quitRace()" class="btn-outline">Volver</button>
                     </div>
                 </div>
             </div>
@@ -319,17 +329,17 @@
             <div class="crop-box" style="width: 400px;">
                 <h3 id="t_theme_title" style="color:var(--p); margin: 0 0 5px 0;">Elegir Plantilla</h3>
                 <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 20px 0;">Personaliza tu entorno de mecanografía.</p>
-                <div style="display: flex; flex-direction: column; padding: 15px; gap: 15px; border: 1px solid var(--p); border-radius: 12px; background:transparent;">
-                    <button class="theme-btn" onclick="UI.saveTheme('cpm')" style="--t-color: #a6ff00; --t-bg: #000000;">
+                <div class="admin-form" style="padding: 15px; gap: 15px; border-color:var(--p); background:transparent;">
+                    <button class="theme-btn" onclick="App.saveTheme('cpm')" style="--t-color: #a6ff00; --t-bg: #000000;">
                         <div class="theme-preview"></div><span>Clásico (Verde)</span>
                     </button>
-                    <button class="theme-btn" onclick="UI.saveTheme('wpm')" style="--t-color: #ff3c00; --t-bg: #000000;">
+                    <button class="theme-btn" onclick="App.saveTheme('wpm')" style="--t-color: #ff3c00; --t-bg: #000000;">
                         <div class="theme-preview"></div><span>Clásico (Naranja)</span>
                     </button>
-                    <button class="theme-btn" onclick="UI.saveTheme('galactic')" style="--t-color: #b388ff; --t-bg: #090a0f;">
+                    <button class="theme-btn" onclick="App.saveTheme('galactic')" style="--t-color: #b388ff; --t-bg: #090a0f;">
                         <div class="theme-preview"></div><span>Galáctico (Snoopy)</span>
                     </button>
-                    <button class="theme-btn" onclick="UI.saveTheme('hacker')" style="--t-color: #00ff00; --t-bg: #050505;">
+                    <button class="theme-btn" onclick="App.saveTheme('hacker')" style="--t-color: #00ff00; --t-bg: #050505;">
                         <div class="theme-preview"></div><span>Hacker Terminal</span>
                     </button>
                 </div>
@@ -337,7 +347,7 @@
             </div>
         </div>
 
-        <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="UI.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
+        <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="App.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
         
         <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
 
@@ -346,10 +356,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <script src="core.js?v=3.2.1"></script>
-    <script src="ui.js?v=3.2.1"></script>
-    <script src="engine.js?v=3.2.0"></script>
+    <script src="main.js?v=1.1.15"></script>
 </body>
 </html>
