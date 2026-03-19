@@ -1,12 +1,10 @@
 /* ================================================================
-   CANANTYPER - UI MÓDULO (FASE 1)
+   CANANTYPER - UI MÓDULO
+   Maneja la navegación, renderizado y estética.
    ================================================================ */
 
 const UI = {
-    listLayout: 'layout-list',
-    trackPage: 0, activeTrackCat: null, filterFavs: false,
-    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeTrnCat: null,
-    
+    listLayout: 'layout-list', trackPage: 0, activeTrackCat: null, filterFavs: false, cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeTrnCat: null,
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     initSortable: (containerId, type, pageContext = 0) => {
@@ -14,33 +12,22 @@ const UI = {
         const container = document.getElementById(containerId);
         if (!container) return;
         if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
-
         if (type === 'track' && !UI.filterFavs) return;
 
         container._sortable = Sortable.create(container, {
-            handle: '.drag-handle',
-            animation: 150,
-            ghostClass: 'sortable-ghost',
+            handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
             onEnd: (evt) => {
                 if (evt.oldIndex === evt.newIndex) return;
-                App.handleDragReorder(type === 'track' ? 'favs' : type, evt.oldIndex, evt.newIndex, pageContext);
+                App.handleDragReorder('favs', evt.oldIndex, evt.newIndex, pageContext);
             }
         });
     },
 
     setLayout: (mode) => {
-        UI.listLayout = mode;
-        localStorage.setItem('ct_layout', mode);
+        UI.listLayout = mode; localStorage.setItem('ct_layout', mode);
         document.querySelectorAll('.layout-btn').forEach(btn => {
-            if (btn.dataset.mode === mode) {
-                btn.style.borderColor = 'var(--p)';
-                btn.style.color = 'var(--p)';
-                btn.style.boxShadow = '0 0 10px color-mix(in srgb, var(--p) 20%, transparent)';
-            } else {
-                btn.style.borderColor = 'var(--border)';
-                btn.style.color = 'var(--text-muted)';
-                btn.style.boxShadow = 'none';
-            }
+            if (btn.dataset.mode === mode) { btn.style.borderColor = 'var(--p)'; btn.style.color = 'var(--p)'; btn.style.boxShadow = '0 0 10px color-mix(in srgb, var(--p) 20%, transparent)'; } 
+            else { btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--text-muted)'; btn.style.boxShadow = 'none'; }
         });
         UI.refreshActiveViews();
     },
@@ -48,7 +35,6 @@ const UI = {
     checkMaintenance: () => {
         const m = CT.data.maint || { active: false, info: true, theme: true };
         const u = CT.ses(); const isAdmin = u && u.r === 'admin';
-        
         if(m.active && !isAdmin) {
             document.getElementById('maint-icon-display').innerText = m.icon || '🛠️';
             document.getElementById('maint-title-display').innerText = m.title || 'Mantenimiento';
@@ -57,21 +43,11 @@ const UI = {
         } else {
             if(!document.getElementById('maintenance-screen').classList.contains('hidden')) { if(u) UI.showLobby(); else UI.show('auth-screen'); }
         }
-        
-        const infoEnabled = m.info !== false;
-        const themeEnabled = m.theme !== false;
-
+        const infoEnabled = m.info !== false; const themeEnabled = m.theme !== false;
         const navInfoBtn = document.getElementById('btn-nav-info');
-        if(navInfoBtn) {
-            if(!infoEnabled && !isAdmin) navInfoBtn.classList.add('hidden');
-            else navInfoBtn.classList.remove('hidden');
-        }
-
+        if(navInfoBtn) { if(!infoEnabled && !isAdmin) navInfoBtn.classList.add('hidden'); else navInfoBtn.classList.remove('hidden'); }
         const themeBtn = document.getElementById('t_theme_btn');
-        if(themeBtn) {
-            if(!themeEnabled && !isAdmin) themeBtn.classList.add('hidden');
-            else themeBtn.classList.remove('hidden');
-        }
+        if(themeBtn) { if(!themeEnabled && !isAdmin) themeBtn.classList.add('hidden'); else themeBtn.classList.remove('hidden'); }
     },
     
     show: (id) => { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); },
@@ -80,41 +56,29 @@ const UI = {
     initLobby() {
         if(CT.data.maint && CT.data.maint.active) { const u = CT.ses(); if(!u || u.r !== 'admin') { UI.checkMaintenance(); return; } }
         const u = CT.ses(); if(!u) return this.show('auth-screen');
-
         updateDiscordStatus("En el menú principal", `Piloto: ${u.n}`, false);
-
-        document.getElementById('val-display-name').innerText = u.n;
-        document.getElementById('val-username').innerText = u.h;
-        document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
-        
-        UI.updateUnitVisuals(CT.currentUnit); 
-        this.renderGlobal(); 
-        UI.renderTrainDropdown();
-        this.show('home-screen');
-        UI.checkAnnouncements(); 
+        document.getElementById('val-display-name').innerText = u.n; document.getElementById('val-username').innerText = u.h; document.getElementById('lobby-avatar').src = u.a || CT.defAvatar;
+        UI.updateUnitVisuals(CT.currentUnit); this.renderGlobal(); UI.renderTrainDropdown(); this.show('home-screen'); UI.checkAnnouncements(); 
     },
 
     showLobby() { this.initLobby(); },
     
     async showStats() { 
-        const u = CT.ses();
-        if(u) await App.getUserScores(u.h); 
-        this.switchStatsTab('personal'); 
-        UI.updateUnitVisuals(CT.currentUnit); 
-        this.show('stats-screen'); 
+        const u = CT.ses(); if(u) await App.getUserScores(u.h); 
+        this.switchStatsTab('personal'); UI.updateUnitVisuals(CT.currentUnit); this.show('stats-screen'); 
     },
     
     showInfo() { this.renderInfoPage(); this.show('info-screen'); },
 
+    // FASE 2: Modificado para solo usar Individual, Elite y Hardcore
     switchStatsTab(tab) {
         document.querySelectorAll('.pane').forEach(p => { if(p.id.startsWith('pane-stats')) p.classList.add('hidden') });
-        document.querySelectorAll('.tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
+        document.querySelectorAll('.st-tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
         document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
         
         if (tab === 'personal') this.renderPersonalStats(); 
-        else if (tab === 'general') this.renderGlobalStats(); 
         else if (tab === 'elite') this.renderEliteStats();
         else if (tab === 'hc') this.renderHardcoreStats();
     },
@@ -133,6 +97,7 @@ const UI = {
         });
     },
 
+    // FASE 2: Adaptado a la grilla CananStudio
     renderPersonalStats() {
         const u = CT.ses(); if(!u) return;
         const userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
@@ -156,22 +121,14 @@ const UI = {
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
         document.querySelectorAll('kbd[data-key]').forEach(el => {
-            const key = el.getAttribute('data-key');
-            const errs = bk[key] || 0;
+            const key = el.getAttribute('data-key'); const errs = bk[key] || 0;
             if(errs > 0) {
-                const pct = (errs / maxErr) * 100;
-                const bgPct = Math.max(10, Math.min(pct, 60)); 
+                const pct = (errs / maxErr) * 100; const bgPct = Math.max(10, Math.min(pct, 60)); 
                 el.style.setProperty('background', `color-mix(in srgb, var(--error) ${bgPct}%, var(--surface-light))`, 'important');
-                el.style.setProperty('border-color', 'var(--error)', 'important');
-                el.style.setProperty('color', '#ffffff', 'important');
-                el.style.setProperty('text-shadow', '0px 0px 4px rgba(0,0,0,0.8)', 'important');
-                el.title = `${errs} errores históricos`;
+                el.style.setProperty('border-color', 'var(--error)', 'important'); el.style.setProperty('color', '#ffffff', 'important');
+                el.style.setProperty('text-shadow', '0px 0px 4px rgba(0,0,0,0.8)', 'important'); el.title = `${errs} errores históricos`;
             } else {
-                el.style.removeProperty('background');
-                el.style.removeProperty('border-color');
-                el.style.removeProperty('color');
-                el.style.removeProperty('text-shadow');
-                el.title = '0 errores';
+                el.style.removeProperty('background'); el.style.removeProperty('border-color'); el.style.removeProperty('color'); el.style.removeProperty('text-shadow'); el.title = '0 errores';
             }
         });
 
@@ -190,6 +147,7 @@ const UI = {
         document.getElementById('st-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<tr><td><b>#${i+1}</b></td><td>${bwItem.w}</td><td><b>${bwItem.errs}</b></td></tr>`).join('');
     },
 
+    // FASE 2: Adaptado a la grilla CananStudio
     renderHardcoreStats() {
         const u = CT.ses(); if(!u) return;
         const userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
@@ -213,32 +171,7 @@ const UI = {
         document.getElementById('st-hc-worst').innerHTML = deathList.map((td, i) => `<tr><td><b>#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${td.t}</div></td><td><b>${td.d}</b></td></tr>`).join('');
     },
 
-    renderGlobalStats() {
-        const users = CT.dbLocal('u');
-        document.getElementById('st-g-users-val').innerText = users.length; 
-        
-        let totalRaces = 0; let totalSum = 0; let globalMax = 0;
-        users.forEach(u => {
-            totalRaces += (u.hi || []).length;
-            totalSum += (u.hi || []).reduce((a,b)=>a+b, 0);
-            let uMax = Math.max(...(u.hi || [0]), 0);
-            if(uMax > globalMax) globalMax = uMax;
-        });
-        
-        document.getElementById('st-g-races-val').innerText = totalRaces;
-        document.getElementById('st-g-avg').innerText = UI.formatValue(totalRaces ? Math.round(totalSum/totalRaces) : 0);
-        document.getElementById('st-g-record').innerText = UI.formatValue(globalMax);
-        
-        let textCounts = {}; (CT.data.s_recent || []).forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
-        const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
-        document.getElementById('st-g-top-texts').innerHTML = topTexts.map((tr, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tr.t}</td><td>${tr.count}</td></tr>`).join('');
-        
-        const phrases = CT.dbLocal('p'); let catCounts = {}; 
-        (CT.data.s_recent || []).forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; catCounts[cat] = (catCounts[cat] || 0) + 1; });
-        let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
-        document.getElementById('st-g-top-cats').innerHTML = topCats.map((tc, i) => `<tr><td><b style="color:var(--p)">#${i+1}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`).join('');
-    },
-
+    // FASE 2: Adaptado a la grilla CananStudio (Fusionando los datos generales en Elite)
     renderEliteStats() {
         const users = CT.dbLocal('u'); if (users.length === 0) return;
         
@@ -247,8 +180,7 @@ const UI = {
         document.getElementById('st-e-most-races-user').innerText = mostRacesUser.n || "-";
 
         let recordUser = users.reduce((p, c) => {
-            let maxC = Math.max(...(c.hi||[0]), 0);
-            let maxP = Math.max(...(p.hi||[0]), 0);
+            let maxC = Math.max(...(c.hi||[0]), 0); let maxP = Math.max(...(p.hi||[0]), 0);
             return maxC > maxP ? c : p;
         }, users[0]);
         document.getElementById('st-e-record-val').innerText = UI.formatValue(Math.max(...(recordUser.hi||[0]), 0));
@@ -291,17 +223,12 @@ const UI = {
         if(!document.getElementById('home-screen').classList.contains('hidden')) UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) UI.showProfile(CT.activeProfHandle || 'me');
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(UI.activeTrackCat || UI.filterFavs) UI.renderTrackList(); else UI.showTrackCategorySelect(); }
-        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-general').classList.contains('hidden')) UI.renderGlobalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) UI.renderEliteStats(); else UI.renderHardcoreStats(); }
+        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) UI.renderEliteStats(); else UI.renderHardcoreStats(); }
     },
 
     setUnit: (unit) => {
         if(CT.currentUnit === unit) return;
         localStorage.removeItem('ct_custom_theme');
-        try {
-            const u = CT.ses(); 
-            if(u && u.theme) { db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
-        } catch (e) { console.warn("Aviso:", e); }
-
         document.documentElement.removeAttribute('data-custom-theme');
 
         CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); 
@@ -324,8 +251,6 @@ const UI = {
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
         if(document.getElementById('t_lbl_st_p_best_avg')) document.getElementById('t_lbl_st_p_best_avg').innerText = 'PROM. GENERAL ' + label;
         if(document.getElementById('t_lbl_st_p_last10_avg')) document.getElementById('t_lbl_st_p_last10_avg').innerText = 'PROM. ÚLT. 10 ' + label;
-        if(document.getElementById('lbl-st-g-avg')) document.getElementById('lbl-st-g-avg').innerText = 'PROMEDIO SERVIDOR ' + label;
-        if(document.getElementById('lbl-st-g-record')) document.getElementById('lbl-st-g-record').innerText = 'RÉCORD ABSOLUTO ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
 
@@ -337,24 +262,14 @@ const UI = {
         if(btn) btn.innerText = `${textLabel} ${CT.fastMode ? onVal : offVal}`;
     },
 
-    toggleFastMode: () => {
-        CT.fastMode = !CT.fastMode;
-        localStorage.setItem('ct_fast_mode', CT.fastMode);
-        UI.updateFastModeVisuals();
-    },
-
-    updateCategorySelects() {},
-
+    toggleFastMode: () => { CT.fastMode = !CT.fastMode; localStorage.setItem('ct_fast_mode', CT.fastMode); UI.updateFastModeVisuals(); },
+    
     renderTrainDropdown() {
         const tPurge = CT.data.ui && CT.data.ui['t_btn_tr_purge'] ? CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
         let html = `<button onclick="App.startPurge()">${tPurge}</button>`;
         const trnCats = CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
-        trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => {
-            const cleanName = c.name.replace('[TRN] ', '');
-            html += `<button onclick="App.startTrnCategory('${c.name}')">⚡ ${cleanName}</button>`;
-        });
-        const drp = document.getElementById('train-dropdown');
-        if(drp) drp.innerHTML = html;
+        trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => { const cleanName = c.name.replace('[TRN] ', ''); html += `<button onclick="App.startTrnCategory('${c.name}')">⚡ ${cleanName}</button>`; });
+        const drp = document.getElementById('train-dropdown'); if(drp) drp.innerHTML = html;
     },
 
     renderGlobal() {
@@ -414,70 +329,46 @@ const UI = {
     
     renderTrackList() {
         const query = (document.getElementById('track-search').value || "").toLowerCase(); let tracks = CT.dbLocal('p');
-        const u = CT.ses(); let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u;
-        let favs = userDoc.favs || [];
+        const u = CT.ses(); let userDoc = CT.dbLocal('u').find(x => x.h === u.h) || u; let favs = userDoc.favs || [];
 
         const listContainer = document.getElementById('track-list-full');
         listContainer.className = 'custom-scroll track-list ' + UI.listLayout;
         
-        if (UI.filterFavs) listContainer.classList.add('fav-scroll');
-        else listContainer.classList.remove('fav-scroll');
+        if (UI.filterFavs) listContainer.classList.add('fav-scroll'); else listContainer.classList.remove('fav-scroll');
 
         let filtered = tracks;
         if (query) {
             document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.add('hidden');
             filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
         } else if (UI.filterFavs) {
-            filtered = tracks.filter(t => favs.includes(t.id.toString()));
-            filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
+            filtered = tracks.filter(t => favs.includes(t.id.toString())); filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
         } else if (!UI.activeTrackCat) {
             UI.showTrackCategorySelect(); return;
         } else {
-            filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); 
-            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
+            filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
         }
 
-        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐';
-        let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
-
+        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐'; let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
         const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
         listContainer.innerHTML = pageData.map(t => {
-            let isFav = favs.includes(t.id.toString());
-            let starClass = isFav ? 'fav-active' : 'fav-inactive';
-            
+            let isFav = favs.includes(t.id.toString()); let starClass = isFav ? 'fav-active' : 'fav-inactive';
             let reorderFavHtml = (UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
             let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
             let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
 
             return `<div class="track-card" onclick="App.startRaceWithTrack('${t.id}')" style="${cardStyle}">
                 <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">
-                    #${t.title}
-                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
-                    ${reorderFavHtml}
+                    #${t.title} <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button> ${reorderFavHtml}
                 </div>
                 <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
             </div>`;
         }).join('');
         document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
-        
-        setTimeout(() => {
-            if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage);
-            else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
-        }, 50);
+        setTimeout(() => { if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage); else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } } }, 50);
     },
     changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.dbLocal('p'); const u = CT.ses(); let favs = (CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
 
-    checkAnnouncements: () => {
-        const anns = CT.dbLocal('a').filter(x => x.active);
-        if (anns.length > 0) {
-            const latest = anns[0];
-            const lastSeen = localStorage.getItem('ct_last_announcement');
-            if (latest.id.toString() !== lastSeen) {
-                UI.showAnnouncement(latest);
-            }
-        }
-    },
-
+    checkAnnouncements: () => { const anns = CT.dbLocal('a').filter(x => x.active); if (anns.length > 0) { const latest = anns[0]; const lastSeen = localStorage.getItem('ct_last_announcement'); if (latest.id.toString() !== lastSeen) { UI.showAnnouncement(latest); } } },
     showAnnouncement(data) { if(!data.id) return; UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
     closeAnnouncement() { if(UI.currentAnnId) { localStorage.setItem('ct_last_announcement', UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
 
