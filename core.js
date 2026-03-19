@@ -1,5 +1,6 @@
 /* ================================================================
    CANANTYPER - CORE SCRIPT (V3.2.0)
+   Maneja Autenticación, Firebase, Discord RPC y Estado del Jugador.
    ================================================================ */
 
 const isDesktopEnv = (typeof process !== 'undefined' && process.versions && !!process.versions.electron);
@@ -29,12 +30,14 @@ const db = firebase.firestore();
 db.enablePersistence().catch((err) => { console.error("Persistencia falló:", err); });
 
 const CT = {
-    data: { u: null, p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: [], s_recent: [], userScores: {}, eliteUsers: [], statsLayout: [] }, 
+    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: [], s_recent: [], userScores: {}, statsLayout: [] }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, activeProfHandle: null, fastMode: false,
     
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
-    ses: () => { return CT.data.u; }, 
+    
+    // REPARADO: Búsqueda exacta del usuario logueado dentro del array global
+    ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (CT.data.u || []).find(x => x.h === s.h) : null; },
     
     init: function() {
         let storedUnit = localStorage.getItem('ct_unit_pref');
@@ -44,7 +47,7 @@ const CT = {
         this.fastMode = localStorage.getItem('ct_fast_mode') === 'true';
 
         const cP = localStorage.getItem('ct_cache_p'); const cC = localStorage.getItem('ct_cache_c');
-        const cUi = localStorage.getItem('ct_cache_ui'); const cU = localStorage.getItem('ct_cache_me');
+        const cUi = localStorage.getItem('ct_cache_ui'); const cU = localStorage.getItem('ct_cache_u');
         
         if(cU) this.data.u = JSON.parse(cU); 
         if(cP) this.data.p = JSON.parse(cP); if(cC) this.data.c = JSON.parse(cC);
@@ -70,11 +73,7 @@ const CT = {
         });
 
         db.collection('config').doc('stats_layout').onSnapshot(snap => {
-            if(snap.exists && snap.data().layout) {
-                CT.data.statsLayout = snap.data().layout;
-            } else {
-                CT.data.statsLayout = [];
-            }
+            if(snap.exists && snap.data().layout) { CT.data.statsLayout = snap.data().layout; } else { CT.data.statsLayout = []; }
             if(typeof UI !== 'undefined' && UI.applyStatsLayout) UI.applyStatsLayout();
         });
 
@@ -103,22 +102,26 @@ const CT = {
             }
         });
 
+        // REPARADO: Volvemos a escuchar a todos los usuarios para armar los Rankings (El volumen es manejable)
+        db.collection('users').onSnapshot(snap => {
+            CT.data.u = snap.docs.map(d => d.data());
+            localStorage.setItem('ct_cache_u', JSON.stringify(CT.data.u));
+            
+            const s = JSON.parse(localStorage.getItem('ct_ses'));
+            if(s && s.h) {
+                const me = CT.data.u.find(x => x.h === s.h);
+                if (me && me.r === 'admin') document.body.classList.add('is-admin');
+                else document.body.classList.remove('is-admin');
+            }
+            if(typeof UI !== 'undefined') { UI.refreshActiveViews(); }
+        });
+
         const session = JSON.parse(localStorage.getItem('ct_ses'));
         if(session && session.h) {
-            db.collection('users').doc(session.h).onSnapshot(doc => {
-                if(doc.exists) {
-                    CT.data.u = doc.data();
-                    localStorage.setItem('ct_cache_me', JSON.stringify(CT.data.u));
-                    if (CT.data.u.r === 'admin') document.body.classList.add('is-admin');
-                    else document.body.classList.remove('is-admin');
-
-                    if(typeof UI !== 'undefined') {
-                        if(document.getElementById('auth-screen') && !document.getElementById('auth-screen').classList.contains('hidden')) { UI.initLobby(); }
-                        UI.refreshActiveViews();
-                    }
-                } else { Auth.logout(); }
-            });
             App.loadLeaderboards();
+            if(typeof UI !== 'undefined') {
+                if(document.getElementById('auth-screen') && !document.getElementById('auth-screen').classList.contains('hidden')) { UI.initLobby(); }
+            }
         } else {
             document.body.classList.remove('is-admin');
             if(typeof UI !== 'undefined') { UI.show('auth-screen'); updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
@@ -140,7 +143,6 @@ const Auth = {
             const docRef = await db.collection('users').doc(handle).get(); 
             if(docRef.exists && docRef.data().p === p) { 
                 localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
-                CT.data.u = docRef.data();
                 location.reload(); 
             } else { 
                 alert("Usuario o contraseña incorrectos"); 
@@ -167,38 +169,25 @@ const Auth = {
             UI.toggleAuth(true); alert("Cuenta creada con éxito."); 
         } catch(e) { alert("Error al conectar con la Nube"); } 
     },
-    logout: () => { localStorage.removeItem('ct_ses'); localStorage.removeItem('ct_cache_me'); location.reload(); },
-    clearCache: () => { if(confirm("¿Seguro que deseas limpiar la caché local?")) { localStorage.removeItem('ct_cache_p'); localStorage.removeItem('ct_cache_c'); localStorage.removeItem('ct_cache_ui'); localStorage.removeItem('ct_cache_me'); location.reload(); } }
+    logout: () => { localStorage.removeItem('ct_ses'); localStorage.removeItem('ct_cache_me'); localStorage.removeItem('ct_cache_u'); location.reload(); },
+    clearCache: () => { if(confirm("¿Seguro que deseas limpiar la caché local?")) { localStorage.removeItem('ct_cache_p'); localStorage.removeItem('ct_cache_c'); localStorage.removeItem('ct_cache_ui'); localStorage.removeItem('ct_cache_me'); localStorage.removeItem('ct_cache_u'); location.reload(); } }
 };
 
 const App = {
-    // Restaurados los listeners ultraligeros de tiempo real para las carreras de "Hoy" y el "Histórico".
-    loadLeaderboards: () => {
-        const todayAR = CT.getARDate();
-        
-        // Carreras de Hoy EN VIVO (Limit 15 para cuidar cuota)
-        db.collection('scores').where('d', '==', todayAR).where('sb', '==', false).orderBy('c', 'desc').limit(15).onSnapshot(snap => {
-            CT.data.s_recent = snap.docs.map(d => d.data());
-            if(typeof UI !== 'undefined') UI.renderGlobal();
-        });
-
-        // Carreras Históricas EN VIVO
-        db.collection('scores').where('hc', '==', false).where('sb', '==', false).orderBy('c', 'desc').limit(15).onSnapshot(snap => {
-            CT.data.s_top = snap.docs.map(d => d.data());
-            if(typeof UI !== 'undefined') UI.renderGlobal();
-        });
-
-        // Promedios: Escaneo silencioso cada 30 segundos
-        App.fetchEliteUsers();
-        setInterval(App.fetchEliteUsers, 30000); 
-    },
-
-    fetchEliteUsers: async () => {
+    // REPARADO: Consultas simples que NO rompen sin índices compuestos. El filtrado de Shadowban se hace en ui.js localmente.
+    loadLeaderboards: async () => {
         try {
-            const eliteReq = await db.collection('users').where('sb', '==', false).get();
-            CT.data.eliteUsers = eliteReq.docs.map(d => d.data());
-            if(typeof UI !== 'undefined') { UI.renderGlobal(); UI.refreshActiveViews(); }
-        } catch(e) {}
+            const topReq = await db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
+            CT.data.s_top = topReq.docs.map(d => d.data());
+        } catch(e) { CT.data.s_top = []; }
+        
+        try {
+            // Descargamos las últimas 50 sin importar fecha, para que siempre haya algo en Recientes.
+            const recReq = await db.collection('scores').orderBy('id', 'desc').limit(50).get();
+            CT.data.s_recent = recReq.docs.map(d => d.data());
+        } catch(e) { CT.data.s_recent = []; }
+        
+        if(typeof UI !== 'undefined') UI.refreshActiveViews();
     },
 
     getUserScores: async (handle) => {
