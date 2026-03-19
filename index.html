@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=1.1.18">
+    <link rel="stylesheet" href="style.css?v=1.1.19">
     <style>
         .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
@@ -74,7 +74,7 @@
                             <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v1.1.18 
+                                CananTyper v1.1.19
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -147,95 +147,73 @@
             <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
         </section>
 
-        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0;">
-            <header class="stats-top-bar">
+        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0; background: #080808;">
+            <header class="stats-top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid #222; background: #0d0d0d; flex-shrink: 0;">
                 <div class="stats-title-group" style="display:flex; align-items:center;">
                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0zIDNoMTh2MmIzIDhoLTN2MmgzIDRoLTE4di0yaDMgdi0yaC0zdi0yaDMgdi0yaC0zdi0yaDMgdi0yaC0zVjNoMHoiLz48L3N2Zz4=" style="width:20px; height:20px; margin-right:10px; filter: drop-shadow(0 0 5px rgba(166,255,0,0.4));">
                     <h2 id="t_hd_stats" style="color:var(--p); font-size:1.1rem; text-transform:uppercase; letter-spacing:2px; text-shadow:0 0 10px rgba(166,255,0,0.3); margin:0;">Estadísticas</h2>
                 </div>
                 
-                <div class="stats-tabs-pro">
+                <div class="stats-tabs-pro" style="display:flex; gap:5px;">
                     <button id="t-st-pe" class="stats-tab-btn active" onclick="window.UI.switchStatsTab('personal')">INDIVIDUALES</button>
                     <button id="t-st-ra" class="stats-tab-btn" onclick="window.UI.switchStatsTab('ranking')">RANKING</button>
-                    <button id="t-st-hc" class="stats-tab-btn" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error); border-color:var(--error);">HARDCORE 💀</button>
+                    <button id="t-st-hc" class="stats-tab-btn" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error);">HARDCORE</button>
                 </div>
 
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <button id="btn-stats-widgets" class="btn-outline hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color: #ffd700; color: #ffd700; font-size: 0.7rem; padding: 6px 15px;">⚙ WIDGETS</button>
-                    <button onclick="window.UI.showLobby()" class="btn-outline" style="border:none; color:var(--text-muted); font-size: 0.7rem; padding: 6px 15px;">SALIR →</button>
-                </div>
-
-                <div id="widgets-menu" class="edit-dropdown hidden" style="top: 60px; right: 120px; width: 250px; z-index: 1000; background: var(--surface); border-color: #ffd700; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
-                    <div style="padding: 10px 15px; border-bottom: 1px solid var(--border); background: #000;">
-                        <span style="color: #ffd700; font-weight: bold; font-size: 0.8rem; text-transform: uppercase;">Gestor de Widgets</span>
-                        <span style="display:block; color:var(--text-muted); font-size:0.65rem;">Cambios aplicados globalmente</span>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: #000; border: 1px solid #333; border-radius: 6px; display: flex; overflow: hidden; height: 28px;">
+                        <button onclick="window.UI.setDashboardZoom(-0.1)" class="btn-outline" style="border: none; border-radius: 0; padding: 0 10px; font-size: 1rem; font-weight: bold; display: flex; align-items: center; color: #aaa;">-</button>
+                        <span id="zoom-level-display" style="color: #ccc; font-size: 0.75rem; padding: 0 10px; border-left: 1px solid #222; border-right: 1px solid #222; display: flex; align-items: center; font-weight: bold;">100%</span>
+                        <button onclick="window.UI.setDashboardZoom(0.1)" class="btn-outline" style="border: none; border-radius: 0; padding: 0 10px; font-size: 1rem; font-weight: bold; display: flex; align-items: center; color: #aaa;">+</button>
                     </div>
-                    <div id="widgets-menu-list" class="custom-scroll" style="max-height: 300px; overflow-y: auto;">
+
+                    <div class="action-menu-wrapper" style="position: relative;">
+                        <button id="btn-stats-widgets" onclick="window.UI.toggleWidgetsMenu()" class="btn-outline admin-only hidden" style="padding: 6px 12px; font-size: 0.7rem; border-color: #ffd700; color: #ffd700; height: 28px; display:flex; align-items:center; gap:5px;">⚙️ WIDGETS</button>
+                        <div id="widgets-menu" class="action-dropdown hidden custom-scroll" style="position:absolute; width: 250px; max-height: 400px; overflow-y: auto; padding: 10px; right: 0; top: 120%; background: #111; border: 1px solid #333; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                            <div style="font-size: 0.7rem; color: #888; text-align: center; margin-bottom: 10px; letter-spacing: 1px; border-bottom:1px solid #222; padding-bottom:5px;">GESTIONAR PANELES</div>
+                            <div id="widgets-menu-list" style="display: flex; flex-direction: column; gap: 5px;"></div>
                         </div>
+                    </div>
+                    
+                    <button onclick="window.UI.showLobby()" class="btn-outline" style="border:none; color:var(--text-muted); font-size: 0.75rem; height: 28px; display:flex; align-items:center;">SALIR ➔</button>
                 </div>
             </header>
             
-            <div class="stats-dashboard custom-scroll" style="flex-grow:1; min-height:0; padding: 2vh 3vw; background: radial-gradient(circle at center, #181818 0%, #121212 100%);">
+            <div id="telemetry-analytics-container" class="custom-scroll" style="flex-grow:1; padding: 25px; overflow-y: auto; transition: transform 0.3s ease; transform-origin: top center;">
                 
                 <div id="pane-stats-personal" class="pane">
                     <div class="stats-grid-container" id="grid-stats-personal">
                         
-                        <div class="ana-block widget-span-4" data-id="w-p-summary">
-                            <header class="ana-header">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <h3 style="color: var(--p);">Resumen del Piloto</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-summary', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-summary', 1)">+</button>
-                                </div>
+                        <div class="db-panel" data-id="w-p-summary">
+                            <header class="panel-header">
+                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> RESUMEN GENERAL</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-summary')" title="Ajustar Tamaño">⤢</button></div>
                             </header>
-                            <div class="ana-content" style="display: flex; justify-content: space-around; align-items: center; padding: 15px;">
-                                <div style="text-align:center;"><small style="display:block; color:var(--text-muted); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="font-size:1.8rem; color:var(--text-main);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--text-muted); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="font-size:1.8rem; color:var(--text-main);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--text-muted); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="font-size:1.2rem; color:var(--text-main);">-</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--p); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">CARRERAS TOTALES</small><b id="st-p-total-races" style="font-size:1.8rem; color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</b></div>
+                            <div class="panel-content" style="display: flex; justify-content: space-around; align-items: center; padding: 25px;">
+                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">PROM. HISTÓRICO</small><b id="st-p-best-avg" class="val-blurrable" style="font-size:2rem; color:#fff;">0</b></div>
+                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="font-size:2rem; color:#fff;">0</b></div>
+                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MEJOR CATEGORÍA</small><b id="st-p-best-cat" style="font-size:1.4rem; color:#fff;">-</b></div>
+                                <div style="text-align:center;"><small style="display:block; color:var(--p); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">CARRERAS COMPLETADAS</small><b id="st-p-total-races" style="font-size:2.2rem; color:var(--p); text-shadow:0 0 15px rgba(166,255,0,0.2);">0</b></div>
                             </div>
                         </div>
 
-                        <div class="ana-block widget-span-2" data-id="w-p-cpm">
-                            <header class="ana-header">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon"></span><h3>Rendimiento Técnico</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-cpm', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-cpm', 1)">+</button>
-                                </div>
+                        <div class="db-panel" data-id="w-p-graph">
+                            <header class="panel-header">
+                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> RENDIMIENTO GLOBAL (ÚLTIMAS 15)</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-graph')">⤢</button></div>
                             </header>
-                            <div class="ana-content ana-cpm-graph" style="position:relative; overflow:hidden; min-height: 180px;">
-                                <svg class="chart-line-svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                                    <defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 20%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:color-mix(in srgb, var(--p) 20%, transparent);stop-opacity:0" /></defs>
-                                    <path class="chart-area" d="M0,300 L0,150 Q250,50 500,100 T1000,80 L1000,300 Z" style="fill:url(#grad-p);"></path>
-                                    <polyline class="chart-line" points="0,150 100,160 200,140 300,110 400,90 500,100 600,120 700,95 800,85 900,88 1000,80" style="stroke:var(--p);"></polyline>
-                                </svg>
-                                <div class="chart-overlay-val val-blurrable">
-                                    <small>VELOCIDAD DE CRUCERO</small>
-                                    <b id="st-p-graph-val">0</b>
-                                </div>
+                            <div class="panel-content" style="position:relative; height: 220px; padding: 15px 15px 0 15px;">
+                                <div id="st-p-svg-container" style="width: 100%; height: 100%;"></div>
                             </div>
                         </div>
 
-                        <div class="ana-block widget-span-2 table-strict-error" data-id="w-p-heat">
-                            <header class="ana-header" style="border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon ana-icon-err"></span><h3 style="color: var(--error);">Diagnóstico de Errores</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-heat', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-heat', 1)">+</button>
-                                </div>
+                        <div class="db-panel db-panel-err" data-id="w-p-heat">
+                            <header class="panel-header">
+                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MAPA DE CALOR: TECLAS CRÍTICAS</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-heat')">⤢</button></div>
                             </header>
-                            <div class="ana-content custom-scroll" style="display:flex; justify-content:center; align-items:center; padding: 10px 0; min-height: 180px;">
-                                <div class="keyboard-container heatmap-cananstudio" style="transform: scale(0.8);">
+                            <div class="panel-content custom-scroll" style="display:flex; justify-content:center; align-items:center; padding: 20px 0; min-height: 220px;">
+                                <div class="keyboard-container heatmap-cananstudio" style="transform: scale(0.9);">
                                     <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
@@ -243,46 +221,28 @@
                             </div>
                         </div>
 
-                        <div class="ana-block widget-span-1" data-id="w-p-top">
-                            <header class="ana-header">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon"></span><h3>Récord Personal (Top 10)</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-top', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-top', 1)">+</button>
-                                </div>
+                        <div class="db-panel" data-id="w-p-top">
+                            <header class="panel-header">
+                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MEJORES CARRERAS (TOP 10)</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-top')">⤢</button></div>
                             </header>
-                            <div class="ana-content custom-scroll data-list-cananstudio" id="st-p-top10-races" style="max-height: 250px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro" id="st-p-top10-races" style="max-height: 280px;"></div>
                         </div>
 
-                        <div class="ana-block widget-span-1 table-strict-error" data-id="w-p-worst">
-                            <header class="ana-header" style="border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon ana-icon-err"></span><h3 style="color: var(--error);">Pistas Críticas (Bottom 5)</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-worst', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-worst', 1)">+</button>
-                                </div>
+                        <div class="db-panel db-panel-err" data-id="w-p-worst">
+                            <header class="panel-header">
+                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> PISTAS A MEJORAR (BOTTOM 5)</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-worst')">⤢</button></div>
                             </header>
-                            <div class="ana-content error-scroll custom-scroll data-list-cananstudio data-list-err" id="st-p-worst-tracks" style="max-height: 250px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-p-worst-tracks" style="max-height: 280px;"></div>
                         </div>
 
-                        <div class="ana-block widget-span-1 table-strict-error" data-id="w-p-words">
-                            <header class="ana-header" style="border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon ana-icon-err"></span><h3 style="color: var(--error);">Palabras a Mejorar (Top 30)</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-words', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('personal', 'w-p-words', 1)">+</button>
-                                </div>
+                        <div class="db-panel db-panel-err" data-id="w-p-words">
+                            <header class="panel-header">
+                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> PALABRAS CRÍTICAS (TOP 30)</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('personal', 'w-p-words')">⤢</button></div>
                             </header>
-                            <div class="ana-content error-scroll custom-scroll data-list-cananstudio data-list-err" id="st-p-worst-words" style="max-height: 250px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-p-worst-words" style="max-height: 280px;"></div>
                         </div>
                     </div>
                 </div>
@@ -290,51 +250,33 @@
                 <div id="pane-stats-ranking" class="pane hidden">
                     <div class="stats-grid-container" id="grid-stats-ranking">
                         
-                        <div class="ana-block widget-span-4" data-id="w-r-summary">
-                            <header class="ana-header">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <h3 style="color: var(--p);">Métricas Globales (Élite)</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('ranking', 'w-r-summary', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('ranking', 'w-r-summary', 1)">+</button>
-                                </div>
+                        <div class="db-panel" data-id="w-r-summary">
+                            <header class="panel-header">
+                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÉTRICAS DE ÉLITE GLOBALES</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('ranking', 'w-r-summary')">⤢</button></div>
                             </header>
-                            <div class="ana-content" style="display: flex; justify-content: space-around; align-items: center; padding: 15px;">
-                                <div style="text-align:center;"><small style="display:block; color:var(--text-muted); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MÁS CARRERAS</small><b id="st-e-most-races-val" style="font-size:1.8rem; color:var(--text-main);">0</b><span id="st-e-most-races-user" style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:bold;">-</span></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--text-muted); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="font-size:1.8rem; color:var(--text-main);">0</b><span id="st-e-top1-user" style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:bold;">-</span></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--text-muted); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="font-size:1.8rem; color:var(--text-main);">0</b><span id="st-e-bestavg-user" style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:bold;">-</span></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--p); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable" style="font-size:1.8rem; color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</b><span id="st-e-record-user" style="display:block; font-size:0.75rem; color:var(--p); font-weight:bold;">-</span></div>
+                            <div class="panel-content" style="display: flex; justify-content: space-around; align-items: center; padding: 25px;">
+                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MÁS CARRERAS</small><b id="st-e-most-races-val" style="font-size:2rem; color:#fff;">0</b><span id="st-e-most-races-user" style="display:block; font-size:0.75rem; color:#aaa; font-weight:bold;">-</span></div>
+                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MÁS VECES TOP 1</small><b id="st-e-top1-val" style="font-size:2rem; color:#fff;">0</b><span id="st-e-top1-user" style="display:block; font-size:0.75rem; color:#aaa; font-weight:bold;">-</span></div>
+                                <div style="text-align:center;"><small style="display:block; color:#777; font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MEJOR PROMEDIO</small><b id="st-e-bestavg-val" class="val-blurrable" style="font-size:2rem; color:#fff;">0</b><span id="st-e-bestavg-user" style="display:block; font-size:0.75rem; color:#aaa; font-weight:bold;">-</span></div>
+                                <div style="text-align:center;"><small style="display:block; color:var(--p); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable" style="font-size:2.2rem; color:var(--p); text-shadow:0 0 15px rgba(166,255,0,0.2);">0</b><span id="st-e-record-user" style="display:block; font-size:0.75rem; color:var(--p); font-weight:bold;">-</span></div>
                             </div>
                         </div>
 
-                        <div class="ana-block widget-span-2" data-id="w-r-texts">
-                            <header class="ana-header">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon"></span><h3>Máxima Velocidad por Pista</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('ranking', 'w-r-texts', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('ranking', 'w-r-texts', 1)">+</button>
-                                </div>
+                        <div class="db-panel" data-id="w-r-texts">
+                            <header class="panel-header">
+                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÁXIMA VELOCIDAD POR PISTA</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('ranking', 'w-r-texts')">⤢</button></div>
                             </header>
-                            <div class="ana-content custom-scroll data-list-cananstudio" id="st-e-table-texts" style="max-height: 400px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro" id="st-e-table-texts" style="max-height: 400px;"></div>
                         </div>
 
-                        <div class="ana-block widget-span-2" data-id="w-r-cats">
-                            <header class="ana-header">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon"></span><h3>Máxima Velocidad por Categoría</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('ranking', 'w-r-cats', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('ranking', 'w-r-cats', 1)">+</button>
-                                </div>
+                        <div class="db-panel" data-id="w-r-cats">
+                            <header class="panel-header">
+                                <div class="panel-title"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÁXIMA VELOCIDAD POR CATEGORÍA</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('ranking', 'w-r-cats')">⤢</button></div>
                             </header>
-                            <div class="ana-content custom-scroll data-list-cananstudio" id="st-e-table-cats" style="max-height: 400px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro" id="st-e-table-cats" style="max-height: 400px;"></div>
                         </div>
                     </div>
                 </div>
@@ -342,51 +284,33 @@
                 <div id="pane-stats-hc" class="pane hidden">
                     <div class="stats-grid-container" id="grid-stats-hc">
                         
-                        <div class="ana-block widget-span-4 table-strict-error" data-id="w-hc-summary">
-                            <header class="ana-header" style="border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <h3 style="color: var(--error);">Métricas de Supervivencia</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('hc', 'w-hc-summary', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('hc', 'w-hc-summary', 1)">+</button>
-                                </div>
+                        <div class="db-panel db-panel-err" data-id="w-hc-summary">
+                            <header class="panel-header">
+                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MÉTRICAS DE SUPERVIVENCIA</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('hc', 'w-hc-summary')">⤢</button></div>
                             </header>
-                            <div class="ana-content" style="display: flex; justify-content: space-around; align-items: center; padding: 15px;">
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">RÉCORD HARDCORE</small><b id="st-hc-record" style="font-size:1.8rem; color:var(--error);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">CARRERAS SUPERVIVIDAS</small><b id="st-hc-surv" style="font-size:1.8rem; color:var(--error);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="font-size:1.8rem; color:var(--error);">0</b></div>
-                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="font-size:1.8rem; color:var(--error); text-shadow:0 0 10px rgba(244,67,54,0.3);">0%</b></div>
+                            <div class="panel-content" style="display: flex; justify-content: space-around; align-items: center; padding: 25px;">
+                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">RÉCORD HARDCORE</small><b id="st-hc-record" style="font-size:2rem; color:var(--error);">0</b></div>
+                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">SUPERS VIVIDAS</small><b id="st-hc-surv" style="font-size:2rem; color:var(--error);">0</b></div>
+                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">MUERTES SÚBITAS</small><b id="st-hc-deaths" style="font-size:2rem; color:var(--error);">0</b></div>
+                                <div style="text-align:center;"><small style="display:block; color:var(--error); font-size:0.65rem; font-weight:bold; margin-bottom:5px;">TASA DE MORTALIDAD</small><b id="st-hc-rate" style="font-size:2.2rem; color:var(--error); text-shadow:0 0 15px rgba(244,67,54,0.3);">0%</b></div>
                             </div>
                         </div>
 
-                        <div class="ana-block widget-span-2 table-strict-error" data-id="w-hc-top">
-                            <header class="ana-header" style="border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon ana-icon-err"></span><h3 style="color: var(--error);">Mejores Sobrevividas (Top 10)</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('hc', 'w-hc-top', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('hc', 'w-hc-top', 1)">+</button>
-                                </div>
+                        <div class="db-panel db-panel-err" data-id="w-hc-top">
+                            <header class="panel-header">
+                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> MEJORES SOBREVIVIDAS (TOP 10)</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('hc', 'w-hc-top')">⤢</button></div>
                             </header>
-                            <div class="ana-content error-scroll custom-scroll data-list-cananstudio data-list-err" id="st-hc-top10" style="max-height: 350px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-hc-top10" style="max-height: 350px;"></div>
                         </div>
 
-                        <div class="ana-block widget-span-2 table-strict-error" data-id="w-hc-worst">
-                            <header class="ana-header" style="border-bottom-color: color-mix(in srgb, var(--error) 30%, transparent);">
-                                <div class="ana-title-wrap">
-                                    <span class="drag-handle admin-only hidden" title="Mover">⠿</span>
-                                    <span class="ana-icon ana-icon-err"></span><h3 style="color: var(--error);">Pistas más Mortales (Top 10)</h3>
-                                </div>
-                                <div class="admin-widget-controls admin-only hidden">
-                                    <button onclick="window.App.toggleWidgetSize('hc', 'w-hc-worst', -1)">-</button>
-                                    <button onclick="window.App.toggleWidgetSize('hc', 'w-hc-worst', 1)">+</button>
-                                </div>
+                        <div class="db-panel db-panel-err" data-id="w-hc-worst">
+                            <header class="panel-header">
+                                <div class="panel-title" style="color:var(--error);"><span class="drag-handle admin-only hidden" title="Mover">☰</span> PISTAS MÁS MORTALES (TOP 10)</div>
+                                <div class="panel-controls admin-only hidden"><button onclick="window.App.cycleWidgetSize('hc', 'w-hc-worst')">⤢</button></div>
                             </header>
-                            <div class="ana-content error-scroll custom-scroll data-list-cananstudio data-list-err" id="st-hc-worst" style="max-height: 350px;"></div>
+                            <div class="panel-content custom-scroll list-view-pro error-list" id="st-hc-worst" style="max-height: 350px;"></div>
                         </div>
                     </div>
                 </div>
