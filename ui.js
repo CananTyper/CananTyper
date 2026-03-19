@@ -1,5 +1,5 @@
 /* ================================================================
-   CANANTYPER - MÓDULO UI (V2.2 - COMPETITIVO)
+   CANANTYPER - MÓDULO UI (V3.0 - COMPETITIVO GLOBAL)
    ================================================================ */
 
 const UI = {
@@ -8,17 +8,106 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     personalChartInstance: null,
     
+    // Layout por Defecto de Estadísticas en caso de que la DB esté vacía
+    defaultLayout: [
+        {id: 'w-p-heat', size: 'wide', pane: 'grid-stats-personal'},
+        {id: 'w-p-trend', size: 'wide', pane: 'grid-stats-personal'},
+        {id: 'w-p-top', size: 'normal', pane: 'grid-stats-personal'},
+        {id: 'w-p-worst-trk', size: 'normal', pane: 'grid-stats-personal'},
+        {id: 'w-p-worst-wrd', size: 'normal', pane: 'grid-stats-personal'},
+        {id: 'w-e-speed', size: 'normal', pane: 'grid-stats-elite'},
+        {id: 'w-e-active', size: 'normal', pane: 'grid-stats-elite'},
+        {id: 'w-hc-surv', size: 'normal', pane: 'grid-stats-hc'},
+        {id: 'w-hc-deadly', size: 'normal', pane: 'grid-stats-hc'}
+    ],
+
     formatValue: (cpm) => { return (CT.currentUnit === 'wpm') ? Math.round(cpm / CT.charPerWord) : cpm; },
 
     handleImageUpload: (event) => {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            UI.openCropModal(e.target.result);
-        };
+        reader.onload = (e) => { UI.openCropModal(e.target.result); };
         reader.readAsDataURL(file);
     },
+
+    /* --- SISTEMA DE ORDENAMIENTO GLOBAL DE ESTADÍSTICAS --- */
+    applyStatsLayout: () => {
+        const layout = (CT.data.statsLayout && CT.data.statsLayout.length > 0) ? CT.data.statsLayout : UI.defaultLayout;
+        layout.forEach(w => {
+            const el = document.querySelector(`.analytic-widget[data-id="${w.id}"]`);
+            const grid = document.getElementById(w.pane);
+            if (el && grid) {
+                grid.appendChild(el);
+                el.classList.remove('w-wide', 'w-large');
+                if(w.size === 'wide') el.classList.add('w-wide');
+                if(w.size === 'large') el.classList.add('w-large');
+            }
+        });
+        setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300);
+    },
+
+    saveStatsLayout: () => {
+        const u = CT.ses(); if(!u || u.r !== 'admin') return;
+        const layout = [];
+        const grids = ['grid-stats-personal', 'grid-stats-elite', 'grid-stats-hc'];
+        grids.forEach(paneId => {
+            const grid = document.getElementById(paneId);
+            if(grid) {
+                grid.querySelectorAll('.analytic-widget').forEach(el => {
+                    let size = 'normal';
+                    if (el.classList.contains('w-wide')) size = 'wide';
+                    if (el.classList.contains('w-large')) size = 'large';
+                    layout.push({ id: el.getAttribute('data-id'), size: size, pane: paneId });
+                });
+            }
+        });
+        db.collection('config').doc('stats_layout').set({ layout: layout });
+    },
+
+    resizeStatWidget: (id, paneType) => {
+        const u = CT.ses(); if(!u || u.r !== 'admin') return;
+        const el = document.querySelector(`.analytic-widget[data-id="${id}"]`);
+        if(!el) return;
+        if(el.classList.contains('w-large')) { el.classList.remove('w-large'); }
+        else if(el.classList.contains('w-wide')) { el.classList.remove('w-wide'); el.classList.add('w-large'); }
+        else { el.classList.add('w-wide'); }
+        UI.saveStatsLayout();
+        setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300);
+    },
+
+    toggleStatsFullscreen: (paneId, btnId) => {
+        const pane = document.getElementById(paneId);
+        const btn = document.getElementById(btnId);
+        if (!pane || !btn) return;
+        pane.classList.toggle('fullscreen-analytics');
+        if (pane.classList.contains('fullscreen-analytics')) {
+            btn.innerText = '⛶ REDUCIR'; btn.style.borderColor = 'var(--p)'; btn.style.color = 'var(--p)';
+            if(paneId === 'pane-stats-hc') { btn.style.borderColor = 'var(--error)'; btn.style.color = 'var(--error)'; }
+        } else {
+            btn.innerText = '⛶ AMPLIAR'; btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--text-muted)';
+            if(paneId === 'pane-stats-hc') { btn.style.borderColor = 'var(--error)'; btn.style.color = 'var(--error)'; }
+        }
+        setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300);
+    },
+
+    initStatsSortable: () => {
+        if (typeof Sortable === 'undefined') return;
+        const u = CT.ses(); if(!u || u.r !== 'admin') return;
+
+        const grids = ['grid-stats-personal', 'grid-stats-elite', 'grid-stats-hc'];
+        grids.forEach(paneId => {
+            const container = document.getElementById(paneId);
+            if(container) {
+                if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
+                container._sortable = Sortable.create(container, {
+                    handle: '.w-handle', animation: 150, ghostClass: 'sortable-ghost',
+                    onEnd: () => UI.saveStatsLayout()
+                });
+            }
+        });
+    },
+    /* --------------------------------------------------------------- */
 
     setLayout: (mode) => {
         UI.listLayout = mode; localStorage.setItem('ct_layout', mode);
@@ -70,6 +159,8 @@ const UI = {
         if(u) await App.getUserScores(u.h); 
         this.switchStatsTab('personal'); 
         UI.updateUnitVisuals(CT.currentUnit); 
+        UI.applyStatsLayout();
+        UI.initStatsSortable();
         this.show('stats-screen'); 
     },
     
@@ -77,14 +168,19 @@ const UI = {
 
     switchStatsTab(tab) {
         document.querySelectorAll('.pane').forEach(p => { if(p.id.startsWith('pane-stats')) p.classList.add('hidden') });
-        document.querySelectorAll('.tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
-        document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
+        document.querySelectorAll('.st-tab-btn').forEach(b => { if(b.id.startsWith('t-st-')) b.classList.remove('active') });
+        
+        const pane = document.getElementById(`pane-stats-${tab}`);
+        if(pane) pane.classList.remove('hidden');
+        
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
         
         if (tab === 'personal') this.renderPersonalStats(); 
         else if (tab === 'elite') this.renderEliteStats();
         else if (tab === 'hc') this.renderHardcoreStats();
+
+        setTimeout(() => { if(UI.personalChartInstance) UI.personalChartInstance.resize(); }, 300);
     },
     
     applyUITexts: () => {
@@ -105,9 +201,6 @@ const UI = {
         const u = CT.ses(); if(!u) return;
         const userScores = (CT.data.userScores[u.h] || []).filter(s => !s.hc); 
         
-        document.querySelectorAll('.st-p-owner').forEach(el => el.innerText = u.n);
-        
-        // Numéricos (Arrays históricos exactos del user doc)
         const hi = u.hi || []; const totalRaces = hi.length;
         document.getElementById('st-p-total-races').innerText = totalRaces;
         
@@ -118,25 +211,24 @@ const UI = {
         const avgLast10 = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0) / last10hi.length) : 0;
         document.getElementById('st-p-last10-avg').innerText = UI.formatValue(avgLast10);
         
-        // Mejor Categoría (requiere cruce con frases)
         const phrases = CT.data.p; let catAvgs = {};
         userScores.forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
         let bestCat = "-"; let maxCatAvg = -1;
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
 
-        // Gráfico de Evolución (similar CananStudio)
+        // Gráfico de Evolución
         if(typeof Chart !== 'undefined' && document.getElementById('personal-trend-chart')) {
             if(UI.personalChartInstance) UI.personalChartInstance.destroy();
             const ctx = document.getElementById('personal-trend-chart').getContext('2d');
-            const trendData = hi.slice(-20); // Últimas 20
+            const trendData = hi.slice(-20); 
             const labels = trendData.map((s, i) => `#${i+1}`);
             const dataPts = trendData.map(s => UI.formatValue(s));
             
             Chart.defaults.color = '#777'; Chart.defaults.font.family = 'monospace';
             UI.personalChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: { labels: labels, datasets: [{ label: 'Velocidad', data: dataPts, borderColor: '#a6ff00', backgroundColor: 'rgba(166,255,0,0.05)', fill: true, tension: 0.1, pointRadius: 2, borderWidth: 2 }] },
+                data: { labels: labels, datasets: [{ label: 'Velocidad', data: dataPts, borderColor: '#a6ff00', backgroundColor: 'rgba(166,255,0,0.05)', fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { grid: { color: '#222' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { display: false } } } }
             });
         }
@@ -155,23 +247,20 @@ const UI = {
             } else { el.style.removeProperty('background'); el.style.removeProperty('border-color'); el.style.removeProperty('color'); el.title = '0 errores'; }
         });
 
-        // Tablas
+        // Tablas Top 10 y Críticas
         const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<tr><td><b>#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.track}</div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td></tr>`).join('');
+        document.getElementById('st-p-top10-races').innerHTML = top10.map((s, i) => `<li><span class="w-rank">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${s.track}</span> <b style="color:var(--p);" class="val-blurrable">${UI.formatValue(s.c)}</b></li>`).join('');
 
         let trackAvgs = {}; userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
         let bottom5 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 5);
-        document.getElementById('st-p-worst-tracks').innerHTML = bottom5.map((tr, i) => `<tr><td><b>#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tr.t}</div></td><td><b class="val-blurrable">${UI.formatValue(Math.round(tr.avg))}</b></td></tr>`).join('');
+        document.getElementById('st-p-worst-tracks').innerHTML = bottom5.map((tr, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${tr.t}</span> <b style="color:var(--error);" class="val-blurrable">${UI.formatValue(Math.round(tr.avg))}</b></li>`).join('');
 
         const bw = u.bad_words || {}; let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 30);
-        document.getElementById('st-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<tr><td><b>#${i+1}</b></td><td>${bwItem.w}</td><td><b>${bwItem.errs}</b></td></tr>`).join('');
+        document.getElementById('st-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bwItem.w}</span> <b style="color:var(--error);">${bwItem.errs}</b></li>`).join('');
     },
 
     renderHardcoreStats() {
-        const u = CT.ses(); if(!u) return;
-        
-        // Exactos del Servidor (Calculados desde Élite)
         const eliteUsers = CT.data.eliteUsers || [];
         let rG = 0; let mG = 0; let dG = 0; let dnG = 0;
         let rU = "-", sU = "-", dU = "-", dnU = "-";
@@ -203,18 +292,17 @@ const UI = {
         document.getElementById('st-hc-danger-user').innerText = dnU;
 
         const top10HC = eliteUsers.filter(eu => eu.hi_hc && eu.hi_hc.length > 0).sort((a,b) => Math.max(...b.hi_hc) - Math.max(...a.hi_hc)).slice(0, 10);
-        document.getElementById('st-hc-top10').innerHTML = top10HC.map((eu, i) => `<tr><td><b>#${i+1}</b></td><td><div class="player-link" onclick="UI.showProfile('${eu.h}')"><div class="avatar-xs"><img src="${eu.a || CT.defAvatar}"></div><span>${eu.n}</span></div></td><td><b class="val-blurrable">${UI.formatValue(Math.max(...eu.hi_hc))}</b></td></tr>`).join('');
+        document.getElementById('list-hc-surv').innerHTML = top10HC.map((eu, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${eu.n}</span> <b style="color:var(--error);">${eu.hi_hc.length} 🏅</b></li>`).join('');
         
         let trackDeathsGlobal = {}; eliteUsers.forEach(eu => { if(eu.hc_track_deaths) { Object.keys(eu.hc_track_deaths).forEach(tId => { trackDeathsGlobal[tId] = (trackDeathsGlobal[tId] || 0) + eu.hc_track_deaths[tId]; }); } });
         let deathList = Object.keys(trackDeathsGlobal).map(k => ({ t: k, d: trackDeathsGlobal[k] })).sort((a,b) => b.d - a.d).slice(0, 10);
-        document.getElementById('st-hc-worst').innerHTML = deathList.map((td, i) => `<tr><td><b>#${i+1}</b></td><td><div style="width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${td.t}</div></td><td><b>${td.d} ☠️</b></td></tr>`).join('');
+        document.getElementById('list-hc-deadly').innerHTML = deathList.map((td, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${td.t}</span> <b style="color:var(--error);">${td.d} ☠️</b></li>`).join('');
     },
 
     renderEliteStats() {
         const eliteUsers = CT.data.eliteUsers || [];
         if (eliteUsers.length === 0) return;
         
-        // Agregación Local CananTyper 2.2 (Agregación matemática en cliente sin costo de cuota)
         let mostRacesUser = eliteUsers.reduce((p, c) => ((c.hi||[]).length + (c.hi_hc||[]).length > (p.hi||[]).length + (p.hi_hc||[]).length) ? c : p, eliteUsers[0]);
         document.getElementById('st-e-most-races-val').innerText = (mostRacesUser.hi||[]).length + (mostRacesUser.hi_hc||[]).length;
         document.getElementById('st-e-most-races-user').innerText = mostRacesUser.n || "-";
@@ -238,25 +326,30 @@ const UI = {
             let avgP = pScores.length >= 5 ? (pScores.reduce((a,b)=>a+b,0)/pScores.length) : 0;
             return avgC > avgP ? c : p;
         }, eliteUsers[0]);
+        
         let bestScores = [...(avgUser.hi||[]), ...(avgUser.hi_hc||[])];
         let bestAvg = bestScores.length >= 5 ? (bestScores.reduce((a,b)=>a+b,0)/bestScores.length) : 0;
         
-        // Exactos (Calculados matemáticamente en cliente)
-        document.getElementById('st-e-bestavg-val').innerText = bestAvg > 0 ? UI.formatValue(Math.round(bestAvg)) : "0";
-        document.getElementById('st-e-bestavg-user').innerText = bestAvg > 0 ? (avgUser.n || "-") : "Faltan datos (Min 5 car.)";
+        if (bestAvg > 0) {
+            document.getElementById('st-e-bestavg-val').innerText = UI.formatValue(Math.round(bestAvg));
+            document.getElementById('st-e-bestavg-user').innerText = avgUser.n || "-";
+        } else {
+            document.getElementById('st-e-bestavg-val').innerText = "0";
+            document.getElementById('st-e-bestavg-user').innerText = "Min 5 car.";
+        }
         
-        // Tablas HOFS (Calculadas desde arrays exactos)
         const top10Speed = [...eliteUsers].sort((a,b) => Math.max(...(b.hi||[0]),0) - Math.max(...(a.hi||[0]),0)).slice(0, 10);
-        document.getElementById('st-e-table-speed').innerHTML = top10Speed.map((u, i) => {
-            const posClass = i === 0 ? 'podium-1' : (i === 1 ? 'podium-2' : (i === 2 ? 'podium-3' : ''));
-            return `<tr><td class="${posClass}">${i+1}</td><td><div class="player-link" onclick="UI.showProfile('${u.h}')"><div class="avatar-xs"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(Math.max(...(u.hi||[0]), 0))}</b></td></tr>`;
-        }).join('');
+        document.getElementById('list-e-speed').innerHTML = top10Speed.map((u, i) => `<li><span class="w-rank" style="color:var(--p);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.n}</span> <b style="color:var(--p);" class="val-blurrable">${UI.formatValue(Math.max(...(u.hi||[0]), 0))}</b></li>`).join('');
 
-        const top10HC = [...eliteUsers].sort((a,b) => Math.max(...(b.hi_hc||[0]),0) - Math.max(...(a.hi_hc||[0]),0)).slice(0, 10);
-        document.getElementById('st-e-table-active').innerHTML = top10HC.map((u, i) => {
-            const posClass = i === 0 ? 'podium-1' : (i === 1 ? 'podium-2' : (i === 2 ? 'podium-3' : ''));
-            return `<tr><td class="${posClass}">${i+1}</td><td><div class="player-link" onclick="UI.showProfile('${u.h}')"><div class="avatar-xs"><img src="${u.a || CT.defAvatar}"></div><span>${u.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(Math.max(...(u.hi_hc||[0]), 0))}</b></td></tr>`;
-        }).join('');
+        const todayAR = CT.getARDate();
+        let todayCounts = {};
+        (CT.data.s_recent || []).forEach(s => { if(s.d === todayAR && !s.sb) todayCounts[s.h] = (todayCounts[s.h] || 0) + 1; });
+        const topActive = Object.keys(todayCounts).map(h => {
+            const uObj = eliteUsers.find(u => u.h === h);
+            return { h: h, n: uObj ? uObj.n : h, a: uObj ? uObj.a : '', c: todayCounts[h] };
+        }).sort((a,b) => b.c - a.c).slice(0, 10);
+
+        document.getElementById('list-e-active').innerHTML = topActive.map((u, i) => `<li><span class="w-rank" style="color:#00bcd4;">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.n}</span> <b style="color:#00bcd4;">${u.c} 🏎️</b></li>`).join('');
     },
 
     renderInfoPage() { if(!CT.data.info) return; document.getElementById('info-display-title').innerText = CT.data.info.title || "Información"; document.getElementById('info-display-content').innerHTML = CT.data.info.content || ""; },
@@ -274,25 +367,28 @@ const UI = {
         document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
         const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
         const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
-        const thIds = ['th-unit-times', 'th-unit-hist', 'th-st-p-vel', 'th-st-e-t-vel'];
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-st-e-t-vel'];
         thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; } });
-        const subIds = ['t_st_p_best_avg_sub', 't_st_p_last10_sub', 't_st_e_record_sub'];
-        subIds.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerText = label; });
+        const subIds = ['t_st_p_best_avg_sub', 't_st_p_last10_sub', 't_st_e_record_sub', 't_st_e_bestavg_sub', 't_st_e_sk_sub'];
+        subIds.forEach(id => { 
+            const el = document.getElementById(id);
+            if(el) {
+                if(id === 't_st_e_bestavg_sub') el.innerText = ` ${label} (Min 5 car.)`;
+                else if(id === 't_st_e_sk_sub') el.innerText = ` ${label} (Normales)`;
+                else el.innerText = ` ${label}`;
+            }
+        });
     },
 
     updateFastModeVisuals: () => { const btn = document.getElementById('btn-fast-mode'); if(btn) btn.innerText = `⚡ Modo Rápido: ${CT.fastMode ? 'SI' : 'NO'}`; },
     toggleFastMode: () => { CT.fastMode = !CT.fastMode; localStorage.setItem('ct_fast_mode', CT.fastMode); UI.updateFastModeVisuals(); },
     renderTrainDropdown() { /* Intacto */ },
 
-    // REPARADO: Consulta exacta a Firestore para Hoy y muestra Élite para Historial
     renderGlobal() {
         const typeEl = document.getElementById('leaderboard-type'); if(!typeEl) return;
         const todayAR = CT.getARDate();
 
-        // En Vivo (Hoy): Viene directo de Firestore s_recent (filtrado por d==todayAR en core)
         let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb && s.d === todayAR);
-        
-        // Histórico Muestra: Viene de s_top (los TOP 50 descargados)
         let histScores = (CT.data.s_top || []).filter(s => !s.sb);
 
         let filtered = typeEl.value === 'today' ? vivoScores : histScores;
@@ -303,7 +399,6 @@ const UI = {
             return `<tr><td class="${posClass}">${idx + 1}</td><td><div class="player-link" onclick="UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || CT.defAvatar}"></div><span>${s.n}</span></div></td><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td></tr>`;
         }).join('');
 
-        // Promedios (Hall of Fame Exacto basado en Muestra Élite)
         const rankingMode = document.getElementById('ranking-type').value;
         const eliteUsers = CT.data.eliteUsers || [];
         
@@ -319,20 +414,168 @@ const UI = {
         }).join('');
     },
 
-    // RESTO DE FUNCIONES (Intactas)
-    async showProfile(who) { /* Intacto Phase 2 anterior */ },
-    renderProfileHistory() { /* Intacto */ },
-    // Modales, Crop, Temas, Anuncios, Tracks (Intactos Phase 2 anterior)
-    openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); },
+    async showProfile(who) {
+        try {
+            const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
+            let u = (who === 'me') ? currentSes : null;
+            if(!u) { const snap = await db.collection('users').doc(targetHandle).get(); if(snap.exists) u = snap.data(); }
+            if(!u) return;
+
+            CT.activeProfHandle = u.h;
+            await App.getUserScores(u.h);
+            
+            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
+            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
+            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
+            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
+            const bestCPM = total ? Math.max(...hi) : 0;
+            
+            document.getElementById('st-avg').innerText = UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = UI.formatValue(bestCPM);
+            CT.profPage = 0; this.renderProfileHistory();
+            
+            const isMe = (currentSes && u.h === currentSes.h);
+            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
+            this.show('profile-screen');
+        } catch (error) { console.error(error); }
+    },
+    
+    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
+    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
+    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
+    
+    openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); UI.toggleSettings(); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
-    applySavedTheme: () => { /* Intacto */ },
-    saveTheme: (name) => { /* Intacto */ },
-    openCropModal(src) { /* Intacto */ },
-    closeCropModal() { /* Intacto */ },
-    saveCrop: () => { /* Intacto Phase 2 anterior */ },
-    checkAnnouncements: () => { /* Intacto */ },
-    showAnnouncement(data) { /* Intacto */ },
-    closeAnnouncement() { /* Intacto */ },
-    showTrackSelect() { /* Intacto */ },
-    renderTrackList() { /* Intacto Phase 2 anterior con Sortable */ }
+
+    applySavedTheme: () => {
+        const customTheme = localStorage.getItem('ct_custom_theme');
+        if (customTheme) {
+            const t = JSON.parse(customTheme);
+            document.documentElement.setAttribute('data-custom-theme', 'true');
+            document.documentElement.style.setProperty('--theme-custom', t.p);
+            document.documentElement.style.setProperty('--bg-custom', t.bg);
+            document.documentElement.style.setProperty('--surface-custom', t.surface);
+        } else { document.documentElement.removeAttribute('data-custom-theme'); }
+    },
+    
+    saveTheme: (themeName) => {
+        let themeObj;
+        if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
+        else if (themeName === 'hacker') { themeObj = { p: '#00ff00', bg: '#050505', surface: '#0a0a0a' }; }
+        else { themeObj = { p: '#a6ff00', bg: '#000000', surface: '#141414' }; } 
+        
+        localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
+        const u = CT.ses(); if(u) { db.collection('users').doc(u.h).update({ theme: themeObj }); }
+        UI.applySavedTheme(); UI.closeThemeModal();
+    },
+
+    renderProfileHistory() {
+        const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc).sort((a,b) => b.id - a.id);
+        const start = CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
+        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${UI.formatValue(s.c)}</b></td><td>${s.track}</td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="EngineControl.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
+        document.getElementById('prof-prev').disabled = CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${CT.profPage + 1}`;
+    },
+    changeProfPage(delta) { const scores = CT.data.userScores[CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { CT.profPage += delta; this.renderProfileHistory(); } },
+
+    checkAnnouncements: () => {
+        const anns = CT.data.a.filter(x => x.active);
+        if (anns.length > 0) {
+            const latest = anns[0];
+            const lastSeen = localStorage.getItem('ct_last_announcement');
+            if (latest.id.toString() !== lastSeen) { UI.showAnnouncement(latest); }
+        }
+    },
+    
+    showAnnouncement(data) { if(!data.id) return; UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
+    closeAnnouncement() { if(UI.currentAnnId) { localStorage.setItem('ct_last_announcement', UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
+
+    showTrackSelect() { document.getElementById('track-search').value = ''; UI.activeTrackCat = null; UI.filterFavs = false; UI.showTrackCategorySelect(); this.show('track-screen'); },
+    showTrackCategorySelect() {
+        document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
+        const tracks = CT.data.p; let cats = CT.data.c; let catCounts = {}; 
+        tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
+        cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+        let t_fav = CT.data.ui && CT.data.ui['t_trk_fav_filter'] ? CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
+        let html = `<div class="cat-card cat-fav-card" onclick="UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
+        html += cats.map(cat => `<div class="cat-card" onclick="UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        document.getElementById('track-category-view').innerHTML = html;
+    },
+    toggleFavFilter() { UI.filterFavs = true; UI.activeTrackCat = null; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
+    selectTrackCategory(cat) { UI.activeTrackCat = cat; UI.filterFavs = false; UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); UI.renderTrackList(); },
+    
+    renderTrackList() {
+        const query = (document.getElementById('track-search').value || "").toLowerCase(); let tracks = CT.data.p;
+        const u = CT.ses(); let favs = u.favs || [];
+
+        const listContainer = document.getElementById('track-list-full');
+        listContainer.className = 'custom-scroll track-list ' + UI.listLayout;
+        
+        if (UI.filterFavs) listContainer.classList.add('fav-scroll');
+        else listContainer.classList.remove('fav-scroll');
+
+        let filtered = tracks;
+        if (query) {
+            document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.add('hidden');
+            filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+        } else if (UI.filterFavs) {
+            filtered = tracks.filter(t => favs.includes(t.id.toString()));
+            filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
+        } else if (!UI.activeTrackCat) {
+            UI.showTrackCategorySelect(); return;
+        } else {
+            filtered = tracks.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); 
+            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
+        }
+
+        let textPinOn = CT.data.ui && CT.data.ui['t_btn_pin_on'] ? CT.data.ui['t_btn_pin_on'].v : '⭐';
+        let textPinOff = CT.data.ui && CT.data.ui['t_btn_pin_off'] ? CT.data.ui['t_btn_pin_off'].v : '☆';
+
+        const start = UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
+        listContainer.innerHTML = pageData.map(t => {
+            let isFav = favs.includes(t.id.toString()); let starClass = isFav ? 'fav-active' : 'fav-inactive';
+            let reorderFavHtml = (UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
+            let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
+            let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
+
+            return `<div class="track-card" onclick="EngineControl.startRaceWithTrack('${t.id}')" style="${cardStyle}">
+                <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">
+                    #${t.title}
+                    <button onclick="event.stopPropagation(); App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
+                    ${reorderFavHtml}
+                </div>
+                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
+            </div>`;
+        }).join('');
+        document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
+        
+        setTimeout(() => {
+            if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage);
+            else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
+        }, 50);
+    },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.data.p; const u = CT.ses(); let favs = u.favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
+
+    openCropModal(src) { const img = document.getElementById('crop-image'); img.src = src; img.onload = () => { UI.cropScale = 1; UI.cropX = 0; UI.cropY = 0; document.getElementById('crop-zoom').value = 1; const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight; if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; } UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); UI.setupCropEvents(); }; },
+    closeCropModal() { document.getElementById('crop-modal').classList.add('hidden'); document.getElementById('img-input').value = ''; },
+    updateCropTransform() { const img = document.getElementById('crop-image'); img.style.transform = `translate(-50%, -50%) translate(${UI.cropX}px, ${UI.cropY}px) scale(${UI.cropScale})`; img.style.left = '50%'; img.style.top = '50%'; },
+    setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.startX = cx - UI.cropX; UI.startY = cy - UI.cropY; }; const moveDrag = (e) => { if(!UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; UI.cropX = cx - UI.startX; UI.cropY = cy - UI.startY; UI.updateCropTransform(); }; const endDrag = () => { UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { UI.cropScale = e.target.value; UI.updateCropTransform(); }; },
+    
+    saveCrop: () => { 
+        const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); 
+        const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; 
+        let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } 
+        const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; 
+        const sW = (imgW * 220) / (viewerImgW * UI.cropScale); const sH = (imgH * 220) / (viewerImgH * UI.cropScale); 
+        const sX = (((viewerImgW * UI.cropScale) / 2) - UI.cropX - 110) * (imgW / (viewerImgW * UI.cropScale)); 
+        const sY = (((viewerImgH * UI.cropScale) / 2) - UI.cropY - 110) * (imgH / (viewerImgH * UI.cropScale)); 
+        ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); 
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); 
+        const u = CT.ses(); 
+        if(u) { 
+            db.collection('users').doc(u.h).update({ a: compressedBase64 }); 
+            db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); 
+            document.getElementById('prof-img').src = compressedBase64; 
+        } 
+        UI.closeCropModal(); 
+    }
 };
