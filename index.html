@@ -160,7 +160,6 @@
             <div class="admin-content-area custom-scroll" style="padding: 15px 0; display: flex; flex-direction: column; width: 100%; border: none; background: transparent;">
                 
                 <div id="pane-stats-personal" class="pane custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    
                     <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
                         <div class="stat-card"><small id="t_lbl_st_p_best_avg">PROM. GENERAL</small><b id="st-p-best-avg" class="val-blurrable" style="margin-bottom:5px;">0</b></div>
                         <div class="stat-card"><small id="t_lbl_st_p_last10_avg">PROM. ÚLT. 10</small><b id="st-p-last10-avg" class="val-blurrable" style="margin-bottom:5px;">0</b></div>
@@ -184,75 +183,60 @@
                     </div>
 
                     <div id="grid-stats-personal" class="analytics-grid">
-                        
                         <div class="analytic-widget w-wide" data-id="w-p-trend">
                             <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Evolución de Velocidad (Últ. 20) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-trend')">⤢</button></div>
                             <div class="w-body" style="position:relative; width:100%; height:100%; padding-bottom: 25px;"><canvas id="chart-personal-trend"></canvas></div>
                         </div>
-
                         <div class="analytic-widget" data-id="w-p-top">
                             <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Mis Mejores Carreras <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-top')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-p-top10"></ul></div>
                         </div>
-
                         <div class="analytic-widget" data-id="w-p-worst-trk" style="border-color: var(--error);">
                             <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Textos a Mejorar <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-trk')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-tracks"></ul></div>
                         </div>
-
                         <div class="analytic-widget" data-id="w-p-worst-wrd" style="border-color: var(--error);">
                             <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Palabras Críticas <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-p-worst-wrd')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-p-worst-words"></ul></div>
                         </div>
-
                     </div>
                 </div>
 
                 <div id="pane-stats-elite" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    
                     <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
                         <div class="stat-card"><small id="t_st_e_most">DOMINADOR CONSTANTE</small><b id="st-e-most-races-val" class="studio-stat-value studio-stat-small-value">0</b><span id="st-e-most-races-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> Carreras Totales</span></div></div>
                         <div class="stat-card"><small id="lbl-st-e-bestavg">MEJOR PROMEDIO HISTÓRICO</small><b id="st-e-bestavg-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-bestavg-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> CPM (Min 5 car.)</span></div></div>
                         <div class="stat-card stat-highlight"><small id="lbl-st-e-record" style="color: var(--p);">RÉCORD ABSOLUTO</small><b id="st-e-record-val" class="val-blurrable studio-stat-value" style="color: var(--p);">0</b><span id="st-e-record-user" class="studio-meta-p" style="margin-top:2px; color: color-mix(in srgb, var(--p) 70%, transparent);">-</span><div class="studio-box-footer"><span style="color:color-mix(in srgb, var(--p) 70%, transparent); font-size:0.7rem;"> CPM</span></div></div>
                         <div class="stat-card"><small id="t_st_e_speed_king">REY DE LA VELOCIDAD</small><b id="st-e-speed-king-val" class="val-blurrable studio-stat-value">0</b><span id="st-e-speed-king-user" class="studio-meta-p" style="margin-top:2px;">-</span><div class="studio-box-footer"><span style="color:var(--text-muted); font-size:0.7rem;"> CPM (Normales)</span></div></div>
                     </div>
-
                     <div id="grid-stats-elite" class="analytics-grid">
-                        
                         <div class="analytic-widget" data-id="w-e-speed">
                             <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 15: Velocidad Absoluta <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-speed')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-e-speed"></ul></div>
                         </div>
-
                         <div class="analytic-widget" data-id="w-e-active">
                             <div class="w-header"><span class="w-handle admin-ctrl">☰</span> Top 15: Rendimiento Diario <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-e-active')">⤢</button></div>
                             <div class="w-body custom-scroll"><ul class="w-list" id="list-e-active"></ul></div>
                         </div>
-
                     </div>
                 </div>
 
                 <div id="pane-stats-hc" class="pane hidden custom-scroll" style="flex-grow:1; min-height:0; display:flex; flex-direction:column;">
-                    
                     <div class="profile-stats" style="margin-bottom: 25px; flex-shrink: 0;">
-                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" class="val-blurrable" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
+                        <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">RÉCORD HARDCORE GLOBAL</small><b id="st-hc-record" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-record-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">LEYENDA (MÁS VICTORIAS)</small><b id="st-hc-surv" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-surv-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent);"><small style="color: var(--error);">EL MÁS MASACRADO</small><b id="st-hc-deaths" style="color: var(--error); margin-bottom:5px;">0</b><span id="st-hc-deaths-user" class="st-p-owner">-</span></div>
                         <div class="stat-card" style="border-color: var(--error);"><small style="color: var(--error);">MAYOR TASA DE MORTALIDAD</small><b id="st-hc-danger-val" style="color: var(--error); margin-bottom:5px;">0%</b><span id="st-hc-danger-user" class="st-p-owner">-</span></div>
                     </div>
-
                     <div id="grid-stats-hc" class="analytics-grid">
-                        
                         <div class="analytic-widget" data-id="w-hc-surv" style="border-color: var(--error);">
                             <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Sobrevivientes Globales <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-surv')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-surv"></ul></div>
                         </div>
-
                         <div class="analytic-widget" data-id="w-hc-deadly" style="border-color: var(--error);">
                             <div class="w-header" style="color: var(--error);"><span class="w-handle admin-ctrl">☰</span> Pistas Mortales (Servidor) <button class="w-resize-btn admin-ctrl" onclick="UI.resizeStatWidget('w-hc-deadly')">⤢</button></div>
                             <div class="w-body custom-scroll error-scroll"><ul class="w-list" id="list-hc-deadly"></ul></div>
                         </div>
-
                     </div>
                 </div>
 
