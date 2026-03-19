@@ -8,7 +8,7 @@ const UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     personalChartInstance: null,
     
-    // Lista Maestra de Widgets (Si active=false, el código omite los cálculos para ahorrar CPU)
+    // Lista Maestra de Widgets (Si active=false, no gasta CPU ni DOM)
     widgetState: [
         { id: 'w-p-heat', name: 'Mapa de Calor', active: true, size: 'wide', pane: 'grid-stats-personal' },
         { id: 'w-p-trend', name: 'Evolución Personal', active: true, size: 'wide', pane: 'grid-stats-personal' },
@@ -34,10 +34,9 @@ const UI = {
     /* --- SISTEMA DE GESTIÓN DE WIDGETS --- */
     applyStatsLayout: () => {
         if(CT.data.statsLayout && CT.data.statsLayout.length > 0) {
-            // Actualizar nuestro state con el de Firebase
             CT.data.statsLayout.forEach(fbW => {
                 let w = UI.widgetState.find(x => x.id === fbW.id);
-                if(w) { w.active = fbW.active; w.size = fbW.size; w.pane = fbW.pane; }
+                if(w) { w.active = fbW.active !== false; w.size = fbW.size; w.pane = fbW.pane; }
             });
         }
 
@@ -46,7 +45,7 @@ const UI = {
             const grid = document.getElementById(w.pane);
             if (el && grid) {
                 grid.appendChild(el);
-                el.style.display = w.active ? 'flex' : 'none'; // Si no está activo, se oculta
+                el.style.display = w.active ? 'flex' : 'none'; 
                 el.classList.remove('w-wide', 'w-large');
                 if(w.size === 'wide') el.classList.add('w-wide');
                 if(w.size === 'large') el.classList.add('w-large');
@@ -59,8 +58,6 @@ const UI = {
     saveStatsLayout: () => {
         const u = CT.ses(); if(!u || u.r !== 'admin') return;
         const layoutToSave = [];
-        
-        // Primero tomamos el orden actual del DOM
         const grids = ['grid-stats-personal', 'grid-stats-elite', 'grid-stats-hc'];
         grids.forEach(paneId => {
             const grid = document.getElementById(paneId);
@@ -112,7 +109,7 @@ const UI = {
         if(w) w.active = isActive;
         UI.saveStatsLayout();
         UI.applyStatsLayout();
-        UI.refreshActiveViews(); // Recalcular solo los activos
+        UI.refreshActiveViews(); 
     },
 
     initStatsSortable: () => {
@@ -248,20 +245,23 @@ const UI = {
         for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
         document.getElementById('st-p-best-cat').innerText = bestCat;
 
-        // WIDGET: Evolución de Velocidad
-        if(UI.isWidgetActive('w-p-trend') && typeof Chart !== 'undefined' && document.getElementById('personal-trend-chart')) {
-            if(UI.personalChartInstance) { UI.personalChartInstance.destroy(); }
-            const ctx = document.getElementById('personal-trend-chart').getContext('2d');
-            const trendData = hi.slice(-20); 
-            const labels = trendData.map((s, i) => `#${i+1}`);
-            const dataPts = trendData.map(s => UI.formatValue(s));
-            
-            Chart.defaults.color = '#777'; Chart.defaults.font.family = 'monospace';
-            UI.personalChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: { labels: labels, datasets: [{ label: 'Velocidad', data: dataPts, borderColor: '#a6ff00', backgroundColor: 'rgba(166,255,0,0.05)', fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { grid: { color: '#222' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { display: false } } } }
-            });
+        // WIDGET: Evolución de Velocidad (Ahora en Canvas correcto)
+        if(UI.isWidgetActive('w-p-trend') && typeof Chart !== 'undefined') {
+            const canvasEl = document.getElementById('chart-personal-trend');
+            if(canvasEl) {
+                if(UI.personalChartInstance) { UI.personalChartInstance.destroy(); }
+                const ctx = canvasEl.getContext('2d');
+                const trendData = hi.slice(-20); 
+                const labels = trendData.map((s, i) => `#${i+1}`);
+                const dataPts = trendData.map(s => UI.formatValue(s));
+                
+                Chart.defaults.color = '#777'; Chart.defaults.font.family = 'monospace';
+                UI.personalChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: 'Velocidad', data: dataPts, borderColor: '#a6ff00', backgroundColor: 'rgba(166,255,0,0.05)', fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { grid: { color: '#222' }, ticks: { font: { size: 10 } } }, x: { grid: { display: false }, ticks: { display: false } } } }
+                });
+            }
         }
 
         // WIDGET: Teclado Heatmap
@@ -280,13 +280,11 @@ const UI = {
             });
         }
 
-        // WIDGET: Top 10
         if(UI.isWidgetActive('w-p-top')) {
             const top10 = [...userScores].sort((a,b) => b.c - a.c).slice(0, 15);
             document.getElementById('list-p-top10').innerHTML = top10.map((s, i) => `<li><span class="w-rank">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${s.track}</span> <b style="color:var(--p);" class="val-blurrable">${UI.formatValue(s.c)}</b></li>`).join('');
         }
 
-        // WIDGET: Worst Tracks
         if(UI.isWidgetActive('w-p-worst-trk')) {
             let trackAvgs = {}; userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
             let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
@@ -294,7 +292,6 @@ const UI = {
             document.getElementById('list-p-worst-tracks').innerHTML = bottom5.map((tr, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Texto #${tr.t}</span> <b style="color:var(--error);" class="val-blurrable">${UI.formatValue(Math.round(tr.avg))}</b></li>`).join('');
         }
 
-        // WIDGET: Bad Words
         if(UI.isWidgetActive('w-p-worst-wrd')) {
             const bw = u.bad_words || {}; let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
             document.getElementById('list-p-worst-words').innerHTML = badWordsList.map((bwItem, i) => `<li><span class="w-rank" style="color:var(--error);">${i+1}</span> <span style="flex-grow:1; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bwItem.w}</span> <b style="color:var(--error);">${bwItem.errs}</b></li>`).join('');
@@ -438,13 +435,14 @@ const UI = {
     toggleFastMode: () => { CT.fastMode = !CT.fastMode; localStorage.setItem('ct_fast_mode', CT.fastMode); UI.updateFastModeVisuals(); },
     renderTrainDropdown() { /* Intacto */ },
 
-    // HOME RANKINGS (Corregido a "Recientes" exactos y "Promedios" exactos)
     renderGlobal() {
         const typeEl = document.getElementById('leaderboard-type'); if(!typeEl) return;
+        const todayAR = CT.getARDate();
 
         let vivoScores = (CT.data.s_recent || []).filter(s => !s.sb);
         let histScores = (CT.data.s_top || []).filter(s => !s.sb);
 
+        // "today" ahora es "Recientes"
         let filtered = typeEl.value === 'today' ? vivoScores : histScores;
         filtered.sort((a,b) => b.c - a.c);
         
@@ -465,7 +463,7 @@ const UI = {
             let arr = u.hi || []; let scores = rankingMode === 'last10' ? arr.slice(-10) : arr;
             let avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
             return { h: u.h, n: u.n, a: u.a, avg: avg, total: arr.length };
-        }).filter(p => p.total >= 5) // Exigimos 5 carreras para evitar picos falsos
+        }).filter(p => p.total >= 5) // Exigimos 5 carreras
           .sort((a,b) => b.avg - a.avg);
 
         const targetPlayers = document.getElementById('global-rank-players');
@@ -479,6 +477,7 @@ const UI = {
         }
     },
 
+    // (Omití el resto de funciones estáticas para mantener el tamaño seguro, como modales y track list, que siguen sin cambios)
     async showProfile(who) {
         try {
             const currentSes = CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
@@ -607,5 +606,5 @@ const UI = {
         document.getElementById('track-prev').disabled = UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${UI.trackPage + 1}`;
         setTimeout(() => { if (UI.filterFavs && !query) UI.initSortable('track-list-full', 'track', UI.trackPage); else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } } }, 50);
     },
-    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.data.p; const u = CT.ses(); let favs = u.favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = CT.data.p; const u = CT.ses(); let favs = u.favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === UI.activeTrackCat.trim()); } const nextStart = (UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { UI.trackPage += delta; this.renderTrackList(); } }
 };
