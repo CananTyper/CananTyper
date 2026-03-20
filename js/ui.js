@@ -25,7 +25,7 @@ window.UI = {
                 onEnd: (evt) => {
                     if (evt.oldIndex === evt.newIndex) return;
                     const tab = type.split('-')[1];
-                    window.App.handleWidgetDragReorder(tab, evt.oldIndex, evt.newIndex);
+                    window.App.saveWidgetOrderFromDOM(tab, containerId);
                 }
             });
             return;
@@ -140,19 +140,10 @@ window.UI = {
         else if (tab === 'elite') this.renderEliteStats();
         else if (tab === 'hc') this.renderHardcoreStats();
 
-        // Renderizar Widgets correspondientes al tab si es admin
         const u = window.CT.ses();
         if(u && u.r === 'admin') {
             window.UI.renderWidgetsMenu();
         }
-    },
-
-    cycleWidgetSize: (btn) => {
-        const widget = btn.closest('.st-widget');
-        if (!widget) return;
-        const tab = window.UI.activeStatsTab;
-        const widgetId = widget.getAttribute('data-id');
-        window.App.cycleWidgetSize(tab, widgetId);
     },
 
     applyStatsLayout() {
@@ -167,13 +158,17 @@ window.UI = {
             if (!grid) return;
             
             const arr = layout[tab] || [];
+            
+            // Ordenar por index antes de inyectar
+            arr.sort((a,b) => (a.order || 0) - (b.order || 0));
+
             arr.forEach((widgetConf, idx) => {
                 const wEl = grid.querySelector(`[data-id="${widgetConf.id}"]`);
                 if(wEl) {
-                    wEl.style.order = widgetConf.order !== undefined ? widgetConf.order : idx;
+                    wEl.style.order = idx; // CSS Flex/Grid Order estricto
                     wEl.classList.toggle('hidden', !widgetConf.v);
                     
-                    wEl.classList.remove('st-col-3', 'st-col-4', 'st-col-6', 'st-col-8', 'st-col-12');
+                    wEl.className = wEl.className.replace(/st-col-\d+/g, '').trim();
                     wEl.classList.add(`st-col-${widgetConf.s || 3}`);
 
                     const handles = wEl.querySelectorAll('.admin-only');
@@ -199,7 +194,8 @@ window.UI = {
         const arr = layout[tab] || [];
         
         let html = '';
-        arr.forEach(w => {
+        // Respetamos el orden para el menú también
+        [...arr].sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(w => {
             const el = document.querySelector(`[data-id="${w.id}"] .st-widget-header span:not(.drag-handle)`);
             const title = el ? el.innerText.trim() : w.id;
             html += `
@@ -247,7 +243,6 @@ window.UI = {
     },
 
     generateBarChartSVG: (dataObj) => {
-        // Recibe { '0-40': 5, '40-80': 12, ... }
         const labels = Object.keys(dataObj);
         if (labels.length === 0) return '';
         const maxVal = Math.max(...Object.values(dataObj), 1);
@@ -276,11 +271,10 @@ window.UI = {
         </svg>`;
     },
 
-    // Filtro Profesional: Ignorar textos General, Entrenamiento o [TRN]
     isCompetitiveTrack: (trackTitle) => {
         const phrases = window.CT.dbLocal('p');
         const tObj = phrases.find(p => p.title.toString() === trackTitle.toString());
-        if(!tObj) return true; // Asumimos válido si no existe (histórico viejo)
+        if(!tObj) return true;
         const cat = (tObj.c || '').trim();
         return cat !== 'General' && cat !== 'Entrenamiento' && !cat.includes('[TRN]');
     },
@@ -309,11 +303,9 @@ window.UI = {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         
-        // Filtro estricto: Solo competitivas y NO hardcore
         let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track));
-        compScores.sort((a,b) => a.id - b.id); // Cronológico
+        compScores.sort((a,b) => a.id - b.id);
         
-        // KPIs
         const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
         
         const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
@@ -322,6 +314,10 @@ window.UI = {
         const last10Arr = [...compScores].slice(-10);
         const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
         const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
+
+        // Nuevo: Récord Personal Absoluto
+        const maxVal = compScores.length ? Math.max(...compScores.map(s => s.c)) : 0;
+        const elRec = document.getElementById('st-p-record-val'); if(elRec) elRec.innerText = window.UI.formatValue(maxVal);
         
         let catAvgs = {};
         compScores.forEach(s => { const cat = window.UI.getTrackCat(s.track); if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
@@ -331,20 +327,13 @@ window.UI = {
             if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } 
         }
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
-
-        // Donut: Porcentaje de carreras de la mejor categoría vs total
-        const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
-        const elDonut = document.getElementById('st-p-donut-acc');
-        if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
         
-        // Graph Lineal
         const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
         const svgContainer = document.getElementById('st-p-svg-container');
         if(svgContainer) {
             svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
         }
 
-        // Gráfico Barras (Distribución de Vel)
         const v50 = window.UI.formatValue(50);
         const v100 = window.UI.formatValue(100);
         const v150 = window.UI.formatValue(150);
@@ -359,8 +348,6 @@ window.UI = {
         const barContainer = document.getElementById('st-p-bar-container');
         if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
 
-
-        // Heatmap
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
         document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
@@ -381,7 +368,6 @@ window.UI = {
             }
         });
 
-        // Top 10 List
         const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
         const top10 = compScoresDesc.slice(0, 10);
         const elTop10 = document.getElementById('st-p-top10-races');
@@ -392,7 +378,6 @@ window.UI = {
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </li>`).join('');
 
-        // Bottom 5 List
         let trackAvgs = {};
         compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
@@ -415,7 +400,7 @@ window.UI = {
         const recentS = (window.CT.data.s_recent || []).filter(s => window.UI.isCompetitiveTrack(s.track) && !s.hc).sort((a,b) => a.id - b.id);
         
         let mostRacesUser = users.reduce((p, c) => {
-            let cH = (c.hi||[]).length; let pH = (p.hi||[]).length; // Deberíamos filtrar, pero user.hi no tiene track info. Estimado.
+            let cH = (c.hi||[]).length; let pH = (p.hi||[]).length;
             return cH > pH ? c : p;
         }, users[0]);
         const elMostVal = document.getElementById('st-e-most-races-val'); if(elMostVal) elMostVal.innerText = (mostRacesUser.hi||[]).length;
@@ -445,12 +430,10 @@ window.UI = {
         const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
         const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
         
-        // Gráfico Servidor
         const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
         const eSvgContainer = document.getElementById('st-e-svg-container');
         if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '';
 
-        // Tablas
         let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         const elTxts = document.getElementById('st-e-table-texts');
         if(elTxts) elTxts.innerHTML = top10T.map((tr, i) => { 
@@ -478,7 +461,6 @@ window.UI = {
             </li>`; 
         }).join('');
 
-        // Jugadores más activos
         let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
         let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
         const elAct = document.getElementById('st-e-table-players');
@@ -500,7 +482,6 @@ window.UI = {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         
-        // Filtro HC (No aplica filtro de categoría por la naturaleza del modo, todo cuenta)
         const hcScores = (window.CT.data.userScores[u.h] || []).filter(s => s.hc === true);
         
         const survCount = hcScores.length;
@@ -513,7 +494,6 @@ window.UI = {
         const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = deaths;
         const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
 
-        // Donut: Tasa de Mortalidad
         const elDonut = document.getElementById('st-hc-donut-rate');
         if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
 
@@ -536,7 +516,6 @@ window.UI = {
                 <div class="st-list-val" style="font-size:0.75rem;">${td.d} X_X</div>
             </li>`).join('');
 
-        // Global Graveyard
         const users = window.CT.dbLocal('u');
         let victims = users.map(us => ({ n: us.n, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
         const elVic = document.getElementById('st-hc-victims');
