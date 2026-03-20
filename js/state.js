@@ -55,16 +55,31 @@ window.CT = {
         });
 
         window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
-            if(snap.exists) { 
-                this.data.statsLayout = snap.data(); 
-            } else {
-                // Layout Base Inicial con los nuevos IDs
-                this.data.statsLayout = {
-                    personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-consistency', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-heat', v:true, s:4}, {id:'w-p-top', v:true, s:4}, {id:'w-p-worst', v:true, s:4}],
-                    elite: [{id:'w-e-vol', v:true, s:3}, {id:'w-e-dom', v:true, s:3}, {id:'w-e-eff', v:true, s:3}, {id:'w-e-rec', v:true, s:3}, {id:'w-e-graph', v:true, s:12}, {id:'w-e-texts', v:true, s:4}, {id:'w-e-cats', v:true, s:4}, {id:'w-e-players', v:true, s:4}],
-                    hc: [{id:'w-h-rec', v:true, s:3}, {id:'w-h-surv', v:true, s:3}, {id:'w-h-death', v:true, s:3}, {id:'w-h-rate', v:true, s:3}, {id:'w-h-top', v:true, s:4}, {id:'w-h-worst', v:true, s:4}, {id:'w-h-victims', v:true, s:4}]
-                };
-                if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('stats_layout').set(this.data.statsLayout);
+            // Failsafe / Migración de Estructura: Siempre verifica que existan todos los widgets
+            const defLayout = {
+                personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-record', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-heat', v:true, s:4}, {id:'w-p-top', v:true, s:4}, {id:'w-p-worst', v:true, s:4}],
+                elite: [{id:'w-e-vol', v:true, s:3}, {id:'w-e-dom', v:true, s:3}, {id:'w-e-eff', v:true, s:3}, {id:'w-e-rec', v:true, s:3}, {id:'w-e-graph', v:true, s:12}, {id:'w-e-texts', v:true, s:4}, {id:'w-e-cats', v:true, s:4}, {id:'w-e-players', v:true, s:4}],
+                hc: [{id:'w-h-rec', v:true, s:3}, {id:'w-h-surv', v:true, s:3}, {id:'w-h-death', v:true, s:3}, {id:'w-h-rate', v:true, s:3}, {id:'w-h-top', v:true, s:4}, {id:'w-h-worst', v:true, s:4}, {id:'w-h-victims', v:true, s:4}]
+            };
+
+            let data = snap.exists ? snap.data() : {};
+            
+            // Inyectar widgets faltantes si hubo una actualización de código
+            ['personal', 'elite', 'hc'].forEach(t => {
+                if(!data[t]) data[t] = defLayout[t];
+                else {
+                    defLayout[t].forEach(defW => {
+                        if(!data[t].find(w => w.id === defW.id)) {
+                            data[t].push(defW);
+                        }
+                    });
+                }
+            });
+
+            this.data.statsLayout = data;
+            
+            if(!snap.exists && this.ses() && this.ses().r === 'admin') {
+                window.db.collection('config').doc('stats_layout').set(this.data.statsLayout);
             }
             window.UI.applyStatsLayout();
         });
