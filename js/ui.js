@@ -6,7 +6,7 @@ window.UI = {
     listLayout: 'layout-list',
     trackPage: 0, activeTrackCat: null, filterFavs: false,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
-    activeStatsTab: 'personal', dashboardZoom: 1,
+    activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
 
     initSortable: (containerId, type, pageContext = 0) => {
@@ -16,20 +16,6 @@ window.UI = {
         if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
 
         if (type === 'track' && !window.UI.filterFavs) return;
-
-        if (type.startsWith('widgets-')) {
-            container._sortable = Sortable.create(container, {
-                handle: '.drag-handle',
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                onEnd: (evt) => {
-                    if (evt.oldIndex === evt.newIndex) return;
-                    const tab = type.split('-')[1];
-                    window.App.handleWidgetDragReorder(tab, evt.oldIndex, evt.newIndex);
-                }
-            });
-            return;
-        }
 
         container._sortable = Sortable.create(container, {
             handle: '.drag-handle',
@@ -112,7 +98,14 @@ window.UI = {
     
     async showStats() { 
         const u = window.CT.ses();
-        if(u) await window.App.getUserScores(u.h); 
+        if(u) {
+            await window.App.getUserScores(u.h); 
+            if(u.r === 'admin') {
+                document.getElementById('btn-stats-widgets').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-stats-widgets').classList.add('hidden');
+            }
+        }
         this.switchStatsTab('personal'); 
         window.UI.updateUnitVisuals(window.CT.currentUnit); 
         this.show('stats-screen'); 
@@ -120,95 +113,32 @@ window.UI = {
     
     showInfo() { this.renderInfoPage(); this.show('info-screen'); },
 
-    async switchStatsTab(tab) {
+    switchStatsTab(tab) {
         window.UI.activeStatsTab = tab;
-        document.querySelectorAll('#stats-screen .pane').forEach(p => p.classList.add('hidden'));
-        document.querySelectorAll('.stats-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#stats-screen .st-pane').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('.st-tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
         
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
         
         if (tab === 'personal') this.renderPersonalStats(); 
-        else if (tab === 'ranking') this.renderRankingStats();
+        else if (tab === 'elite') this.renderEliteStats();
         else if (tab === 'hc') this.renderHardcoreStats();
-
-        const u = window.CT.ses();
-        if(u && u.r === 'admin') {
-            document.getElementById('btn-stats-widgets').classList.remove('hidden');
-            window.UI.renderWidgetsMenu();
-        } else {
-            document.getElementById('btn-stats-widgets').classList.add('hidden');
-        }
     },
 
-    setDashboardZoom: (delta) => {
-        window.UI.dashboardZoom += delta;
-        if(window.UI.dashboardZoom < 0.5) window.UI.dashboardZoom = 0.5;
-        if(window.UI.dashboardZoom > 1.5) window.UI.dashboardZoom = 1.5;
-        document.getElementById('zoom-level-display').innerText = Math.round(window.UI.dashboardZoom * 100) + '%';
-        document.getElementById('telemetry-analytics-container').style.transform = `scale(${window.UI.dashboardZoom})`;
-    },
-
-    applyStatsLayout() {
-        const layout = window.CT.data.statsLayout;
-        if (!layout) return;
-
-        const u = window.CT.ses(); 
-        const isAdmin = u && u.r === 'admin';
-
-        ['personal', 'ranking', 'hc'].forEach(tab => {
-            const grid = document.getElementById(`grid-stats-${tab}`);
-            if (!grid) return;
-            
-            const arr = layout[tab] || [];
-            arr.forEach((widgetConf, idx) => {
-                const wEl = grid.querySelector(`[data-id="${widgetConf.id}"]`);
-                if(wEl) {
-                    wEl.style.order = widgetConf.order !== undefined ? widgetConf.order : idx;
-                    wEl.classList.toggle('hidden', !widgetConf.v);
-                    
-                    wEl.classList.remove('widget-span-1', 'widget-span-2', 'widget-span-3', 'widget-span-4');
-                    wEl.classList.add(`widget-span-${widgetConf.s || 2}`);
-
-                    const controls = wEl.querySelector('.admin-widget-controls');
-                    const handle = wEl.querySelector('.drag-handle');
-                    if (controls) controls.classList.toggle('hidden', !isAdmin);
-                    if (handle) handle.classList.toggle('hidden', !isAdmin);
-                }
-            });
-
-            if (isAdmin) {
-                window.UI.initSortable(`grid-stats-${tab}`, `widgets-${tab}`, 0);
-            }
-        });
-    },
-
-    toggleWidgetsMenu: () => { 
-        document.getElementById('widgets-menu').classList.toggle('hidden'); 
-        window.UI.renderWidgetsMenu();
-    },
-
-    renderWidgetsMenu: () => {
-        const layout = window.CT.data.statsLayout;
-        if (!layout) return;
-        const tab = window.UI.activeStatsTab;
-        const arr = layout[tab] || [];
+    cycleWidgetSize: (btn) => {
+        const widget = btn.closest('.st-widget');
+        if (!widget) return;
         
-        let html = '';
-        arr.forEach(w => {
-            const el = document.querySelector(`[data-id="${w.id}"] .panel-title`);
-            const title = el ? el.innerText.replace('☰', '').trim() : w.id;
-            html += `
-            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #2a2a2a; align-items:center;">
-                <span style="color:var(--text-main); font-size:0.75rem;">${title}</span>
-                <input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')" style="width:14px; height:14px; cursor:pointer;">
-            </div>`;
-        });
-        document.getElementById('widgets-menu-list').innerHTML = html;
+        if (widget.classList.contains('st-col-3')) { widget.classList.remove('st-col-3'); widget.classList.add('st-col-4'); }
+        else if (widget.classList.contains('st-col-4')) { widget.classList.remove('st-col-4'); widget.classList.add('st-col-6'); }
+        else if (widget.classList.contains('st-col-6')) { widget.classList.remove('st-col-6'); widget.classList.add('st-col-8'); }
+        else if (widget.classList.contains('st-col-8')) { widget.classList.remove('st-col-8'); widget.classList.add('st-col-12'); }
+        else { widget.classList.remove('st-col-12'); widget.classList.add('st-col-3'); }
     },
 
-    generateSVGChart: (dataArray) => {
+    generateLineChartSVG: (dataArray) => {
         if(!dataArray || dataArray.length < 2) return '';
         const max = Math.max(...dataArray, 10); 
         const width = 1000;
@@ -228,15 +158,25 @@ window.UI = {
         let circles = dataArray.map((val, i) => {
             const x = i * stepX;
             const y = height - ((val / max) * (height - 20)) - 10;
-            return `<circle cx="${x}" cy="${y}" r="4" class="chart-point" style="stroke:var(--p);"></circle>`;
+            return `<circle cx="${x}" cy="${y}" r="4" class="st-chart-point" style="stroke:var(--p);"></circle>`;
         }).join('');
 
         return `
-        <svg class="chart-line-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-            <defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:0" /></linearGradient></defs>
-            <path class="chart-area" d="${pathD}" style="fill:url(#grad-p);"></path>
-            <polyline class="chart-line" points="${points}" style="stroke:var(--p);"></polyline>
+        <svg class="st-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+            <defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:transparent;stop-opacity:0" /></linearGradient></defs>
+            <path class="st-chart-area" d="${pathD}" style="fill:url(#grad-p);"></path>
+            <polyline class="st-chart-line" points="${points}" style="stroke:var(--p);"></polyline>
             ${circles}
+        </svg>`;
+    },
+
+    generateDonutSVG: (percentage, colorVar) => {
+        const p = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
+        const strokeDasharray = `${p}, 100`;
+        return `<svg viewBox="0 0 36 36" class="st-donut">
+            <path class="st-donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="st-donut-fill" style="stroke:${colorVar};" stroke-dasharray="${strokeDasharray}" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <text x="18" y="21" class="st-donut-text" style="fill:${colorVar};">${Math.round(p)}%</text>
         </svg>`;
     },
     
@@ -259,7 +199,7 @@ window.UI = {
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         const userScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc).sort((a,b) => a.id - b.id); // Cronológico para gráfico
         
-        // Summary
+        // KPIs
         const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = userScores.length;
         
         const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
@@ -271,52 +211,58 @@ window.UI = {
         
         const phrases = window.CT.dbLocal('p'); let catAvgs = {};
         userScores.forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
-        let bestCat = "-"; let maxCatAvg = -1;
-        for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; } }
+        let bestCat = "-"; let maxCatAvg = -1; let bestCatCount = 0;
+        for (let c in catAvgs) { 
+            let avg = catAvgs[c].sum / catAvgs[c].count; 
+            if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } 
+        }
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
+
+        // Donut: Porcentaje de carreras de la mejor categoría vs total
+        const accuracy = userScores.length > 0 ? (bestCatCount / userScores.length) * 100 : 0;
+        const elDonut = document.getElementById('st-p-donut-acc');
+        if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
         
-        // Graph
+        // Graph Lineal
         const last15Scores = [...userScores].slice(-15).map(s => window.UI.formatValue(s.c));
         const svgContainer = document.getElementById('st-p-svg-container');
         if(svgContainer) {
-            svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateSVGChart(last15Scores) : '<div style="color:#555; text-align:center; margin-top:80px;">Juega más partidas para generar la gráfica</div>';
+            svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:100px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
         }
 
         // Heatmap
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
-        document.querySelectorAll('kbd[data-key]').forEach(el => {
+        document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
             const key = el.getAttribute('data-key');
             const errs = bk[key] || 0;
             if(errs > 0) {
                 const pct = (errs / maxErr) * 100;
                 const bgPct = Math.max(10, Math.min(pct, 60)); 
-                el.style.setProperty('background', `color-mix(in srgb, var(--error) ${bgPct}%, var(--surface-light))`, 'important');
+                el.style.setProperty('background', `color-mix(in srgb, var(--error) ${bgPct}%, #0a0a0a)`, 'important');
                 el.style.setProperty('border-color', 'var(--error)', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
-                el.style.setProperty('text-shadow', '0px 0px 4px rgba(0,0,0,0.8)', 'important');
-                el.title = `${errs} errores históricos`;
+                el.title = `Errores críticos: ${errs}`;
             } else {
                 el.style.removeProperty('background');
                 el.style.removeProperty('border-color');
                 el.style.removeProperty('color');
-                el.style.removeProperty('text-shadow');
-                el.title = '0 errores';
+                el.title = 'Estable';
             }
         });
 
-        // Top 10
+        // Top 10 List
         const userScoresDesc = [...userScores].sort((a,b) => b.c - a.c);
         const top10 = userScoresDesc.slice(0, 10);
         const elTop10 = document.getElementById('st-p-top10-races');
         if(elTop10) elTop10.innerHTML = top10.map((s, i) => `
-            <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--text-main); font-weight:bold;">${s.track}</div>
-                <div class="data-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
-            </div>`).join('');
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${s.track}</div>
+                <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
+            </li>`).join('');
 
-        // Bottom 5
+        // Bottom 5 List
         let trackAvgs = {};
         userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
@@ -324,64 +270,25 @@ window.UI = {
         if(bottom5.length === 0) bottom5 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 5);
         const elBottom = document.getElementById('st-p-worst-tracks');
         if(elBottom) elBottom.innerHTML = bottom5.map((tr, i) => `
-            <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${tr.t}</div>
-                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
-            </div>`).join('');
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${tr.t}</div>
+                <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
+            </li>`).join('');
 
         // Bad Words
         const bw = userDoc.bad_words || {};
         let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 30);
         const elWords = document.getElementById('st-p-worst-words');
         if(elWords) elWords.innerHTML = badWordsList.map((bwItem, i) => `
-            <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${bwItem.w}</div>
-                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;">${bwItem.errs} err</div>
-            </div>`).join('');
-
-        window.UI.applyStatsLayout();
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${bwItem.w}</div>
+                <div class="st-list-val" style="font-size:0.75rem;">${bwItem.errs} err</div>
+            </li>`).join('');
     },
 
-    renderHardcoreStats() {
-        const u = window.CT.ses(); if(!u) return;
-        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-        const hcScores = (window.CT.data.userScores[u.h] || []).filter(s => s.hc === true);
-        
-        const survCount = hcScores.length;
-        const deaths = userDoc.hc_deaths || 0;
-        const totalAttempts = survCount + deaths;
-        const survRate = totalAttempts > 0 ? Math.round((deaths / totalAttempts) * 100) : 0;
-        
-        const elRec = document.getElementById('st-hc-record'); if(elRec) elRec.innerText = window.UI.formatValue(userDoc.hi_hc && userDoc.hi_hc.length > 0 ? Math.max(...userDoc.hi_hc) : 0);
-        const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = survCount;
-        const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = deaths;
-        const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = survRate + '%';
-
-        const top10 = [...hcScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        const elHcTop = document.getElementById('st-hc-top10');
-        if(elHcTop) elHcTop.innerHTML = top10.map((s, i) => `
-            <div class="data-list-item">
-                <div class="data-list-rank" style="color:var(--error);">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${s.track}</div>
-                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(s.c)}</div>
-            </div>`).join('');
-        
-        let trackDeaths = userDoc.hc_track_deaths || {};
-        let deathList = Object.keys(trackDeaths).map(k => ({ t: k, d: trackDeaths[k] })).sort((a,b) => b.d - a.d).slice(0, 10);
-        const elHcWorst = document.getElementById('st-hc-worst');
-        if(elHcWorst) elHcWorst.innerHTML = deathList.map((td, i) => `
-            <div class="data-list-item">
-                <div class="data-list-rank" style="color:var(--error);">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--error); font-weight:bold;">${td.t}</div>
-                <div style="color:var(--error); font-weight:900; font-size: 0.9rem;">${td.d} x_x</div>
-            </div>`).join('');
-
-        window.UI.applyStatsLayout();
-    },
-
-    renderRankingStats() {
+    renderEliteStats() {
         const users = window.CT.dbLocal('u'); if (users.length === 0) return;
         
         let mostRacesUser = users.reduce((p, c) => ((c.hi||[]).length > (p.hi||[]).length) ? c : p, users[0]);
@@ -418,12 +325,12 @@ window.UI = {
         if(elTxts) elTxts.innerHTML = top10T.map((tr, i) => { 
             let trMax = topS.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0}); 
             return `
-            <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--text-main); font-weight:bold;">${tr}</div>
-                <div style="color:var(--text-muted); font-size:0.75rem;">${trMax.n}</div>
-                <div style="color:var(--p); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(trMax.c)}</div>
-            </div>`; 
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${tr}</div>
+                <div class="st-list-meta">${trMax.n}</div>
+                <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
+            </li>`; 
         }).join('');
         
         const phrases = window.CT.dbLocal('p');
@@ -433,15 +340,52 @@ window.UI = {
         if(elCats) elCats.innerHTML = top10C.map((cat, i) => { 
             let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0}); 
             return `
-            <div class="data-list-item">
-                <div class="data-list-rank">#${i+1}</div>
-                <div class="data-list-name" style="color:var(--text-main); font-weight:bold;">${cat}</div>
-                <div style="color:var(--text-muted); font-size:0.75rem;">${catMax.n}</div>
-                <div style="color:var(--p); font-weight:900; font-size: 0.9rem;" class="val-blurrable">${window.UI.formatValue(catMax.c)}</div>
-            </div>`; 
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${cat}</div>
+                <div class="st-list-meta">${catMax.n}</div>
+                <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
+            </li>`; 
         }).join('');
+    },
 
-        window.UI.applyStatsLayout();
+    renderHardcoreStats() {
+        const u = window.CT.ses(); if(!u) return;
+        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        const hcScores = (window.CT.data.userScores[u.h] || []).filter(s => s.hc === true);
+        
+        const survCount = hcScores.length;
+        const deaths = userDoc.hc_deaths || 0;
+        const totalAttempts = survCount + deaths;
+        const survRate = totalAttempts > 0 ? ((deaths / totalAttempts) * 100) : 0;
+        
+        const elRec = document.getElementById('st-hc-record'); if(elRec) elRec.innerText = window.UI.formatValue(userDoc.hi_hc && userDoc.hi_hc.length > 0 ? Math.max(...userDoc.hi_hc) : 0);
+        const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = survCount;
+        const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = deaths;
+        const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
+
+        // Donut: Tasa de Mortalidad
+        const elDonut = document.getElementById('st-hc-donut-rate');
+        if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
+
+        const top10 = [...hcScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        const elHcTop = document.getElementById('st-hc-top10');
+        if(elHcTop) elHcTop.innerHTML = top10.map((s, i) => `
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${s.track}</div>
+                <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
+            </li>`).join('');
+        
+        let trackDeaths = userDoc.hc_track_deaths || {};
+        let deathList = Object.keys(trackDeaths).map(k => ({ t: k, d: trackDeaths[k] })).sort((a,b) => b.d - a.d).slice(0, 10);
+        const elHcWorst = document.getElementById('st-hc-worst');
+        if(elHcWorst) elHcWorst.innerHTML = deathList.map((td, i) => `
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${td.t}</div>
+                <div class="st-list-val" style="font-size:0.75rem;">${td.d} X_X</div>
+            </li>`).join('');
     },
 
     renderInfoPage() {
@@ -455,7 +399,7 @@ window.UI = {
         if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) window.UI.showProfile(window.CT.activeProfHandle || 'me');
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
-        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-ranking').classList.contains('hidden')) window.UI.renderRankingStats(); else window.UI.renderHardcoreStats(); }
+        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) window.UI.renderEliteStats(); else window.UI.renderHardcoreStats(); }
     },
 
     setUnit: (unit) => {
@@ -483,10 +427,6 @@ window.UI = {
         if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
         if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
-        if(document.getElementById('t_lbl_st_p_best_avg')) document.getElementById('t_lbl_st_p_best_avg').innerText = 'PROM. HISTÓRICO';
-        if(document.getElementById('t_lbl_st_p_last10_avg')) document.getElementById('t_lbl_st_p_last10_avg').innerText = 'PROM. ÚLT. 10';
-        if(document.getElementById('lbl-st-g-avg')) document.getElementById('lbl-st-g-avg').innerText = 'PROMEDIO SERVIDOR ' + label;
-        if(document.getElementById('lbl-st-g-record')) document.getElementById('lbl-st-g-record').innerText = 'RÉCORD ABSOLUTO ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
     },
 
@@ -564,31 +504,6 @@ window.UI = {
         }).join('');
     },
 
-    async showProfile(who) {
-        try {
-            const currentSes = window.CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
-            const u = window.CT.dbLocal('u').find(x => x.h === targetHandle); if(!u) return;
-            window.CT.activeProfHandle = u.h;
-            
-            await window.App.getUserScores(u.h);
-            
-            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
-            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
-            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
-            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
-            const bestCPM = total ? Math.max(...hi) : 0;
-            document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
-            window.CT.profPage = 0; this.renderProfileHistory();
-            const isMe = (currentSes && u.h === currentSes.h);
-            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
-            this.show('profile-screen');
-        } catch (error) { console.error(error); }
-    },
-    
-    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
-    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
-    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
-    
     openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); window.UI.toggleSettings(); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
 
