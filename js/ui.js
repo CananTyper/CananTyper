@@ -17,6 +17,20 @@ window.UI = {
 
         if (type === 'track' && !window.UI.filterFavs) return;
 
+        if (type.startsWith('widgets-')) {
+            container._sortable = Sortable.create(container, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: (evt) => {
+                    if (evt.oldIndex === evt.newIndex) return;
+                    const tab = type.split('-')[1];
+                    window.App.handleWidgetDragReorder(tab, evt.oldIndex, evt.newIndex);
+                }
+            });
+            return;
+        }
+
         container._sortable = Sortable.create(container, {
             handle: '.drag-handle',
             animation: 150,
@@ -125,17 +139,79 @@ window.UI = {
         if (tab === 'personal') this.renderPersonalStats(); 
         else if (tab === 'elite') this.renderEliteStats();
         else if (tab === 'hc') this.renderHardcoreStats();
+
+        // Renderizar Widgets correspondientes al tab si es admin
+        const u = window.CT.ses();
+        if(u && u.r === 'admin') {
+            window.UI.renderWidgetsMenu();
+        }
     },
 
     cycleWidgetSize: (btn) => {
         const widget = btn.closest('.st-widget');
         if (!widget) return;
+        const tab = window.UI.activeStatsTab;
+        const widgetId = widget.getAttribute('data-id');
+        window.App.cycleWidgetSize(tab, widgetId);
+    },
+
+    applyStatsLayout() {
+        const layout = window.CT.data.statsLayout;
+        if (!layout) return;
+
+        const u = window.CT.ses(); 
+        const isAdmin = u && u.r === 'admin';
+
+        ['personal', 'elite', 'hc'].forEach(tab => {
+            const grid = document.getElementById(`grid-stats-${tab}`);
+            if (!grid) return;
+            
+            const arr = layout[tab] || [];
+            arr.forEach((widgetConf, idx) => {
+                const wEl = grid.querySelector(`[data-id="${widgetConf.id}"]`);
+                if(wEl) {
+                    wEl.style.order = widgetConf.order !== undefined ? widgetConf.order : idx;
+                    wEl.classList.toggle('hidden', !widgetConf.v);
+                    
+                    wEl.classList.remove('st-col-3', 'st-col-4', 'st-col-6', 'st-col-8', 'st-col-12');
+                    wEl.classList.add(`st-col-${widgetConf.s || 3}`);
+
+                    const handles = wEl.querySelectorAll('.admin-only');
+                    handles.forEach(h => h.classList.toggle('hidden', !isAdmin));
+                }
+            });
+
+            if (isAdmin) {
+                window.UI.initSortable(`grid-stats-${tab}`, `widgets-${tab}`, 0);
+            }
+        });
+    },
+
+    toggleWidgetsMenu: () => { 
+        document.getElementById('widgets-menu').classList.toggle('hidden'); 
+        window.UI.renderWidgetsMenu();
+    },
+
+    renderWidgetsMenu: () => {
+        const layout = window.CT.data.statsLayout;
+        if (!layout) return;
+        const tab = window.UI.activeStatsTab;
+        const arr = layout[tab] || [];
         
-        if (widget.classList.contains('st-col-3')) { widget.classList.remove('st-col-3'); widget.classList.add('st-col-4'); }
-        else if (widget.classList.contains('st-col-4')) { widget.classList.remove('st-col-4'); widget.classList.add('st-col-6'); }
-        else if (widget.classList.contains('st-col-6')) { widget.classList.remove('st-col-6'); widget.classList.add('st-col-8'); }
-        else if (widget.classList.contains('st-col-8')) { widget.classList.remove('st-col-8'); widget.classList.add('st-col-12'); }
-        else { widget.classList.remove('st-col-12'); widget.classList.add('st-col-3'); }
+        let html = '';
+        arr.forEach(w => {
+            const el = document.querySelector(`[data-id="${w.id}"] .st-widget-header span:not(.drag-handle)`);
+            const title = el ? el.innerText.trim() : w.id;
+            html += `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a1a1a; align-items:center;">
+                <span style="color:#ccc; font-size:0.75rem; font-weight:bold;">${title}</span>
+                <label class="st-switch">
+                    <input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')">
+                    <span class="st-slider"></span>
+                </label>
+            </div>`;
+        });
+        document.getElementById('widgets-menu-list').innerHTML = html;
     },
 
     generateLineChartSVG: (dataArray) => {
@@ -170,6 +246,26 @@ window.UI = {
         </svg>`;
     },
 
+    generateBarChartSVG: (dataObj) => {
+        // Recibe { '0-40': 5, '40-80': 12, ... }
+        const labels = Object.keys(dataObj);
+        if (labels.length === 0) return '';
+        const maxVal = Math.max(...Object.values(dataObj), 1);
+        
+        let html = `<div style="display:flex; width:100%; height:100%; justify-content:space-between; align-items:flex-end; padding-bottom:20px; gap:10px;">`;
+        labels.forEach(l => {
+            const hPct = (dataObj[l] / maxVal) * 100;
+            html += `
+            <div class="st-bar-group">
+                <span class="st-bar-val">${dataObj[l]}</span>
+                <div class="st-bar" style="height:${hPct}%;"></div>
+                <span class="st-bar-label">${l}</span>
+            </div>`;
+        });
+        html += `</div>`;
+        return html;
+    },
+
     generateDonutSVG: (percentage, colorVar) => {
         const p = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
         const strokeDasharray = `${p}, 100`;
@@ -178,6 +274,21 @@ window.UI = {
             <path class="st-donut-fill" style="stroke:${colorVar};" stroke-dasharray="${strokeDasharray}" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
             <text x="18" y="21" class="st-donut-text" style="fill:${colorVar};">${Math.round(p)}%</text>
         </svg>`;
+    },
+
+    // Filtro Profesional: Ignorar textos General, Entrenamiento o [TRN]
+    isCompetitiveTrack: (trackTitle) => {
+        const phrases = window.CT.dbLocal('p');
+        const tObj = phrases.find(p => p.title.toString() === trackTitle.toString());
+        if(!tObj) return true; // Asumimos válido si no existe (histórico viejo)
+        const cat = (tObj.c || '').trim();
+        return cat !== 'General' && cat !== 'Entrenamiento' && !cat.includes('[TRN]');
+    },
+
+    getTrackCat: (trackTitle) => {
+        const phrases = window.CT.dbLocal('p');
+        const tObj = phrases.find(p => p.title.toString() === trackTitle.toString());
+        return tObj ? (tObj.c || 'General').trim() : 'General';
     },
     
     applyUITexts: () => {
@@ -197,20 +308,23 @@ window.UI = {
     renderPersonalStats() {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-        const userScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc).sort((a,b) => a.id - b.id); // Cronológico para gráfico
+        
+        // Filtro estricto: Solo competitivas y NO hardcore
+        let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track));
+        compScores.sort((a,b) => a.id - b.id); // Cronológico
         
         // KPIs
-        const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = userScores.length;
+        const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
         
-        const avgGen = userScores.length ? Math.round(userScores.reduce((a,b)=>a+b.c, 0) / userScores.length) : 0;
+        const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
         const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
         
-        const last10Arr = [...userScores].slice(-10);
+        const last10Arr = [...compScores].slice(-10);
         const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
         const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
         
-        const phrases = window.CT.dbLocal('p'); let catAvgs = {};
-        userScores.forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
+        let catAvgs = {};
+        compScores.forEach(s => { const cat = window.UI.getTrackCat(s.track); if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
         let bestCat = "-"; let maxCatAvg = -1; let bestCatCount = 0;
         for (let c in catAvgs) { 
             let avg = catAvgs[c].sum / catAvgs[c].count; 
@@ -219,16 +333,32 @@ window.UI = {
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
 
         // Donut: Porcentaje de carreras de la mejor categoría vs total
-        const accuracy = userScores.length > 0 ? (bestCatCount / userScores.length) * 100 : 0;
+        const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
         const elDonut = document.getElementById('st-p-donut-acc');
         if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
         
         // Graph Lineal
-        const last15Scores = [...userScores].slice(-15).map(s => window.UI.formatValue(s.c));
+        const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
         const svgContainer = document.getElementById('st-p-svg-container');
         if(svgContainer) {
-            svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:100px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
+            svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
         }
+
+        // Gráfico Barras (Distribución de Vel)
+        const v50 = window.UI.formatValue(50);
+        const v100 = window.UI.formatValue(100);
+        const v150 = window.UI.formatValue(150);
+        let dist = { [`<${v50}`]: 0, [`${v50}-${v100}`]: 0, [`${v100}-${v150}`]: 0, [`>${v150}`]: 0 };
+        compScores.forEach(s => {
+            let v = window.UI.formatValue(s.c);
+            if(v < v50) dist[`<${v50}`]++;
+            else if(v >= v50 && v < v100) dist[`${v50}-${v100}`]++;
+            else if(v >= v100 && v < v150) dist[`${v100}-${v150}`]++;
+            else dist[`>${v150}`]++;
+        });
+        const barContainer = document.getElementById('st-p-bar-container');
+        if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
+
 
         // Heatmap
         const bk = userDoc.bad_keys || {};
@@ -252,8 +382,8 @@ window.UI = {
         });
 
         // Top 10 List
-        const userScoresDesc = [...userScores].sort((a,b) => b.c - a.c);
-        const top10 = userScoresDesc.slice(0, 10);
+        const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
+        const top10 = compScoresDesc.slice(0, 10);
         const elTop10 = document.getElementById('st-p-top10-races');
         if(elTop10) elTop10.innerHTML = top10.map((s, i) => `
             <li class="st-list-item">
@@ -264,7 +394,7 @@ window.UI = {
 
         // Bottom 5 List
         let trackAvgs = {};
-        userScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
+        compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
         let bottom5 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 5);
         if(bottom5.length === 0) bottom5 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 5);
@@ -276,22 +406,18 @@ window.UI = {
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
             </li>`).join('');
 
-        // Bad Words
-        const bw = userDoc.bad_words || {};
-        let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 30);
-        const elWords = document.getElementById('st-p-worst-words');
-        if(elWords) elWords.innerHTML = badWordsList.map((bwItem, i) => `
-            <li class="st-list-item">
-                <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${bwItem.w}</div>
-                <div class="st-list-val" style="font-size:0.75rem;">${bwItem.errs} err</div>
-            </li>`).join('');
+        window.UI.applyStatsLayout();
     },
 
     renderEliteStats() {
         const users = window.CT.dbLocal('u'); if (users.length === 0) return;
+        const topS = (window.CT.data.s_top || []).filter(s => window.UI.isCompetitiveTrack(s.track));
+        const recentS = (window.CT.data.s_recent || []).filter(s => window.UI.isCompetitiveTrack(s.track) && !s.hc).sort((a,b) => a.id - b.id);
         
-        let mostRacesUser = users.reduce((p, c) => ((c.hi||[]).length > (p.hi||[]).length) ? c : p, users[0]);
+        let mostRacesUser = users.reduce((p, c) => {
+            let cH = (c.hi||[]).length; let pH = (p.hi||[]).length; // Deberíamos filtrar, pero user.hi no tiene track info. Estimado.
+            return cH > pH ? c : p;
+        }, users[0]);
         const elMostVal = document.getElementById('st-e-most-races-val'); if(elMostVal) elMostVal.innerText = (mostRacesUser.hi||[]).length;
         const elMostUsr = document.getElementById('st-e-most-races-user'); if(elMostUsr) elMostUsr.innerText = mostRacesUser.n || "-";
 
@@ -312,7 +438,6 @@ window.UI = {
         const elAvgVal = document.getElementById('st-e-bestavg-val'); if(elAvgVal) elAvgVal.innerText = window.UI.formatValue(Math.round(bestAvg));
         const elAvgUsr = document.getElementById('st-e-bestavg-user'); if(elAvgUsr) elAvgUsr.innerText = avgUser.n || "-";
 
-        const topS = window.CT.data.s_top || [];
         let tm = {}; topS.forEach(s => { if(!tm[s.track] || s.c > tm[s.track].c) tm[s.track] = s; });
         let top1c = {}; Object.values(tm).forEach(s => { top1c[s.h] = (top1c[s.h]||0)+1; });
         let mTop1h = Object.keys(top1c).reduce((a,b) => top1c[a] > top1c[b] ? a : b, "");
@@ -320,6 +445,12 @@ window.UI = {
         const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
         const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
         
+        // Gráfico Servidor
+        const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
+        const eSvgContainer = document.getElementById('st-e-svg-container');
+        if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '';
+
+        // Tablas
         let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         const elTxts = document.getElementById('st-e-table-texts');
         if(elTxts) elTxts.innerHTML = top10T.map((tr, i) => { 
@@ -333,8 +464,7 @@ window.UI = {
             </li>`; 
         }).join('');
         
-        const phrases = window.CT.dbLocal('p');
-        let scoresWithCat = topS.map(s => { let tObj = phrases.find(p => p.title.toString() === s.track.toString()); return { ...s, cat: tObj ? (tObj.c || 'General') : 'General' }; });
+        let scoresWithCat = topS.map(s => { return { ...s, cat: window.UI.getTrackCat(s.track) }; });
         let cCounts = {}; scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; }); let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         const elCats = document.getElementById('st-e-table-cats');
         if(elCats) elCats.innerHTML = top10C.map((cat, i) => { 
@@ -347,11 +477,30 @@ window.UI = {
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
             </li>`; 
         }).join('');
+
+        // Jugadores más activos
+        let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
+        let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
+        const elAct = document.getElementById('st-e-table-players');
+        if(elAct) elAct.innerHTML = topAct.map((h, i) => {
+            let n = (users.find(x=>x.h===h)||{n:h}).n;
+            return `
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${n}</div>
+                <div class="st-list-meta">${h}</div>
+                <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
+            </li>`;
+        }).join('');
+
+        window.UI.applyStatsLayout();
     },
 
     renderHardcoreStats() {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        
+        // Filtro HC (No aplica filtro de categoría por la naturaleza del modo, todo cuenta)
         const hcScores = (window.CT.data.userScores[u.h] || []).filter(s => s.hc === true);
         
         const survCount = hcScores.length;
@@ -386,6 +535,19 @@ window.UI = {
                 <div class="st-list-name">${td.t}</div>
                 <div class="st-list-val" style="font-size:0.75rem;">${td.d} X_X</div>
             </li>`).join('');
+
+        // Global Graveyard
+        const users = window.CT.dbLocal('u');
+        let victims = users.map(us => ({ n: us.n, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
+        const elVic = document.getElementById('st-hc-victims');
+        if(elVic) elVic.innerHTML = victims.map((v, i) => `
+            <li class="st-list-item">
+                <div class="st-list-rank">#${i+1}</div>
+                <div class="st-list-name">${v.n}</div>
+                <div class="st-list-val" style="font-size:0.75rem;">${v.d} X_X</div>
+            </li>`).join('');
+
+        window.UI.applyStatsLayout();
     },
 
     renderInfoPage() {
