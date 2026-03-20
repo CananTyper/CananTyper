@@ -143,6 +143,9 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .table-header h3 { margin: 0; font-size: 0.95rem; color: var(--p); text-transform: uppercase; transition: color 0.3s, text-shadow 0.3s; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
 
+.table-strict-error { border-color: color-mix(in srgb, var(--error) 30%, transparent) !important; transition: border-color 0.3s, box-shadow 0.3s !important; }
+.table-strict-error:hover { border-color: var(--error) !important; box-shadow: 0 10px 25px color-mix(in srgb, var(--error) 15%, transparent) !important; }
+
 .nitro-select { background: var(--bg); color: var(--p); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.7rem; font-weight: bold; cursor: pointer; outline: none; transition: all 0.3s; }
 .nitro-select:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
 .table-body-wrapper { flex-grow: 1; min-height: 0; }
@@ -301,16 +304,14 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
 .online-dot { width: 7px; height: 7px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 8px #00ff00; } 
 
 /* =========================================================================
-   NUEVOS ESTILOS PARA LA SECCIÓN ESTADÍSTICAS (PRO ANALYTICS V2)
+   ESTADÍSTICAS PRO ANALYTICS (TELEMETRÍA V3)
    ========================================================================= */
 
-/* Topbar Estética y Limpia */
-.st-topbar { display: flex; justify-content: space-between; align-items: center; padding: 0 30px; background: rgba(5,5,5,0.9); border-bottom: 1px solid #1a1a1a; height: 60px; flex-shrink: 0; backdrop-filter: blur(10px); }
+.st-topbar { display: flex; justify-content: space-between; align-items: center; padding: 0 30px; background: #050505; border-bottom: 1px solid #1a1a1a; height: 60px; flex-shrink: 0; }
 .st-brand { display: flex; align-items: center; gap: 10px; }
 .st-brand h2 { margin: 0; color: var(--text-main); font-size: 1rem; letter-spacing: 3px; font-weight: 900; }
 .st-brand-icon { color: var(--p); font-size: 1.2rem; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 50%, transparent); }
 
-/* Pestañas / Menú Central */
 .st-tabs { display: flex; height: 100%; }
 .st-tab-btn { background: transparent; border: none; color: #555; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; padding: 0 20px; cursor: pointer; transition: all 0.3s ease; position: relative; outline: none; }
 .st-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
@@ -321,20 +322,17 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
 .st-tab-hc:hover { color: var(--error); }
 .st-tab-hc.active { color: var(--error); }
 
-/* Acciones Derecha */
 .st-actions { display: flex; align-items: center; gap: 15px; }
-.st-btn-widget { background: transparent; border: 1px solid #333; color: #aaa; font-size: 0.7rem; font-weight: bold; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; outline: none; }
+.st-btn-widget { background: transparent; border: 1px solid #333; color: #aaa; font-size: 0.7rem; font-weight: bold; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; outline: none; display:flex; align-items:center; gap:5px;}
 .st-btn-widget:hover { border-color: #ffd700; color: #ffd700; background: rgba(255,215,0,0.05); }
 .st-btn-volver { background: transparent; border: none; color: var(--text-muted); font-size: 0.7rem; font-weight: bold; cursor: pointer; transition: color 0.2s; outline: none; }
 .st-btn-volver:hover { color: #fff; }
 
-/* Grid System (12 Columnas Estricto) */
-.st-dashboard { flex-grow: 1; padding: 30px; background: #050505; overflow-y: auto; overflow-x: hidden; }
+.st-dashboard { flex-grow: 1; padding: 30px; background: #080808; overflow-y: auto; overflow-x: hidden; }
 .st-pane { width: 100%; }
 .st-pane.hidden { display: none !important; }
 .st-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; width: 100%; max-width: 1600px; margin: 0 auto; grid-auto-flow: dense; }
 
-/* Widget Classes */
 .st-col-3 { grid-column: span 3; }
 .st-col-4 { grid-column: span 4; }
 .st-col-6 { grid-column: span 6; }
@@ -347,21 +345,21 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
     .st-col-8 { grid-column: span 12; }
 }
 
-/* Tarjetas Analíticas (Widgets) */
 .st-widget { background: #111111; border: 1px solid #222222; border-radius: 4px; display: flex; flex-direction: column; transition: all 0.3s; position: relative; overflow: hidden; }
 .st-widget:hover { border-color: #333; }
 .st-widget-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; background: rgba(0,0,0,0.2); }
-.st-widget-header span { color: #888; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-.st-resize-btn { background: transparent; border: none; color: #555; cursor: pointer; font-size: 0.9rem; padding: 0; outline: none; transition: color 0.2s; }
-.st-resize-btn:hover { color: var(--text-main); }
+.st-widget-header span { color: #888; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display:flex; align-items:center; gap:8px;}
+.st-resize-btn { background: transparent; border: none; color: #555; cursor: pointer; font-size: 0.9rem; padding: 0; outline: none; transition: color 0.2s; font-weight:bold;}
+.st-resize-btn:hover { color: var(--text-main); transform:scale(1.1);}
 .st-widget-content { flex-grow: 1; padding: 15px; display: flex; flex-direction: column; position: relative; }
 .st-flex-center { justify-content: center; align-items: center; }
 
-/* Tipografía de Datos */
 .st-val { color: var(--text-main); font-size: 2.5rem; font-weight: 900; line-height: 1; font-family: 'Courier New', Courier, monospace; letter-spacing: -1px; }
 .st-sub { color: #666; font-size: 0.65rem; font-weight: bold; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
 
-/* SVG Chart */
+.st-card-highlight { border-color: color-mix(in srgb, var(--p) 20%, transparent); background: color-mix(in srgb, var(--p) 2%, #111); }
+.st-card-highlight:hover { border-color: color-mix(in srgb, var(--p) 50%, transparent); box-shadow: 0 10px 25px color-mix(in srgb, var(--p) 10%, transparent); }
+
 .st-chart-wrapper { flex-grow: 1; position: relative; width: 100%; height: 100%; min-height: 200px; }
 .st-chart-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
 .st-chart-area { opacity: 0.2; }
@@ -369,14 +367,17 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
 .st-chart-point { stroke-width: 2; transition: r 0.2s; fill: #000; cursor: crosshair; }
 .st-chart-point:hover { r: 6; fill: var(--p); }
 
-/* SVG Donut Chart */
 .st-donut { width: 60px; height: 60px; }
 .st-donut-bg { fill: none; stroke: #222; stroke-width: 3.8; }
 .st-donut-fill { fill: none; stroke-width: 3.8; stroke-linecap: round; animation: donutFill 1s ease-out forwards; }
 .st-donut-text { font-family: 'Courier New', Courier, monospace; font-size: 10px; font-weight: bold; text-anchor: middle; }
 @keyframes donutFill { from { stroke-dasharray: 0, 100; } }
 
-/* Listas de Datos Flat */
+.st-bar-group { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; flex: 1; gap: 5px; }
+.st-bar { width: 60%; background: var(--p); border-radius: 2px 2px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 10px color-mix(in srgb, var(--p) 30%, transparent); }
+.st-bar-label { color: #666; font-size: 0.6rem; font-family: monospace; font-weight: bold; }
+.st-bar-val { color: var(--text-main); font-size: 0.7rem; font-weight: bold; }
+
 .st-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
 .st-list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid #1a1a1a; transition: background 0.2s; }
 .st-list-item:hover { background: #151515; }
@@ -386,14 +387,19 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
 .st-list-meta { color: #666; font-size: 0.7rem; width: 120px; text-align: right; margin-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
 .st-list-val { color: var(--p); font-size: 0.9rem; font-weight: 900; width: 60px; text-align: right; font-family: monospace; }
 
-/* Variaciones Error / Hardcore */
 .st-widget-error { border-color: color-mix(in srgb, var(--error) 20%, transparent); }
 .st-widget-error .st-widget-header { border-bottom-color: color-mix(in srgb, var(--error) 20%, transparent); }
 .st-list-err .st-list-name { color: var(--error); }
 .st-list-err .st-list-val { color: var(--error); }
 .st-list-err .st-list-item:hover { background: color-mix(in srgb, var(--error) 5%, transparent); }
 
-/* Teclado en Stats */
-.st-heatmap-wrapper { display: flex; justify-content: center; align-items: center; flex-grow: 1; min-height: 150px; }
 .keyboard-container.heatmap-cananstudio kbd { width: 32px; height: 32px; border-radius: 4px; font-size: 0.8rem; background: #0a0a0a; border-color: #222; color: #444; }
 .keyboard-container.heatmap-cananstudio kbd:hover { border-color: var(--error); color: #fff; transform: none; box-shadow: none; }
+
+/* SWITHCES DE WIDGETS */
+.st-switch { position: relative; display: inline-block; width: 30px; height: 16px; }
+.st-switch input { opacity: 0; width: 0; height: 0; }
+.st-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #222; transition: .3s; border-radius: 16px; }
+.st-slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: #555; transition: .3s; border-radius: 50%; }
+input:checked + .st-slider { background-color: color-mix(in srgb, var(--p) 30%, #222); }
+input:checked + .st-slider:before { transform: translateX(14px); background-color: var(--p); box-shadow: 0 0 5px var(--p); }
