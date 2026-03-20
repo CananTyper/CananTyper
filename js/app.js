@@ -24,17 +24,24 @@ window.App = {
         }
     },
 
-    handleWidgetDragReorder: (tab, oldIdx, newIdx) => {
-        let layout = window.CT.data.statsLayout;
-        if (!layout || !layout[tab]) return;
+    // LÓGICA PRO DE REORDENAMIENTO DE WIDGETS BASADA EN DOM REAL
+    saveWidgetOrderFromDOM: (tab, gridElementId) => {
+        const grid = document.getElementById(gridElementId);
+        if(!grid) return;
         
-        let arr = layout[tab];
-        if (oldIdx < 0 || oldIdx >= arr.length || newIdx < 0 || newIdx >= arr.length) return;
+        // Obtenemos el orden de los IDs visuales (solo los visibles)
+        const visibleDomIds = Array.from(grid.children)
+            .filter(el => !el.classList.contains('hidden'))
+            .map(el => el.getAttribute('data-id'));
+            
+        let layout = window.CT.data.statsLayout[tab];
+        
+        layout.forEach(w => {
+            const domIdx = visibleDomIds.indexOf(w.id);
+            // Si está visible le damos su nuevo orden, si está oculto lo mandamos al final
+            w.order = domIdx !== -1 ? domIdx : 999;
+        });
 
-        const [movedItem] = arr.splice(oldIdx, 1);
-        arr.splice(newIdx, 0, movedItem);
-
-        arr.forEach((w, i) => w.order = i);
         window.App.saveStatsLayout();
     },
 
@@ -68,7 +75,6 @@ window.App = {
 
     saveStatsLayout: () => {
         window.db.collection('config').doc('stats_layout').set(window.CT.data.statsLayout)
-            .then(() => window.UI.applyStatsLayout())
             .catch(err => console.error("Error guardando layout de widgets", err));
     },
 
