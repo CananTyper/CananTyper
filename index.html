@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=2.0.0">
+    <link rel="stylesheet" href="style.css?v=2.1.0">
     <style>
         .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
@@ -74,7 +74,7 @@
                             <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v2.0.0 
+                                CananTyper v2.1.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -147,58 +147,77 @@
             <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
         </section>
 
-        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0; background: var(--bg);">
+        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0; background: #050505;">
             
             <header class="st-topbar">
                 <div class="st-brand">
-                    <span class="st-brand-icon">📊</span>
-                    <h2>TELEMETRÍA</h2>
+                    <span class="st-brand-icon">📈</span>
+                    <h2>TELEMETRÍA DE PILOTO</h2>
                 </div>
                 
                 <div class="st-tabs">
                     <button id="t-st-pe" class="st-tab-btn active" onclick="window.UI.switchStatsTab('personal')">INDIVIDUALES</button>
-                    <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">ÉLITE</button>
-                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')">HARDCORE</button>
+                    <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">ÉLITE GLOBAL</button>
+                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')">HARDCORE 💀</button>
                 </div>
 
                 <div class="st-actions">
-                    <button id="btn-stats-widgets" class="st-btn-widget hidden">⚙ WIDGETS</button>
-                    <button class="st-btn-volver" onclick="window.UI.showLobby()">VOLVER ➔</button>
+                    <button id="btn-stats-widgets" class="st-btn-widget" onclick="console.log('Widgets Phase Pending');">⚙ WIDGETS</button>
+                    <button class="st-btn-volver" onclick="window.UI.showLobby()">TERMINAR SESIÓN ➔</button>
                 </div>
             </header>
             
             <div class="st-dashboard custom-scroll">
                 
                 <div id="pane-stats-personal" class="st-pane">
-                    <div class="st-grid">
+                    <div class="st-grid" id="grid-stats-personal">
                         
-                        <div class="st-card st-col-3">
-                            <div class="st-card-title">Promedio Histórico</div>
-                            <div class="st-card-val val-blurrable" id="st-p-best-avg">0</div>
-                        </div>
-                        <div class="st-card st-col-3">
-                            <div class="st-card-title">Promedio (Últimas 10)</div>
-                            <div class="st-card-val val-blurrable" id="st-p-last10-avg">0</div>
-                        </div>
-                        <div class="st-card st-col-3">
-                            <div class="st-card-title">Categoría Dominante</div>
-                            <div class="st-card-val" id="st-p-best-cat" style="font-size:1.5rem; line-height:2.5rem;">-</div>
-                        </div>
-                        <div class="st-card st-col-3 st-card-highlight">
-                            <div class="st-card-title" style="color:var(--p);">Carreras Finalizadas</div>
-                            <div class="st-card-val" id="st-p-total-races" style="color:var(--p);">0</div>
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>MÉTRICA GLOBAL</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val val-blurrable" id="st-p-best-avg">0</div>
+                                <div class="st-sub">PROM. HISTÓRICO</div>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-12" style="height: 300px; display:flex; flex-direction:column;">
-                            <div class="st-card-title">Rendimiento Técnico Global (Últimas 15)</div>
-                            <div id="st-p-svg-container" class="st-chart-wrapper">
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>MÉTRICA RECIENTE</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val val-blurrable" id="st-p-last10-avg">0</div>
+                                <div class="st-sub">PROM. ÚLTIMAS 10</div>
+                            </div>
+                        </div>
+
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>CONSISTENCIA</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px;">
+                                <div id="st-p-donut-acc"></div>
+                                <div style="text-align:left;">
+                                    <div class="st-sub" style="color:#fff;">CARRERAS</div>
+                                    <div class="st-val" id="st-p-total-races" style="font-size:1.5rem; color:var(--p);">0</div>
                                 </div>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-4 st-card-error" style="display:flex; flex-direction:column;">
-                            <div class="st-card-title" style="color:var(--error);">Mapa de Calor (Teclas Críticas)</div>
-                            <div class="st-heatmap-wrapper custom-scroll">
-                                <div class="keyboard-container" style="transform: scale(0.85); margin-top:-10px;">
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>ESPECIALIDAD</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-p-best-cat" style="font-size:1.1rem; color:#fff; word-break: break-all;">-</div>
+                                <div class="st-sub">CAT. DOMINANTE</div>
+                            </div>
+                        </div>
+
+                        <div class="st-widget st-col-8">
+                            <div class="st-widget-header"><span>RENDIMIENTO TÉCNICO (ÚLT. 15 CARRERAS)</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content" style="padding: 10px 15px 0 15px;">
+                                <div id="st-p-svg-container" class="st-chart-wrapper"></div>
+                            </div>
+                        </div>
+
+                        <div class="st-widget st-col-4 st-widget-error">
+                            <div class="st-widget-header"><span>MAPA DE CALOR</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center custom-scroll">
+                                <div class="keyboard-container" style="transform: scale(0.75); margin-top:-10px;">
                                     <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
@@ -206,14 +225,18 @@
                             </div>
                         </div>
 
-                        <div class="st-card st-col-4" style="display:flex; flex-direction:column;">
-                            <div class="st-card-title">Récord Personal (Top 10)</div>
-                            <div class="st-list-wrapper custom-scroll" id="st-p-top10-races"></div>
+                        <div class="st-widget st-col-6">
+                            <div class="st-widget-header"><span>RÉCORD PERSONAL (TOP 10)</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll">
+                                <ul class="st-list" id="st-p-top10-races"></ul>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-4 st-card-error" style="display:flex; flex-direction:column;">
-                            <div class="st-card-title" style="color:var(--error);">Déficit de Consistencia (Bottom 5)</div>
-                            <div class="st-list-wrapper error-scroll custom-scroll st-list-error" id="st-p-worst-tracks"></div>
+                        <div class="st-widget st-col-6 st-widget-error">
+                            <div class="st-widget-header"><span>DÉFICIT DE CONSISTENCIA (BOTTOM 5)</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll error-scroll">
+                                <ul class="st-list st-list-err" id="st-p-worst-tracks"></ul>
+                            </div>
                         </div>
 
                     </div>
@@ -222,35 +245,51 @@
                 <div id="pane-stats-elite" class="st-pane hidden">
                     <div class="st-grid">
                         
-                        <div class="st-card st-col-3">
-                            <div class="st-card-title">Mayor Volumen (Carreras)</div>
-                            <div class="st-card-val" id="st-e-most-races-val">0</div>
-                            <div class="st-card-sub" id="st-e-most-races-user">-</div>
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>VOLUMEN</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-e-most-races-val">0</div>
+                                <div class="st-sub" id="st-e-most-races-user" style="color:var(--p);">-</div>
+                                <div class="st-sub" style="margin-top:5px;">MÁS CARRERAS</div>
+                            </div>
                         </div>
-                        <div class="st-card st-col-3">
-                            <div class="st-card-title">Dominio Absoluto (Top 1)</div>
-                            <div class="st-card-val" id="st-e-top1-val">0</div>
-                            <div class="st-card-sub" id="st-e-top1-user">-</div>
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>DOMINIO</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-e-top1-val">0</div>
+                                <div class="st-sub" id="st-e-top1-user" style="color:var(--p);">-</div>
+                                <div class="st-sub" style="margin-top:5px;">MÁS VECES TOP 1</div>
+                            </div>
                         </div>
-                        <div class="st-card st-col-3">
-                            <div class="st-card-title">Mejor Promedio Global</div>
-                            <div class="st-card-val val-blurrable" id="st-e-bestavg-val">0</div>
-                            <div class="st-card-sub" id="st-e-bestavg-user">-</div>
+                        <div class="st-widget st-col-3">
+                            <div class="st-widget-header"><span>EFICIENCIA</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val val-blurrable" id="st-e-bestavg-val">0</div>
+                                <div class="st-sub" id="st-e-bestavg-user" style="color:var(--p);">-</div>
+                                <div class="st-sub" style="margin-top:5px;">MEJOR PROMEDIO</div>
+                            </div>
                         </div>
-                        <div class="st-card st-col-3 st-card-highlight">
-                            <div class="st-card-title" style="color:var(--p);">Récord de Velocidad Server</div>
-                            <div class="st-card-val val-blurrable" id="st-e-record-val" style="color:var(--p);">0</div>
-                            <div class="st-card-sub" id="st-e-record-user" style="color:var(--p);">-</div>
+                        <div class="st-widget st-col-3" style="border-color:var(--p);">
+                            <div class="st-widget-header"><span style="color:var(--p);">ABSOLUTO</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val val-blurrable" id="st-e-record-val" style="color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</div>
+                                <div class="st-sub" id="st-e-record-user" style="color:#fff;">-</div>
+                                <div class="st-sub" style="margin-top:5px;">RÉCORD SERVER</div>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-6" style="display:flex; flex-direction:column; height: 500px;">
-                            <div class="st-card-title">Máxima Velocidad Registrada por Pista</div>
-                            <div class="st-list-wrapper custom-scroll" id="st-e-table-texts"></div>
+                        <div class="st-widget st-col-6">
+                            <div class="st-widget-header"><span>MÁXIMA VELOCIDAD POR PISTA</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll" style="max-height: 450px;">
+                                <ul class="st-list" id="st-e-table-texts"></ul>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-6" style="display:flex; flex-direction:column; height: 500px;">
-                            <div class="st-card-title">Máxima Velocidad Registrada por Categoría</div>
-                            <div class="st-list-wrapper custom-scroll" id="st-e-table-cats"></div>
+                        <div class="st-widget st-col-6">
+                            <div class="st-widget-header"><span>MÁXIMA VELOCIDAD POR CATEGORÍA</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll" style="max-height: 450px;">
+                                <ul class="st-list" id="st-e-table-cats"></ul>
+                            </div>
                         </div>
 
                     </div>
@@ -259,31 +298,50 @@
                 <div id="pane-stats-hc" class="st-pane hidden">
                     <div class="st-grid">
                         
-                        <div class="st-card st-col-3 st-card-error">
-                            <div class="st-card-title" style="color:var(--error);">Récord Supervivencia</div>
-                            <div class="st-card-val" id="st-hc-record" style="color:var(--error);">0</div>
+                        <div class="st-widget st-col-3 st-widget-error">
+                            <div class="st-widget-header"><span>CÚSPIDE</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-hc-record" style="color:var(--error);">0</div>
+                                <div class="st-sub">RÉCORD HARDCORE</div>
+                            </div>
                         </div>
-                        <div class="st-card st-col-3 st-card-error">
-                            <div class="st-card-title" style="color:var(--error);">Pistas Superadas</div>
-                            <div class="st-card-val" id="st-hc-surv" style="color:var(--error);">0</div>
+                        <div class="st-widget st-col-3 st-widget-error">
+                            <div class="st-widget-header"><span>VICTORIAS</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-hc-surv" style="color:#fff;">0</div>
+                                <div class="st-sub">PISTAS SUPERADAS</div>
+                            </div>
                         </div>
-                        <div class="st-card st-col-3 st-card-error">
-                            <div class="st-card-title" style="color:var(--error);">Muertes Súbitas (Errores)</div>
-                            <div class="st-card-val" id="st-hc-deaths" style="color:var(--error);">0</div>
+                        <div class="st-widget st-col-3 st-widget-error">
+                            <div class="st-widget-header"><span>DERROTAS</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-hc-deaths" style="color:#fff;">0</div>
+                                <div class="st-sub">MUERTES SÚBITAS</div>
+                            </div>
                         </div>
-                        <div class="st-card st-col-3 st-card-error" style="box-shadow: inset 0 0 20px rgba(244,67,54,0.1);">
-                            <div class="st-card-title" style="color:var(--error);">Tasa de Mortalidad</div>
-                            <div class="st-card-val" id="st-hc-rate" style="color:var(--error);">0%</div>
+                        <div class="st-widget st-col-3 st-widget-error">
+                            <div class="st-widget-header"><span>PROBABILIDAD</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px;">
+                                <div id="st-hc-donut-rate"></div>
+                                <div style="text-align:left;">
+                                    <div class="st-sub" style="color:#fff;">TASA DE</div>
+                                    <div class="st-sub" style="color:var(--error);">MORTALIDAD</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-6 st-card-error" style="display:flex; flex-direction:column; height: 500px;">
-                            <div class="st-card-title" style="color:var(--error);">Hall of Fame: Mejores Sobrevividas</div>
-                            <div class="st-list-wrapper error-scroll custom-scroll st-list-error" id="st-hc-top10"></div>
+                        <div class="st-widget st-col-6 st-widget-error">
+                            <div class="st-widget-header"><span>HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 450px;">
+                                <ul class="st-list st-list-err" id="st-hc-top10"></ul>
+                            </div>
                         </div>
 
-                        <div class="st-card st-col-6 st-card-error" style="display:flex; flex-direction:column; height: 500px;">
-                            <div class="st-card-title" style="color:var(--error);">Cementerio: Pistas más Mortales</div>
-                            <div class="st-list-wrapper error-scroll custom-scroll st-list-error" id="st-hc-worst"></div>
+                        <div class="st-widget st-col-6 st-widget-error">
+                            <div class="st-widget-header"><span>CEMENTERIO (PISTAS MORTALES)</span><button class="st-resize-btn" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 450px;">
+                                <ul class="st-list st-list-err" id="st-hc-worst"></ul>
+                            </div>
                         </div>
 
                     </div>
