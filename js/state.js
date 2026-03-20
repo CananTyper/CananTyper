@@ -3,7 +3,7 @@
    ================================================================ */
 
 window.CT = {
-    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {} }, 
+    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {}, statsLayout: null }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
@@ -52,6 +52,21 @@ window.CT = {
                 if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('maintenance').set(this.data.maint);
             }
             window.UI.checkMaintenance();
+        });
+
+        window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
+            if(snap.exists) { 
+                this.data.statsLayout = snap.data(); 
+            } else {
+                // Layout Base Inicial con los nuevos IDs
+                this.data.statsLayout = {
+                    personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-consistency', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-heat', v:true, s:4}, {id:'w-p-top', v:true, s:4}, {id:'w-p-worst', v:true, s:4}],
+                    elite: [{id:'w-e-vol', v:true, s:3}, {id:'w-e-dom', v:true, s:3}, {id:'w-e-eff', v:true, s:3}, {id:'w-e-rec', v:true, s:3}, {id:'w-e-graph', v:true, s:12}, {id:'w-e-texts', v:true, s:4}, {id:'w-e-cats', v:true, s:4}, {id:'w-e-players', v:true, s:4}],
+                    hc: [{id:'w-h-rec', v:true, s:3}, {id:'w-h-surv', v:true, s:3}, {id:'w-h-death', v:true, s:3}, {id:'w-h-rate', v:true, s:3}, {id:'w-h-top', v:true, s:4}, {id:'w-h-worst', v:true, s:4}, {id:'w-h-victims', v:true, s:4}]
+                };
+                if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('stats_layout').set(this.data.statsLayout);
+            }
+            window.UI.applyStatsLayout();
         });
 
         window.db.collection('config').doc('info_page').onSnapshot(snap => {
