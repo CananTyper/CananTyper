@@ -178,7 +178,7 @@
                     <div class="st-grid" id="grid-stats-personal">
                         
                         <div class="st-widget st-col-3" data-id="w-p-summary">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÉTRICA GLOBAL</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÉTRICA GLOBAL</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-summary')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val val-blurrable" id="st-p-best-avg">0</div>
                                 <div class="st-sub">PROM. HISTÓRICO (COMPETITIVO)</div>
@@ -186,26 +186,23 @@
                         </div>
 
                         <div class="st-widget st-col-3" data-id="w-p-recent">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÉTRICA RECIENTE</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÉTRICA RECIENTE</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-recent')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val val-blurrable" id="st-p-last10-avg">0</div>
                                 <div class="st-sub">PROM. ÚLTIMAS 10</div>
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-3" data-id="w-p-consistency">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>TASA DE CONSISTENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
-                            <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px;">
-                                <div id="st-p-donut-acc"></div>
-                                <div style="text-align:left;">
-                                    <div class="st-sub" style="color:#fff;">CARRERAS VÁLIDAS</div>
-                                    <div class="st-val" id="st-p-total-races" style="font-size:1.5rem; color:var(--p);">0</div>
-                                </div>
+                        <div class="st-widget st-col-3" data-id="w-p-record" style="border-color:var(--p);">
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--p);">CÚSPIDE INDIVIDUAL</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-record')">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val val-blurrable" id="st-p-record-val" style="color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</div>
+                                <div class="st-sub" style="color:#fff;">RÉCORD ABSOLUTO</div>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-3" data-id="w-p-specialty">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>ESPECIALIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>ESPECIALIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-specialty')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-p-best-cat" style="font-size:1.1rem; color:#fff; word-break: break-all; text-align:center;">-</div>
                                 <div class="st-sub">CATEGORÍA DOMINANTE</div>
@@ -213,21 +210,21 @@
                         </div>
 
                         <div class="st-widget st-col-8" data-id="w-p-graph">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>RENDIMIENTO TÉCNICO (ÚLT. 15 CARRERAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>RENDIMIENTO TÉCNICO (ÚLT. 15 CARRERAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-graph')">↗</button></div>
                             <div class="st-widget-content" style="padding: 10px 15px 0 15px; min-height: 200px;">
                                 <div id="st-p-svg-container" class="st-chart-wrapper"></div>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4" data-id="w-p-dist">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DISTRIBUCIÓN DE VELOCIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DISTRIBUCIÓN DE VELOCIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-dist')">↗</button></div>
                             <div class="st-widget-content st-flex-center" style="padding: 15px 10px 5px 10px; min-height: 200px;">
                                 <div id="st-p-bar-container" class="st-chart-wrapper" style="margin-top:0;"></div>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-p-heat">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-heat')">↗</button></div>
                             <div class="st-widget-content st-flex-center custom-scroll" style="min-height: 200px;">
                                 <div class="keyboard-container" style="transform: scale(0.75); margin-top:-10px;">
                                     <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
@@ -238,14 +235,14 @@
                         </div>
 
                         <div class="st-widget st-col-4" data-id="w-p-top">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>RÉCORD PERSONAL (TOP 10)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>RÉCORD PERSONAL (TOP 10)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-top')">↗</button></div>
                             <div class="st-widget-content custom-scroll" style="max-height: 300px;">
                                 <ul class="st-list" id="st-p-top10-races"></ul>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-p-worst">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DÉFICIT DE CONSISTENCIA (BOTTOM 5)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DÉFICIT DE CONSISTENCIA (BOTTOM 5)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-worst')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 300px;">
                                 <ul class="st-list st-list-err" id="st-p-worst-tracks"></ul>
                             </div>
@@ -258,7 +255,7 @@
                     <div class="st-grid" id="grid-stats-elite">
                         
                         <div class="st-widget st-col-3" data-id="w-e-vol">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>VOLUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>VOLUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-vol')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-e-most-races-val">0</div>
                                 <div class="st-sub" id="st-e-most-races-user" style="color:var(--p);">-</div>
@@ -266,7 +263,7 @@
                             </div>
                         </div>
                         <div class="st-widget st-col-3" data-id="w-e-dom">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DOMINIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DOMINIO</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-dom')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-e-top1-val">0</div>
                                 <div class="st-sub" id="st-e-top1-user" style="color:var(--p);">-</div>
@@ -274,7 +271,7 @@
                             </div>
                         </div>
                         <div class="st-widget st-col-3" data-id="w-e-eff">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>EFICIENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>EFICIENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-eff')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val val-blurrable" id="st-e-bestavg-val">0</div>
                                 <div class="st-sub" id="st-e-bestavg-user" style="color:var(--p);">-</div>
@@ -282,7 +279,7 @@
                             </div>
                         </div>
                         <div class="st-widget st-col-3" style="border-color:var(--p);" data-id="w-e-rec">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--p);">ABSOLUTO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--p);">ABSOLUTO</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-rec')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val val-blurrable" id="st-e-record-val" style="color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</div>
                                 <div class="st-sub" id="st-e-record-user" style="color:#fff;">-</div>
@@ -291,28 +288,28 @@
                         </div>
 
                         <div class="st-widget st-col-12" data-id="w-e-graph">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PULSO DEL SERVIDOR (ÚLTIMAS 20 CARRERAS VÁLIDAS GLOBALES)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PULSO DEL SERVIDOR (ÚLTIMAS 20 CARRERAS VÁLIDAS GLOBALES)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-graph')">↗</button></div>
                             <div class="st-widget-content" style="padding: 10px 15px 0 15px; min-height: 200px;">
                                 <div id="st-e-svg-container" class="st-chart-wrapper"></div>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4" data-id="w-e-texts">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÁXIMA VELOCIDAD POR PISTA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÁXIMA VELOCIDAD POR PISTA</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-texts')">↗</button></div>
                             <div class="st-widget-content custom-scroll" style="max-height: 400px;">
                                 <ul class="st-list" id="st-e-table-texts"></ul>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4" data-id="w-e-cats">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÁXIMA VELOCIDAD POR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÁXIMA VELOCIDAD POR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-cats')">↗</button></div>
                             <div class="st-widget-content custom-scroll" style="max-height: 400px;">
                                 <ul class="st-list" id="st-e-table-cats"></ul>
                             </div>
                         </div>
                         
                         <div class="st-widget st-col-4" data-id="w-e-players">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PILOTOS MÁS ACTIVOS (VÁLIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PILOTOS MÁS ACTIVOS (VÁLIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-players')">↗</button></div>
                             <div class="st-widget-content custom-scroll" style="max-height: 400px;">
                                 <ul class="st-list" id="st-e-table-players"></ul>
                             </div>
@@ -325,28 +322,28 @@
                     <div class="st-grid" id="grid-stats-hc">
                         
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-rec">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CÚSPIDE</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CÚSPIDE</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-rec')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-hc-record" style="color:var(--error);">0</div>
                                 <div class="st-sub">RÉCORD HARDCORE</div>
                             </div>
                         </div>
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-surv">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">VICTORIAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">VICTORIAS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-surv')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-hc-surv" style="color:#fff;">0</div>
                                 <div class="st-sub">PISTAS SUPERADAS</div>
                             </div>
                         </div>
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-death">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DERROTAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DERROTAS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-death')">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-hc-deaths" style="color:#fff;">0</div>
                                 <div class="st-sub">MUERTES SÚBITAS</div>
                             </div>
                         </div>
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-rate">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PROBABILIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PROBABILIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-rate')">↗</button></div>
                             <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px;">
                                 <div id="st-hc-donut-rate"></div>
                                 <div style="text-align:left;">
@@ -357,21 +354,21 @@
                         </div>
 
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-h-top">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-top')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-top10"></ul>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-h-worst">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PISTAS MÁS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PISTAS MÁS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-worst')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-worst"></ul>
                             </div>
                         </div>
                         
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-h-victims">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CEMENTERIO DE PILOTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CEMENTERIO DE PILOTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-victims')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-victims"></ul>
                             </div>
