@@ -6,6 +6,7 @@ window.UI = {
     listLayout: 'layout-list', trackPage: 0, activeTrackCat: null, filterFavs: false,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeStatsTab: 'personal',
     
+    // Motor inteligente para listas (Ahorra cientos de líneas de código)
     _genList: (arr, limit, hasMeta, rowFn) => {
         let html = '';
         for(let i=0; i<limit; i++) {
@@ -265,16 +266,6 @@ window.UI = {
             let bestCat = "-"; let maxCatAvg = -1; let bestCatCount = 0;
             for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } }
             const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
-
-            const first10 = [...compScores].slice(0, 10);
-            const avgF = first10.length ? first10.reduce((a,b)=>a+b.c,0)/first10.length : 0;
-            let trend = 0; if(avgF > 0) trend = ((avgLast10 - avgF) / avgF) * 100;
-            const elTrend = document.getElementById('st-p-trend-val');
-            if(elTrend) {
-                elTrend.innerText = (trend > 0 ? '+' : '') + trend.toFixed(1) + '%';
-                elTrend.style.color = trend >= 0 ? 'var(--p)' : 'var(--error)';
-                elTrend.style.textShadow = trend >= 0 ? '0 0 10px color-mix(in srgb, var(--p) 30%, transparent)' : 'none';
-            }
 
             const elDonut = document.getElementById('st-p-donut-acc'); if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0, 'var(--p)');
             const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
@@ -592,8 +583,7 @@ window.UI = {
     }
 };
 
-// En tu archivo `app.js` y `state.js` ya borramos este eventListener de la última línea,
-// así que ahora solo se ejecutará UNA vez aquí:
+// Arranque de la app. Puesto explícitamente y por única vez.
 document.addEventListener('DOMContentLoaded', () => { 
     if(window.CT && window.CT.init) window.CT.init(); 
 });
