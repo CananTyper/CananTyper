@@ -210,5 +210,12 @@ window.CT = {
             window.UI.applyUITexts(); window.UI.refreshActiveViews();
         });
     },
-    ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (window.CT.data.u || []).find(x => x.h === s.h) : null; }
+    
+    // Fallback robusto para sesión en caso de que la DB aún no cargue
+    ses: () => { 
+        const s = JSON.parse(localStorage.getItem('ct_ses')); 
+        if(!s) return null;
+        const found = (window.CT.data.u || []).find(x => x.h === s.h);
+        return found || { h: s.h, n: s.h, r: 'usuario' }; 
+    }
 };
