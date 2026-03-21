@@ -107,6 +107,10 @@ input, textarea, [contenteditable="true"], input[type="color"] { -webkit-user-se
 [data-tooltip-exit]:hover::after { opacity: 1; visibility: visible; bottom: -35px; border-color: var(--error); box-shadow: 0 5px 15px color-mix(in srgb, var(--error) 40%, transparent); }
 [data-tooltip-exit]:hover::before { opacity: 1; visibility: visible; bottom: -16px; border-bottom-color: var(--error); }
 
+/* LINK A PISTAS GLOBALES PRO */
+.track-link { color: var(--text-main); font-weight: bold; cursor: pointer; transition: color 0.2s; text-decoration: underline transparent; }
+.track-link:hover { color: var(--p); text-decoration: underline var(--p); text-shadow: 0 0 8px color-mix(in srgb, var(--p) 40%, transparent); }
+
 input, textarea { width: 100%; padding: 14px; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 10px; outline: none; transition: all 0.3s; font-family: inherit; }
 input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 15%, transparent); }
 .input-error { border-color: var(--error) !important; background: color-mix(in srgb, var(--error) 10%, transparent) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--error) 20%, transparent) !important; }
