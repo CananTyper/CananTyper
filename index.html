@@ -43,7 +43,7 @@
         </section>
 
         <section id="home-screen" class="screen hidden">
-            <header class="top-nav">
+            <header class="top-nav" style="position: relative; z-index: 2000;">
                 <div class="nav-left">
                     <div class="user-pill player-link" onclick="window.UI.showProfile('me')">
                         <div class="avatar-sm"><img id="lobby-avatar" src="" alt=""></div>
@@ -247,21 +247,21 @@
 
                         <div class="st-widget st-col-4" data-id="w-p-top">
                             <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>RÉCORD PERSONAL (TOP 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-top')">↗</button></div>
-                            <div class="st-widget-content custom-scroll" style="max-height: 400px;">
+                            <div class="st-widget-content custom-scroll" style="max-height: 300px;">
                                 <ul class="st-list" id="st-p-top10-races"></ul>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-p-worst">
                             <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">ZONAS DE FRICCIÓN (BOTTOM 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-worst')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
+                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 300px;">
                                 <ul class="st-list st-list-err" id="st-p-worst-tracks"></ul>
                             </div>
                         </div>
 
                         <div class="st-widget st-col-4 st-widget-error" data-id="w-p-words">
                             <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PALABRAS CRÍTICAS (TOP 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-words')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
+                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 300px;">
                                 <ul class="st-list st-list-err" id="st-p-worst-words"></ul>
                             </div>
                         </div>
@@ -403,21 +403,21 @@
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-top">
+                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-top">
                             <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-top')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-top10"></ul>
                             </div>
                         </div>
                         
-                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-victims">
+                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-victims">
                             <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CEMENTERIO DE PILOTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-victims')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-victims"></ul>
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-12 st-widget-error" data-id="w-h-legends">
+                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-legends">
                             <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">LEYENDAS DEL HARDCORE</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-legends')">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-legends"></ul>
@@ -446,6 +446,102 @@
                 </div>
             </div>
         </div>
+
+        <section id="profile-screen" class="screen hidden">
+            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="window.UI.showLobby()" class="btn-outline">Volver</button></header>
+            <div class="profile-top-area">
+                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div>
+                <input type="file" id="img-input" accept="image/*" hidden onchange="if(this.files && this.files[0]){const r=new FileReader();r.onload=e=>window.UI.openCropModal(e.target.result);r.readAsDataURL(this.files[0]);}this.value='';">
+                <div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="window.UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="window.App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
+                <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
+            </div>
+            <div class="profile-history-area">
+                <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
+                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="window.UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="window.UI.changeProfPage(1)">→</button></div>
+            </div>
+        </section>
+
+        <section id="track-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button></header>
+            <div class="track-selection-area">
+                <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="window.UI.renderTrackList()" style="margin-bottom: 15px;">
+                <div id="track-category-view" class="category-grid custom-scroll"></div>
+                <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; flex-grow: 1; min-height: 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <button id="btn-back-cat-track" onclick="window.UI.showTrackCategorySelect()" class="btn-outline"><span id="t_trk_back">← Categorías</span></button>
+                        <div class="layout-controls" style="display:flex; gap:5px;">
+                            <button onclick="window.UI.setLayout('layout-list')" class="btn-outline layout-btn" data-mode="layout-list" style="padding:4px 8px;" title="Lista">☷</button>
+                            <button onclick="window.UI.setLayout('layout-grid')" class="btn-outline layout-btn" data-mode="layout-grid" style="padding:4px 8px;" title="Cuadrícula">⊞</button>
+                            <button onclick="window.UI.setLayout('layout-compact')" class="btn-outline layout-btn" data-mode="layout-compact" style="padding:4px 8px;" title="Compacto">⊟</button>
+                            <button onclick="window.UI.setLayout('layout-zoom')" class="btn-outline layout-btn" data-mode="layout-zoom" style="padding:4px 8px;" title="Alejar Zoom">🔍</button>
+                        </div>
+                    </div>
+                    <div id="track-list-full" class="custom-scroll track-list"></div>
+                    <div class="pagination-bar" style="margin-top: 15px;"><button id="track-prev" class="btn-outline" onclick="window.UI.changeTrackPage(-1)">←</button><span id="track-page-num" class="page-indicator">Página 1</span><button id="track-next" class="btn-outline" onclick="window.UI.changeTrackPage(1)">→</button></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="game-screen" class="screen hidden">
+            <div class="game-container" style="max-width: 1200px; width: 100%;">
+                
+                <div class="game-hud">
+                    <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
+                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
+                </div>
+
+                <div class="progress-container" style="margin-bottom: 25px; position:relative;">
+                    <div id="race-progress" class="progress-bar"></div>
+                    <div id="ghost-progress" class="ghost-bar hidden"></div>
+                </div>
+
+                <div id="target-text" class="game-text-display"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
+                
+                <div id="in-game-controls" class="game-controls">
+                    <button id="t_btn_back" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
+                    <button id="t_btn_retry" onclick="window.App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
+                    <button id="t_btn_new" onclick="window.App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                </div>
+
+                <div id="game-result-modal" class="game-result hidden">
+                    <h2 id="final-speed-display" class="result-score">0 CPM</h2>
+                    
+                    <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
+                    
+                    <div class="result-actions" style="margin-top: 25px;">
+                        <button id="t_btn_retry2" onclick="window.App.retryRace()" class="btn-outline">Repetir</button>
+                        <button id="t_btn_cont" onclick="window.App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button id="t_btn_back2" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="theme-modal" class="crop-overlay hidden">
+            <div class="crop-box" style="width: 400px;">
+                <h3 id="t_theme_title" style="color:var(--p); margin: 0 0 5px 0;">Elegir Plantilla</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 20px 0;">Personaliza tu entorno de mecanografía.</p>
+                <div class="admin-form" style="padding: 15px; gap: 15px; border-color:var(--p); background:transparent;">
+                    <button class="theme-btn" onclick="window.App.saveTheme('cpm')" style="--t-color: #a6ff00; --t-bg: #000000;">
+                        <div class="theme-preview"></div><span>Clásico (Verde)</span>
+                    </button>
+                    <button class="theme-btn" onclick="window.App.saveTheme('wpm')" style="--t-color: #ff3c00; --t-bg: #000000;">
+                        <div class="theme-preview"></div><span>Clásico (Naranja)</span>
+                    </button>
+                    <button class="theme-btn" onclick="window.App.saveTheme('galactic')" style="--t-color: #b388ff; --t-bg: #090a0f;">
+                        <div class="theme-preview"></div><span>Galáctico (Snoopy)</span>
+                    </button>
+                    <button class="theme-btn" onclick="window.App.saveTheme('hacker')" style="--t-color: #00ff00; --t-bg: #050505;">
+                        <div class="theme-preview"></div><span>Hacker Terminal</span>
+                    </button>
+                </div>
+                <button onclick="window.UI.closeThemeModal()" class="btn-outline" style="width:100%; margin-top:10px; border:none;">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="window.App.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="window.UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
+        <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="window.UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
 
     </div>
 
