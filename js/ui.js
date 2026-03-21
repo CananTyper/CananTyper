@@ -9,19 +9,14 @@ window.UI = {
     activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
     
-    // Formateadores Seguros
-    formatTrackName: (t) => { 
-        if(!t) return 'Desconocido';
-        return isNaN(t) ? t : '#' + t; 
-    },
+    formatTrackName: (t) => { return t; },
     formatTrackNameFull: (t) => { 
         if(!t) return 'Desconocido';
         const cat = window.UI.getTrackCat(t);
-        const name = isNaN(t) ? t : 'Texto ' + t;
         if (cat && cat !== 'General' && cat !== '-') {
-            return name + ' | ' + cat.replace('[TRN] ', '');
+            return t + ' | ' + cat.replace('[TRN] ', '');
         }
-        return name + ' | ' + cat; 
+        return t + ' | ' + cat; 
     },
 
     initSortable: (containerId, type, pageContext = 0) => {
@@ -450,7 +445,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                     </li>`;
                 } else {
-                    top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                    top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elTop10 = document.getElementById('st-p-top10-races');
@@ -473,7 +468,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
                     </li>`;
                 } else {
-                    bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                    bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elBottom = document.getElementById('st-p-worst-tracks');
@@ -492,7 +487,7 @@ window.UI = {
                         <div class="st-list-val" style="font-size:0.75rem; width:80px;">${bwItem.errs} errores</div>
                     </li>`;
                 } else {
-                    wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
+                    wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val" style="width:80px;">-</div></li>`;
                 }
             }
             const elWords = document.getElementById('st-p-worst-words');
@@ -643,7 +638,6 @@ window.UI = {
     renderHardcoreStats() {
         try {
             const users = window.CT.dbLocal('u');
-            // Hardcore usa un escaneo puro para evitar mezclas con competitivas
             const globalHcScores = (window.CT.data.s_top || []).concat(window.CT.data.s_recent || []).filter(s => s.hc === true);
             
             let globalDeaths = 0;
@@ -773,21 +767,208 @@ window.UI = {
         } catch(e) { console.error("Error renderHardcoreStats:", e); }
     },
 
-    renderInfoPage() {
-        if(!window.CT.data.info) return;
-        document.getElementById('info-display-title').innerText = window.CT.data.info.title || "Información";
-        document.getElementById('info-display-content').innerHTML = window.CT.data.info.content || "";
+    renderGlobal() {
+        try {
+            const todayAR = window.CT.getARDate();
+            const typeEl = document.getElementById('leaderboard-type'); 
+            const rankTypeEl = document.getElementById('ranking-type');
+            if(!typeEl || !rankTypeEl) return; 
+
+            let recent = window.CT.data.s_recent || [];
+            let top = window.CT.data.s_top || [];
+
+            let filteredScores = typeEl.value === 'today' ? recent.filter(s => !s.hc && s.d === todayAR) : top.filter(s => !s.hc);
+            let limitTimes = typeEl.value === 'today' ? 10 : 20; 
+            filteredScores.sort((a,b) => b.c - a.c);
+            
+            document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => {
+                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
+                return `<tr>
+                    <td class="${posClass}">${idx + 1}</td>
+                    <td><div class="player-link" onclick="window.UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || window.CT.defAvatar}"></div><span>${s.n}</span></div></td>
+                    <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td>
+                    <td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+                        <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${window.UI.formatTrackName(s.track)}</span>
+                        <button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Competir contra el Fantasma">👻</button>
+                    </div></td>
+                </tr>`;
+            }).join('');
+
+            const rankingMode = rankTypeEl.value;
+            const users = window.CT.dbLocal('u');
+            let playerStats = users.map(u => {
+                const history = (u.hi || []).filter(val => typeof val === 'number' && !isNaN(val)); 
+                let averageCPM = 0;
+                if(rankingMode === 'last10') {
+                    const l10 = history.slice(-10);
+                    averageCPM = l10.length ? Math.round(l10.reduce((a,b)=>a+b, 0) / l10.length) : 0;
+                } else {
+                    averageCPM = history.length ? Math.round(history.reduce((a,b)=>a+b, 0) / history.length) : 0;
+                }
+                return { n: u.n, a: u.a, h: u.h, avgCPM: averageCPM, total: history.length };
+            }).filter(u => u.total > 0).sort((a,b) => b.avgCPM - a.avgCPM);
+
+            document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => {
+                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
+                return `<tr>
+                    <td class="${posClass}">${idx + 1}</td>
+                    <td><div class="player-link" onclick="window.UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || window.CT.defAvatar}"></div><span>${p.n}</span></div></td>
+                    <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
+                </tr>`;
+            }).join('');
+        } catch(e) { console.error("Error rendering global:", e); }
     },
 
-    refreshActiveViews: () => {
-        if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
-        if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
-        if(!document.getElementById('profile-screen').classList.contains('hidden')) {
-            window.UI.showProfile(window.CT.activeProfHandle || 'me');
-        }
-        if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
-        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) window.UI.renderEliteStats(); else window.UI.renderHardcoreStats(); }
-    }
-};
+    async showProfile(who) {
+        try {
+            const currentSes = window.CT.ses(); 
+            if (!currentSes) return;
+            const targetHandle = (who === 'me') ? currentSes.h : who;
+            
+            let u = window.CT.dbLocal('u').find(x => x.h === targetHandle); 
+            if(!u) {
+                // Recuperación asíncrona robusta
+                const doc = await window.db.collection('users').doc(targetHandle).get();
+                if(doc.exists) u = doc.data();
+                else return;
+            }
+            
+            window.CT.activeProfHandle = u.h;
+            
+            await window.App.getUserScores(u.h);
+            
+            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
+            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
+            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
+            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
+            const bestCPM = total ? Math.max(...hi) : 0;
+            document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
+            window.CT.profPage = 0; window.UI.renderProfileHistory();
+            const isMe = (currentSes && u.h === currentSes.h);
+            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
+            
+            window.UI.show('profile-screen');
+        } catch (error) { console.error("Error en showProfile:", error); }
+    },
 
-document.addEventListener('DOMContentLoaded', () => { window.CT.init(); });
+    closeProfile: () => {
+        window.UI.show('home-screen'); 
+    },
+    
+    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
+    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
+    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
+    
+    openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); window.UI.toggleSettings(); },
+    closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
+
+    applySavedTheme: () => {
+        const customTheme = localStorage.getItem('ct_custom_theme');
+        if (customTheme) {
+            const t = JSON.parse(customTheme);
+            document.documentElement.setAttribute('data-custom-theme', 'true');
+            document.documentElement.style.setProperty('--theme-custom', t.p);
+            document.documentElement.style.setProperty('--bg-custom', t.bg);
+            document.documentElement.style.setProperty('--surface-custom', t.surface);
+        } else {
+            document.documentElement.removeAttribute('data-custom-theme');
+        }
+    },
+
+    renderProfileHistory() {
+        const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc).sort((a,b) => b.id - a.id);
+        const start = window.CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
+        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td><td><span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</span></td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
+        document.getElementById('prof-prev').disabled = window.CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${window.CT.profPage + 1}`;
+    },
+    changeProfPage(delta) { const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (window.CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { window.CT.profPage += delta; window.UI.renderProfileHistory(); } },
+
+    checkAnnouncements: () => {
+        const anns = window.CT.dbLocal('a').filter(x => x.active);
+        if (anns.length > 0) {
+            const latest = anns[0];
+            const lastSeen = localStorage.getItem('ct_last_announcement');
+            if (latest.id.toString() !== lastSeen) {
+                window.UI.showAnnouncement(latest);
+            }
+        }
+    },
+
+    showTrackSelect() { document.getElementById('track-search').value = ''; window.UI.activeTrackCat = null; window.UI.filterFavs = false; window.UI.showTrackCategorySelect(); window.UI.show('track-screen'); },
+    showTrackCategorySelect() {
+        document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
+        const tracks = window.CT.dbLocal('p'); let cats = window.CT.dbLocal('c'); let catCounts = {}; 
+        tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
+        cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+        let t_fav = window.CT.data.ui && window.CT.data.ui['t_trk_fav_filter'] ? window.CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
+        let html = `<div class="cat-card cat-fav-card" onclick="window.UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
+        html += cats.map(cat => `<div class="cat-card" onclick="window.UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        document.getElementById('track-category-view').innerHTML = html;
+    },
+    toggleFavFilter() { window.UI.filterFavs = true; window.UI.activeTrackCat = null; window.UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); window.UI.renderTrackList(); },
+    selectTrackCategory(cat) { window.UI.activeTrackCat = cat; window.UI.filterFavs = false; window.UI.trackPage = 0; document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.remove('hidden'); window.UI.renderTrackList(); },
+    
+    renderTrackList() {
+        const query = (document.getElementById('track-search').value || "").toLowerCase(); let tracks = window.CT.dbLocal('p');
+        const u = window.CT.ses(); let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        let favs = userDoc.favs || [];
+
+        const listContainer = document.getElementById('track-list-full');
+        listContainer.className = 'custom-scroll track-list ' + window.UI.listLayout;
+        
+        if (window.UI.filterFavs) listContainer.classList.add('fav-scroll');
+        else listContainer.classList.remove('fav-scroll');
+
+        let filtered = tracks;
+        if (query) {
+            document.getElementById('track-category-view').classList.add('hidden'); document.getElementById('track-list-view').classList.remove('hidden'); document.getElementById('btn-back-cat-track').classList.add('hidden');
+            filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+        } else if (window.UI.filterFavs) {
+            filtered = tracks.filter(t => favs.includes(t.id.toString()));
+            filtered.sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
+        } else if (!window.UI.activeTrackCat) {
+            window.UI.showTrackCategorySelect(); return;
+        } else {
+            filtered = tracks.filter(t => (t.c || 'General').trim() === window.UI.activeTrackCat.trim()); 
+            filtered = filtered.sort((a,b) => (a.order || 0) - (b.order || 0));
+        }
+
+        let textPinOn = window.CT.data.ui && window.CT.data.ui['t_btn_pin_on'] ? window.CT.data.ui['t_btn_pin_on'].v : '⭐';
+        let textPinOff = window.CT.data.ui && window.CT.data.ui['t_btn_pin_off'] ? window.CT.data.ui['t_btn_pin_off'].v : '☆';
+
+        const start = window.UI.trackPage * 20; const pageData = filtered.slice(start, start + 20);
+        listContainer.innerHTML = pageData.map(t => {
+            let isFav = favs.includes(t.id.toString());
+            let starClass = isFav ? 'fav-active' : 'fav-inactive';
+            
+            let reorderFavHtml = (window.UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
+            let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
+            let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
+
+            return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}">
+                <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">
+                    ${window.UI.formatTrackName(t.title)}
+                    <button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
+                    ${reorderFavHtml}
+                </div>
+                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
+            </div>`;
+        }).join('');
+        document.getElementById('track-prev').disabled = window.UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${window.UI.trackPage + 1}`;
+        
+        setTimeout(() => {
+            if (window.UI.filterFavs && !query) window.UI.initSortable('track-list-full', 'track', window.UI.trackPage);
+            else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
+        }, 50);
+    },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = window.CT.dbLocal('p'); const u = window.CT.ses(); let favs = (window.CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (window.UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === window.UI.activeTrackCat.trim()); } const nextStart = (window.UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { window.UI.trackPage += delta; window.UI.renderTrackList(); } },
+
+    showAnnouncement(data) { if(!data.id) return; window.UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
+    closeAnnouncement() { if(window.UI.currentAnnId) { localStorage.setItem('ct_last_announcement', window.UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
+
+    openCropModal(src) { const img = document.getElementById('crop-image'); img.src = src; img.onload = () => { window.UI.cropScale = 1; window.UI.cropX = 0; window.UI.cropY = 0; document.getElementById('crop-zoom').value = 1; const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight; if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; } window.UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); window.UI.setupCropEvents(); }; },
+    closeCropModal() { document.getElementById('crop-modal').classList.add('hidden'); document.getElementById('img-input').value = ''; },
+    updateCropTransform() { const img = document.getElementById('crop-image'); img.style.transform = `translate(-50%, -50%) translate(${window.UI.cropX}px, ${window.UI.cropY}px) scale(${window.UI.cropScale})`; img.style.left = '50%'; img.style.top = '50%'; },
+    setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { window.UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; window.UI.startX = cx - window.UI.cropX; window.UI.startY = cy - window.UI.cropY; }; const moveDrag = (e) => { if(!window.UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; window.UI.cropX = cx - window.UI.startX; window.UI.cropY = cy - window.UI.startY; window.UI.updateCropTransform(); }; const endDrag = () => { window.UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { window.UI.cropScale = e.target.value; window.UI.updateCropTransform(); }; }
+};
