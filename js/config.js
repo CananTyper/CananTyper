@@ -27,7 +27,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 window.db = firebase.firestore();
 
-// Restaurada la persistencia compatible para evitar la ruptura de la DB
 window.db.enablePersistence({ synchronizeTabs: true }).catch((err) => { 
     console.error("Persistencia falló:", err); 
 });
