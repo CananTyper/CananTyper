@@ -149,12 +149,19 @@
         </section>
 
         <section id="stats-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
+            <header class="top-nav" style="border-bottom: none; margin-bottom: 10px; padding-bottom: 10px;">
+                <div style="flex: 1;">
                     <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
-                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
+                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem; font-weight: bold;">Análisis de rendimiento</p>
                 </div>
-                <div style="display:flex; gap:15px; align-items:center;">
+                
+                <div class="stats-nav-tabs" style="display: flex; gap: 15px; align-items: center; justify-content: center; flex: 2;">
+                    <button id="t-st-pe" class="st-nav-btn active" onclick="window.UI.switchStatsTab('personal')">Individuales</button>
+                    <button id="t-st-el" class="st-nav-btn st-nav-ranking" onclick="window.UI.switchStatsTab('elite')">👑 RANKING</button>
+                    <button id="t-st-hc" class="st-nav-btn st-nav-hc" onclick="window.UI.switchStatsTab('hc')">Hardcore 💀</button>
+                </div>
+
+                <div style="display:flex; gap:15px; align-items:center; justify-content: flex-end; flex: 1;">
                     <button id="btn-stats-widgets" class="btn-outline admin-only hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color:#ffd700; color:#ffd700;">⚙️ Widgets</button>
                     <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
                 </div>
@@ -165,72 +172,22 @@
                 <div id="widgets-menu-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;"></div>
             </div>
 
-            <div class="st-topbar" style="border-radius:12px; margin-bottom:15px;">
-                <div class="st-tabs">
-                    <button id="t-st-pe" class="st-tab-btn active" onclick="window.UI.switchStatsTab('personal')">Personales</button>
-                    <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">Élite</button>
-                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error)">Hardcore 💀</button>
-                </div>
-            </div>
-
-            <div class="st-dashboard custom-scroll" style="flex-grow:1; border-radius:12px; border:1px solid var(--border);">
+            <div id="st-transition-wrapper" class="st-dashboard custom-scroll" style="flex-grow:1; border-radius:12px; border:1px solid var(--border); overflow-x: hidden;">
                 
                 <div id="pane-stats-personal" class="st-pane">
                     <div id="grid-stats-personal" class="st-grid">
-                        <div class="st-widget st-card-highlight st-col-3" data-id="w-p-summary">
-                            <div class="st-widget-header"><span class="drag-handle">≡ RESUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-total-races">0</div><div class="st-sub">CARRERAS TOTALES</div></div>
-                        </div>
-                        <div class="st-widget st-col-3" data-id="w-p-recent">
-                            <div class="st-widget-header"><span class="drag-handle">≡ PROM. ÚLT 10</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-last10-avg">0</div><div class="st-sub">VELOCIDAD</div></div>
-                        </div>
-                        <div class="st-widget st-col-3" data-id="w-p-record">
-                            <div class="st-widget-header"><span class="drag-handle">≡ RÉCORD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-record-val">0</div><div class="st-sub">MÁXIMA ABSOLUTA</div></div>
-                        </div>
-                        <div class="st-widget st-col-3" data-id="w-p-specialty">
-                            <div class="st-widget-header"><span class="drag-handle">≡ MEJOR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-best-cat" style="font-size:1.5rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div><div class="st-sub">ESPECIALIDAD</div></div>
-                        </div>
-                        <div class="st-widget st-col-8" data-id="w-p-graph">
-                            <div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO (Últimas 15)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content"><div class="st-chart-wrapper" id="st-p-svg-container"></div></div>
-                        </div>
-                        <div class="st-widget st-col-4" data-id="w-p-dist">
-                            <div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content" id="st-p-bar-container"></div>
-                        </div>
-                        <div class="st-widget st-col-4" data-id="w-p-donut">
-                            <div class="st-widget-header"><span class="drag-handle">≡ PRECISIÓN COMPETITIVA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center" id="st-p-donut-acc"></div>
-                        </div>
-                        <div class="st-widget st-col-4" data-id="w-p-trend">
-                            <div class="st-widget-header"><span class="drag-handle">≡ TENDENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-trend-val">0%</div><div class="st-sub">VS PRIMERAS 10</div></div>
-                        </div>
-                        <div class="st-widget st-widget-error st-col-8" data-id="w-p-heat">
-                            <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="keyboard-container heatmap-cananstudio" style="padding:0;">
-                                    <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
-                                    <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
-                                    <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-6" data-id="w-p-top">
-                            <div class="st-widget-header"><span class="drag-handle">≡ MEJORES CARRERAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content custom-scroll" style="padding:0; max-height: 300px;"><ul class="st-list" id="st-p-top10-races"></ul></div>
-                        </div>
-                        <div class="st-widget st-widget-error st-col-6" data-id="w-p-worst">
-                            <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS A MEJORAR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-tracks"></ul></div>
-                        </div>
-                        <div class="st-widget st-widget-error st-col-6" data-id="w-p-words">
-                            <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ PALABRAS CRÍTICAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-words"></ul></div>
-                        </div>
+                        <div class="st-widget st-card-highlight st-col-3" data-id="w-p-summary"><div class="st-widget-header"><span class="drag-handle">≡ RESUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-total-races">0</div><div class="st-sub">CARRERAS TOTALES</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-p-recent"><div class="st-widget-header"><span class="drag-handle">≡ PROM. ÚLT 10</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-last10-avg">0</div><div class="st-sub">VELOCIDAD</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-p-record"><div class="st-widget-header"><span class="drag-handle">≡ RÉCORD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-record-val">0</div><div class="st-sub">MÁXIMA ABSOLUTA</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-p-specialty"><div class="st-widget-header"><span class="drag-handle">≡ MEJOR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-best-cat" style="font-size:1.5rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div><div class="st-sub">ESPECIALIDAD</div></div></div>
+                        <div class="st-widget st-col-8" data-id="w-p-graph"><div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO (Últimas 15)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content"><div class="st-chart-wrapper" id="st-p-svg-container"></div></div></div>
+                        <div class="st-widget st-col-4" data-id="w-p-dist"><div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-p-bar-container"></div></div>
+                        <div class="st-widget st-col-4" data-id="w-p-donut"><div class="st-widget-header"><span class="drag-handle">≡ PRECISIÓN COMPETITIVA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-p-donut-acc"></div></div>
+                        <div class="st-widget st-col-4" data-id="w-p-trend"><div class="st-widget-header"><span class="drag-handle">≡ TENDENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-trend-val">0%</div><div class="st-sub">VS PRIMERAS 10</div></div></div>
+                        <div class="st-widget st-widget-error st-col-8" data-id="w-p-heat"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="keyboard-container heatmap-cananstudio" style="padding:0;"><div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div><div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div><div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div></div></div></div>
+                        <div class="st-widget st-col-6" data-id="w-p-top"><div class="st-widget-header"><span class="drag-handle">≡ MEJORES CARRERAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height: 300px;"><ul class="st-list" id="st-p-top10-races"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-p-worst"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS A MEJORAR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-tracks"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-p-words"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ PALABRAS CRÍTICAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-words"></ul></div></div>
                     </div>
                 </div>
 
