@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=3.3.0">
+    <link rel="stylesheet" href="style.css?v=1.1.15">
     <style>
+        /* Estilos inyectados para el Drag & Drop (SortableJS) */
         .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
     </style>
@@ -43,7 +44,7 @@
         </section>
 
         <section id="home-screen" class="screen hidden">
-            <header class="top-nav" style="position: relative; z-index: 2000;">
+            <header class="top-nav">
                 <div class="nav-left">
                     <div class="user-pill player-link" onclick="window.UI.showProfile('me')">
                         <div class="avatar-sm"><img id="lobby-avatar" src="" alt=""></div>
@@ -66,7 +67,7 @@
                         <button id="btn-nav-settings" onclick="window.UI.toggleSettings()" class="nav-icon-btn" data-tooltip="Ajustes">
                             ⚙️<span id="update-dot" class="update-dot hidden"></span>
                         </button>
-                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 230px; z-index: 9999; cursor: default;">
+                        <div id="settings-dropdown" class="edit-dropdown hidden" style="right: 15px; top: 120%; min-width: 230px; z-index: 100; cursor: default;">
                             <button id="btn-update-status" class="update-menu-item hidden" onclick="window.App.handleUpdateClick()"></button>
                             <button id="btn-fast-mode" onclick="window.UI.toggleFastMode()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">⚡ Modo Rápido: NO</button>
                             <button id="t_theme_btn" onclick="window.UI.openThemeBuilder()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: inherit; width: 100%; border-bottom: 1px solid var(--border);">🎨 Personalizar</button>
@@ -74,7 +75,7 @@
                             <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v3.3.0 
+                                CananTyper v1.1.15 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -147,305 +148,135 @@
             <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
         </section>
 
-        <section id="stats-screen" class="screen hidden" style="flex-direction: column; padding: 0; background: #050505;">
-            
-            <header class="st-topbar">
-                <div class="st-brand">
-                    <span class="st-brand-icon">📈</span>
-                    <h2>TELEMETRÍA GLOBAL</h2>
+        <section id="stats-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
+                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
                 </div>
-                
-                <div class="st-tabs">
-                    <button id="t-st-pe" class="st-tab-btn active" onclick="window.UI.switchStatsTab('personal')">INDIVIDUALES</button>
-                    <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">ÉLITE GLOBAL</button>
-                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')">HARDCORE 💀</button>
-                </div>
-
-                <div class="st-actions" style="position:relative;">
-                    <button id="btn-stats-widgets" class="st-btn-widget admin-only hidden" onclick="window.UI.toggleWidgetsMenu()">⚙ WIDGETS</button>
-                    <button class="st-btn-volver" onclick="window.UI.showLobby()">TERMINAR SESIÓN ➔</button>
-                    
-                    <div id="widgets-menu" class="action-dropdown hidden custom-scroll" style="position:absolute; width: 280px; max-height: 400px; overflow-y: auto; padding: 15px; right: 80px; top: 110%; background: #0d0d0d; border: 1px solid #333; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
-                        <div style="font-size: 0.7rem; color: #888; text-align: center; margin-bottom: 15px; letter-spacing: 1px; border-bottom:1px solid #222; padding-bottom:10px;">PANEL DE CONTROL DE PANTALLA</div>
-                        <div id="widgets-menu-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
-                    </div>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <button id="btn-stats-widgets" class="btn-outline hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color:#ffd700; color:#ffd700;">⚙️ Widgets</button>
+                    <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
                 </div>
             </header>
-            
-            <div class="st-dashboard custom-scroll">
+
+            <div id="widgets-menu" class="hidden" style="background:var(--surface-light); border:1px solid var(--border); padding:15px; border-radius:12px; margin-bottom:15px;">
+                <h3 style="margin:0 0 10px 0; color:var(--text-main); font-size:1rem;">Gestión de Widgets</h3>
+                <div id="widgets-menu-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;"></div>
+            </div>
+
+            <div class="st-topbar" style="border-radius:12px; margin-bottom:15px;">
+                <div class="st-tabs">
+                    <button id="t-st-pe" class="st-tab-btn active" onclick="window.UI.switchStatsTab('personal')">Personales</button>
+                    <button id="t-st-ge" class="st-tab-btn" onclick="window.UI.switchStatsTab('general')">Servidor</button>
+                    <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">Élite</button>
+                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')">Hardcore 💀</button>
+                </div>
+            </div>
+
+            <div class="st-dashboard custom-scroll" style="flex-grow:1; border-radius:12px; border:1px solid var(--border);">
                 
                 <div id="pane-stats-personal" class="st-pane">
-                    <div class="st-grid" id="grid-stats-personal">
-                        
-                        <div class="st-widget st-col-3" data-id="w-p-summary">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÉTRICA GLOBAL</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-summary')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val val-blurrable" id="st-p-best-avg">0</div>
-                                <div class="st-sub">PROM. HISTÓRICO (COMPETITIVO)</div>
-                            </div>
+                    <div id="grid-stats-personal" class="st-grid">
+                        <div class="st-widget st-card-highlight st-col-3" data-id="w-p-summary">
+                            <div class="st-widget-header"><span class="drag-handle">≡ RESUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-total-races">0</div><div class="st-sub">CARRERAS TOTALES</div></div>
                         </div>
-
                         <div class="st-widget st-col-3" data-id="w-p-recent">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÉTRICA RECIENTE</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-recent')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val val-blurrable" id="st-p-last10-avg">0</div>
-                                <div class="st-sub">PROM. ÚLTIMAS 10</div>
-                            </div>
+                            <div class="st-widget-header"><span class="drag-handle">≡ PROM. ÚLT 10</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-last10-avg">0</div><div class="st-sub">VELOCIDAD</div></div>
                         </div>
-
-                        <div class="st-widget st-col-3" data-id="w-p-record" style="border-color:var(--p);">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--p);">CÚSPIDE INDIVIDUAL</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-record')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val val-blurrable" id="st-p-record-val" style="color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</div>
-                                <div class="st-sub" style="color:#fff;">RÉCORD ABSOLUTO</div>
-                            </div>
+                        <div class="st-widget st-col-3" data-id="w-p-record">
+                            <div class="st-widget-header"><span class="drag-handle">≡ RÉCORD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-record-val">0</div><div class="st-sub">MÁXIMA ABSOLUTA</div></div>
                         </div>
-
                         <div class="st-widget st-col-3" data-id="w-p-specialty">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>ESPECIALIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-specialty')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val" id="st-p-best-cat" style="font-size:2.2rem; color:#fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">-</div>
-                                <div class="st-sub">CATEGORÍA DOMINANTE</div>
-                            </div>
+                            <div class="st-widget-header"><span class="drag-handle">≡ MEJOR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-best-cat" style="font-size:1.5rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div><div class="st-sub">ESPECIALIDAD</div></div>
                         </div>
-
                         <div class="st-widget st-col-8" data-id="w-p-graph">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>EVOLUCIÓN TÉCNICA (ÚLT. 15 VÁLIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-graph')">↗</button></div>
-                            <div class="st-widget-content" style="padding: 10px 15px 15px 15px; min-height: 220px;">
-                                <div id="st-p-svg-container" class="st-chart-wrapper"></div>
-                            </div>
+                            <div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO (Últimas 15)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content"><div class="st-chart-wrapper" id="st-p-svg-container"></div></div>
                         </div>
-
-                        <div class="st-widget st-col-4" data-id="w-p-donut">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>TASA DE CONSISTENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-donut')">↗</button></div>
-                            <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px; min-height: 220px;">
-                                <div id="st-p-donut-acc"></div>
-                                <div style="text-align:left;">
-                                    <div class="st-sub" style="color:#fff;">RUTAS VÁLIDAS</div>
-                                    <div class="st-val" id="st-p-total-races" style="font-size:1.5rem; color:var(--p);">0</div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="st-widget st-col-4" data-id="w-p-dist">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DISTRIBUCIÓN DE VELOCIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-dist')">↗</button></div>
-                            <div class="st-widget-content st-flex-center" style="padding: 15px 10px 5px 10px; min-height: 200px;">
-                                <div id="st-p-bar-container" class="st-chart-wrapper" style="margin-top:0;"></div>
-                            </div>
+                            <div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content" id="st-p-bar-container"></div>
                         </div>
-
-                        <div class="st-widget st-col-8 st-widget-error" data-id="w-p-heat">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">MAPA DE CALOR (TECLAS CRÍTICAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-heat')">↗</button></div>
-                            <div class="st-widget-content st-flex-center custom-scroll" style="min-height: 200px;">
-                                <div class="keyboard-container" style="transform: scale(0.9); margin-top:-10px;">
+                        <div class="st-widget st-col-4" data-id="w-p-donut">
+                            <div class="st-widget-header"><span class="drag-handle">≡ PRECISIÓN COMPETITIVA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center" id="st-p-donut-acc"></div>
+                        </div>
+                        <div class="st-widget st-col-4" data-id="w-p-trend">
+                            <div class="st-widget-header"><span class="drag-handle">≡ TENDENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-trend-val">0%</div><div class="st-sub">VS PRIMERAS 10</div></div>
+                        </div>
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-p-heat">
+                            <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="keyboard-container heatmap-cananstudio" style="padding:0;">
                                     <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="st-widget st-col-4" data-id="w-p-top">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>RÉCORD PERSONAL (TOP 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-top')">↗</button></div>
-                            <div class="st-widget-content custom-scroll" style="max-height: 300px;">
-                                <ul class="st-list" id="st-p-top10-races"></ul>
-                            </div>
+                        <div class="st-widget st-col-6" data-id="w-p-top">
+                            <div class="st-widget-header"><span class="drag-handle">≡ MEJORES CARRERAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content custom-scroll" style="padding:0; max-height: 300px;"><ul class="st-list" id="st-p-top10-races"></ul></div>
                         </div>
-
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-p-worst">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">ZONAS DE FRICCIÓN (BOTTOM 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-worst')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 300px;">
-                                <ul class="st-list st-list-err" id="st-p-worst-tracks"></ul>
-                            </div>
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-p-worst">
+                            <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS A MEJORAR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-tracks"></ul></div>
                         </div>
-
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-p-words">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PALABRAS CRÍTICAS (TOP 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('personal', 'w-p-words')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 300px;">
-                                <ul class="st-list st-list-err" id="st-p-worst-words"></ul>
-                            </div>
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-p-words">
+                            <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ PALABRAS CRÍTICAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
+                            <div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-words"></ul></div>
                         </div>
-
                     </div>
                 </div>
 
+                <div id="pane-stats-general" class="st-pane hidden">
+                     <div class="st-grid">
+                        <div class="st-widget st-col-3"><div class="st-widget-header"><span>≡ USUARIOS</span></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-g-users-val">0</div></div></div>
+                        <div class="st-widget st-col-3"><div class="st-widget-header"><span>≡ CARRERAS GLOBALES</span></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-g-races-val">0</div></div></div>
+                        <div class="st-widget st-col-3"><div class="st-widget-header"><span>≡ PROMEDIO SRV</span></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-g-avg">0</div></div></div>
+                        <div class="st-widget st-card-highlight st-col-3"><div class="st-widget-header"><span>≡ RÉCORD ABSOLUTO</span></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-g-record">0</div></div></div>
+                        <div class="st-widget st-col-6"><div class="st-widget-header"><span>≡ TEXTOS TOP</span></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><table class="data-table" style="width:100%;"><thead><tr><th>Texto</th><th>Jugadas</th></tr></thead><tbody id="st-g-top-texts"></tbody></table></div></div>
+                        <div class="st-widget st-col-6"><div class="st-widget-header"><span>≡ CATEGORÍAS TOP</span></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><table class="data-table" style="width:100%;"><thead><tr><th>Categoría</th><th>Jugadas</th></tr></thead><tbody id="st-g-top-cats"></tbody></table></div></div>
+                     </div>
+                </div>
+
                 <div id="pane-stats-elite" class="st-pane hidden">
-                    <div class="st-grid" id="grid-stats-elite">
-                        
-                        <div class="st-widget st-col-3" data-id="w-e-vol">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>VOLUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-vol')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val" id="st-e-most-races-val">0</div>
-                                <div class="st-sub" id="st-e-most-races-user" style="color:var(--p);">-</div>
-                                <div class="st-sub" style="margin-top:5px;">MÁS CARRERAS (VÁLIDAS)</div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-3" data-id="w-e-dom">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DOMINIO</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-dom')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val" id="st-e-top1-val">0</div>
-                                <div class="st-sub" id="st-e-top1-user" style="color:var(--p);">-</div>
-                                <div class="st-sub" style="margin-top:5px;">MÁS VECES TOP 1</div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-3" data-id="w-e-eff">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>EFICIENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-eff')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val val-blurrable" id="st-e-bestavg-val">0</div>
-                                <div class="st-sub" id="st-e-bestavg-user" style="color:var(--p);">-</div>
-                                <div class="st-sub" style="margin-top:5px;">MEJOR PROMEDIO</div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-3" style="border-color:var(--p);" data-id="w-e-rec">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--p);">ABSOLUTO</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-rec')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val val-blurrable" id="st-e-record-val" style="color:var(--p); text-shadow:0 0 10px rgba(166,255,0,0.3);">0</div>
-                                <div class="st-sub" id="st-e-record-user" style="color:#fff;">-</div>
-                                <div class="st-sub" style="margin-top:5px;">RÉCORD SERVER</div>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-8" data-id="w-e-graph">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PULSO DEL SERVIDOR (ÚLT. 20 CARRERAS VÁLIDAS GLOBALES)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-graph')">↗</button></div>
-                            <div class="st-widget-content" style="padding: 10px 15px 15px 15px; min-height: 250px;">
-                                <div id="st-e-svg-container" class="st-chart-wrapper"></div>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-4" data-id="w-e-donut">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MONOPOLIO GLOBAL</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-donut')">↗</button></div>
-                            <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px; min-height: 200px;">
-                                <div id="st-e-donut-monopoly"></div>
-                                <div style="text-align:left;">
-                                    <div class="st-sub" style="color:#fff;">TOP 1 HELD BY</div>
-                                    <div class="st-val" id="st-e-donut-user" style="font-size:1.1rem; color:var(--p); word-break: break-all;">#1</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-12" data-id="w-e-tier">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DISTRIBUCIÓN DE RANGOS GLOBALES</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-tier')">↗</button></div>
-                            <div class="st-widget-content st-flex-center" style="padding: 15px 10px 5px 10px; min-height: 200px;">
-                                <div id="st-e-bar-tier" class="st-chart-wrapper" style="margin-top:0;"></div>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-4" data-id="w-e-texts">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÁXIMA VELOCIDAD POR PISTA (TOP 10)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-texts')">↗</button></div>
-                            <div class="st-widget-content custom-scroll" style="max-height: 400px;">
-                                <ul class="st-list" id="st-e-table-texts"></ul>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-4" data-id="w-e-cats">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>MÁXIMA VELOCIDAD POR CATEGORÍA (TOP 10)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-cats')">↗</button></div>
-                            <div class="st-widget-content custom-scroll" style="max-height: 400px;">
-                                <ul class="st-list" id="st-e-table-cats"></ul>
-                            </div>
-                        </div>
-                        
-                        <div class="st-widget st-col-4" data-id="w-e-players">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PILOTOS MÁS ACTIVOS (TOP 10)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('elite', 'w-e-players')">↗</button></div>
-                            <div class="st-widget-content custom-scroll" style="max-height: 400px;">
-                                <ul class="st-list" id="st-e-table-players"></ul>
-                            </div>
-                        </div>
-
+                    <div id="grid-stats-elite" class="st-grid">
+                        <div class="st-widget st-col-3" data-id="w-e-vol"><div class="st-widget-header"><span class="drag-handle">≡ MAYOR VOLUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-e-most-races-val">0</div><div class="st-sub" id="st-e-most-races-user">-</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-e-dom"><div class="st-widget-header"><span class="drag-handle">≡ MAYOR DOMINIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-e-top1-val">0</div><div class="st-sub" id="st-e-top1-user">-</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-e-eff"><div class="st-widget-header"><span class="drag-handle">≡ MEJOR PROMEDIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-e-bestavg-val">0</div><div class="st-sub" id="st-e-bestavg-user">-</div></div></div>
+                        <div class="st-widget st-card-highlight st-col-3" data-id="w-e-rec"><div class="st-widget-header"><span class="drag-handle">≡ RÉCORD MUNDIAL</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-e-record-val">0</div><div class="st-sub" id="st-e-record-user">-</div></div></div>
+                        <div class="st-widget st-col-12" data-id="w-e-graph"><div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO GLOBAL (Últimas 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content"><div class="st-chart-wrapper" id="st-e-svg-container"></div></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-donut"><div class="st-widget-header"><span class="drag-handle">≡ TASA DE MONOPOLIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-e-donut-monopoly"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;" id="st-e-donut-user">-</div></div>
+                        <div class="st-widget st-col-8" data-id="w-e-tier"><div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN POR TIERS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-e-bar-tier"></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-texts"><div class="st-widget-header"><span class="drag-handle">≡ TOP TEXTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-texts"></ul></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-cats"><div class="st-widget-header"><span class="drag-handle">≡ TOP CATEGORÍAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-cats"></ul></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-players"><div class="st-widget-header"><span class="drag-handle">≡ MÁS ACTIVOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-players"></ul></div></div>
                     </div>
                 </div>
 
                 <div id="pane-stats-hc" class="st-pane hidden">
-                    <div class="st-grid" id="grid-stats-hc">
-                        
-                        <div class="st-widget st-col-3 st-widget-error" data-id="w-h-rec">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CÚSPIDE</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-rec')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val" id="st-hc-record" style="color:var(--error);">0</div>
-                                <div class="st-sub">RÉCORD SERVER HC</div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-3 st-widget-error" data-id="w-h-surv">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">VICTORIAS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-surv')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val" id="st-hc-surv" style="color:#fff;">0</div>
-                                <div class="st-sub">PISTAS SUPERADAS (GLOBAL)</div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-3 st-widget-error" data-id="w-h-death">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DERROTAS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-death')">↗</button></div>
-                            <div class="st-widget-content st-flex-center">
-                                <div class="st-val" id="st-hc-deaths" style="color:#fff;">0</div>
-                                <div class="st-sub">MUERTES SÚBITAS (GLOBAL)</div>
-                            </div>
-                        </div>
-                        <div class="st-widget st-col-3 st-widget-error" data-id="w-h-rate">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PROBABILIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-rate')">↗</button></div>
-                            <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px;">
-                                <div id="st-hc-donut-rate"></div>
-                                <div style="text-align:left;">
-                                    <div class="st-sub" style="color:#fff;">TASA GLOBAL</div>
-                                    <div class="st-sub" style="color:var(--error);">MORTALIDAD</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-6" data-id="w-h-safe" style="border-color:var(--border);">
-                            <div class="st-widget-header" style="border-bottom-color:#1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--success);">REFUGIOS GLOBALES (MÁS SEGURAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-safe')">↗</button></div>
-                            <div class="st-widget-content custom-scroll" style="max-height: 400px;">
-                                <ul class="st-list" id="st-hc-safe"></ul>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-worst">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PISTAS MÁS MORTALES (TOP 10)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-worst')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
-                                <ul class="st-list st-list-err" id="st-hc-worst"></ul>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-top">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-top')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
-                                <ul class="st-list st-list-err" id="st-hc-top10"></ul>
-                            </div>
-                        </div>
-                        
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-victims">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CEMENTERIO DE PILOTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-victims')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
-                                <ul class="st-list st-list-err" id="st-hc-victims"></ul>
-                            </div>
-                        </div>
-
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-legends">
-                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">LEYENDAS DEL HARDCORE</span><button class="st-resize-btn admin-only hidden" onclick="window.App.cycleWidgetSize('hc', 'w-h-legends')">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
-                                <ul class="st-list st-list-err" id="st-hc-legends"></ul>
-                            </div>
-                        </div>
-
+                    <div id="grid-stats-hc" class="st-grid">
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-rec"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ RÉCORD HC</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" style="color:var(--error);" id="st-hc-record">0</div><div class="st-sub">VELOCIDAD MÁXIMA</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-h-surv" style="border-color:var(--success);"><div class="st-widget-header"><span class="drag-handle" style="color:var(--success);">≡ SUPERVIVENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" style="color:var(--success);" id="st-hc-surv">0</div><div class="st-sub">CARRERAS COMPLETADAS</div></div></div>
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-death"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MUERTES SÚBITAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" style="color:var(--error);" id="st-hc-deaths">0</div><div class="st-sub">ELIMINACIONES</div></div></div>
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-rate"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TASA MORTALIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-hc-donut-rate"></div></div>
+                        <div class="st-widget st-col-6" data-id="w-h-top"><div class="st-widget-header"><span class="drag-handle">≡ MEJORES SOBREVIVIDAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-hc-top10"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-h-worst"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-worst"></ul></div></div>
+                        <div class="st-widget st-col-4" data-id="w-h-legends" style="border-color:var(--success);"><div class="st-widget-header"><span class="drag-handle" style="color:var(--success);">≡ LEYENDAS (MÁS SUPERVIVENCIAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-hc-legends"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-victims"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ VÍCTIMAS (MÁS MUERTES)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-victims"></ul></div></div>
+                        <div class="st-widget st-col-4" data-id="w-h-safe" style="border-color:var(--success);"><div class="st-widget-header"><span class="drag-handle" style="color:var(--success);">≡ TEXTOS MÁS SEGUROS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-hc-safe"></ul></div></div>
                     </div>
                 </div>
 
             </div>
         </section>
-
-        <div id="track-preview-modal" class="crop-overlay hidden" style="z-index: 3000;">
-            <div class="crop-box track-preview-box" style="width: 600px; max-width: 90vw; background: var(--surface); border: 1px solid var(--p); display:flex; flex-direction:column; padding: 30px;">
-                <h3 id="tp-title" style="color:var(--p); margin: 0 0 5px 0; font-size:1.5rem; text-transform:uppercase; letter-spacing:2px;">TEXTO XX</h3>
-                <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
-                    <span id="tp-cat" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold; text-transform:uppercase;">CATEGORÍA</span>
-                    <span id="tp-words" style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">0 PALABRAS</span>
-                </div>
-                <div class="custom-scroll" style="flex-grow:1; max-height: 40vh; text-align:justify; color:var(--text-main); font-size:1rem; line-height:1.6; padding-right:10px;">
-                    <p id="tp-content" style="margin:0;"></p>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
-                    <button class="btn-outline" onclick="window.UI.closeTrackPreview()">ACEPTAR</button>
-                    <button class="btn-primary" id="tp-btn-play" style="box-shadow: 0 0 15px color-mix(in srgb, var(--p) 40%, transparent);">JUGAR</button>
-                </div>
-            </div>
-        </div>
 
         <section id="profile-screen" class="screen hidden">
             <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="window.UI.showLobby()" class="btn-outline">Volver</button></header>
@@ -541,7 +372,24 @@
         </div>
 
         <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="window.App.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="window.UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
+        
         <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="window.UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
+
+        <div id="track-preview-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="auth-card" style="position: relative; max-width: 600px; width: 90%; text-align: left; padding: 30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:15px;">
+                    <h2 id="tp-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Título</h2>
+                    <button onclick="window.UI.closeTrackPreview()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem; font-weight:bold;">×</button>
+                </div>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <span id="tp-cat" style="background:var(--surface); padding:5px 10px; border-radius:5px; font-size:0.8rem; color:var(--text-main); border:1px solid var(--border);"></span>
+                    <span id="tp-words" style="background:var(--surface); padding:5px 10px; border-radius:5px; font-size:0.8rem; color:var(--text-main); border:1px solid var(--border);"></span>
+                </div>
+                <div id="tp-content" class="custom-scroll" style="color: var(--text-main); font-size:1.1rem; line-height:1.6; max-height: 40vh; overflow-y:auto; margin-bottom:20px; padding:15px; background:var(--bg); border:1px solid var(--border); border-radius:10px;">
+                </div>
+                <button id="tp-btn-play" class="btn-primary btn-large" style="width:100%;">JUGAR ESTA PISTA</button>
+            </div>
+        </div>
 
     </div>
 
