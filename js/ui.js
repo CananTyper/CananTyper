@@ -9,9 +9,13 @@ window.UI = {
     activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
     
-    // Formateadores de Texto
-    formatTrackName: (t) => { return isNaN(t) ? t : '#' + t; },
+    // Formateadores Seguros
+    formatTrackName: (t) => { 
+        if(!t) return 'Desconocido';
+        return isNaN(t) ? t : '#' + t; 
+    },
     formatTrackNameFull: (t) => { 
+        if(!t) return 'Desconocido';
         const cat = window.UI.getTrackCat(t);
         const name = isNaN(t) ? t : 'Texto ' + t;
         if (cat && cat !== 'General' && cat !== '-') {
@@ -157,14 +161,6 @@ window.UI = {
         }
     },
 
-    cycleWidgetSize: (btn) => {
-        const widget = btn.closest('.st-widget');
-        if (!widget) return;
-        const tab = window.UI.activeStatsTab;
-        const widgetId = widget.getAttribute('data-id');
-        window.App.cycleWidgetSize(tab, widgetId);
-    },
-
     applyStatsLayout() {
         const layout = window.CT.data.statsLayout;
         if (!layout) return;
@@ -290,22 +286,24 @@ window.UI = {
     },
 
     isCompetitiveTrack: (trackTitle) => {
+        if(!trackTitle) return false;
         const phrases = window.CT.dbLocal('p');
-        const tObj = phrases.find(p => p.title.toString() === trackTitle.toString());
+        const tObj = phrases.find(p => p.title && p.title.toString() === trackTitle.toString());
         if(!tObj) return true;
         const cat = (tObj.c || '').trim();
         return cat !== 'General' && cat !== 'Entrenamiento' && !cat.includes('[TRN]');
     },
 
     getTrackCat: (trackTitle) => {
+        if(!trackTitle) return 'General';
         const phrases = window.CT.dbLocal('p');
-        const tObj = phrases.find(p => p.title.toString() === trackTitle.toString());
+        const tObj = phrases.find(p => p.title && p.title.toString() === trackTitle.toString());
         return tObj ? (tObj.c || 'General').trim() : 'General';
     },
 
-    // PREVIEW DE PISTAS (MODAL)
     showTrackPreview: (trackId) => {
-        const track = window.CT.dbLocal('p').find(t => t.id.toString() === trackId.toString() || t.title.toString() === trackId.toString());
+        if(!trackId) return;
+        const track = window.CT.dbLocal('p').find(t => t.id && t.id.toString() === trackId.toString() || t.title && t.title.toString() === trackId.toString());
         if(!track) return;
         document.getElementById('tp-title').innerText = window.UI.formatTrackNameFull(track.title);
         document.getElementById('tp-cat').innerText = (track.c || 'General').trim();
@@ -338,437 +336,515 @@ window.UI = {
     },
 
     renderPersonalStats() {
-        const u = window.CT.ses(); if(!u) return;
-        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-        
-        let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track));
-        compScores.sort((a,b) => a.id - b.id);
-        
-        const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
-        
-        const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
-        const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
-        
-        const last10Arr = [...compScores].slice(-10);
-        const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
-        const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
-
-        const maxVal = compScores.length ? Math.max(...compScores.map(s => s.c)) : 0;
-        const elRec = document.getElementById('st-p-record-val'); if(elRec) elRec.innerText = window.UI.formatValue(maxVal);
-        
-        let catAvgs = {};
-        compScores.forEach(s => { const cat = window.UI.getTrackCat(s.track); if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
-        let bestCat = "-"; let maxCatAvg = -1; let bestCatCount = 0;
-        for (let c in catAvgs) { 
-            let avg = catAvgs[c].sum / catAvgs[c].count; 
-            if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } 
-        }
-        const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
-
-        const first10 = [...compScores].slice(0, 10);
-        const avgF = first10.length ? first10.reduce((a,b)=>a+b.c,0)/first10.length : 0;
-        let trend = 0;
-        if(avgF > 0) trend = ((avgLast10 - avgF) / avgF) * 100;
-        const elTrend = document.getElementById('st-p-trend-val');
-        if(elTrend) {
-            elTrend.innerText = (trend > 0 ? '+' : '') + trend.toFixed(1) + '%';
-            elTrend.style.color = trend >= 0 ? 'var(--p)' : 'var(--error)';
-            elTrend.style.textShadow = trend >= 0 ? '0 0 10px color-mix(in srgb, var(--p) 30%, transparent)' : 'none';
-        }
-
-        const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
-        const elDonut = document.getElementById('st-p-donut-acc');
-        if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
-        
-        const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
-        const svgContainer = document.getElementById('st-p-svg-container');
-        if(svgContainer) {
-            svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
-        }
-
-        const v200 = window.UI.formatValue(200);
-        const v500 = window.UI.formatValue(500);
-        const v700 = window.UI.formatValue(700);
-        const v1000 = window.UI.formatValue(1000);
-        
-        const l1 = `<${v200}`;
-        const l2 = `${v200}-${v500}`;
-        const l3 = `${v500}-${v700}`;
-        const l4 = `${v700}-999`;
-        const l5 = `≥${v1000}`;
-
-        let dist = { [l1]: 0, [l2]: 0, [l3]: 0, [l4]: 0, [l5]: 0 };
-        compScores.forEach(s => {
-            let v = window.UI.formatValue(s.c);
-            if(v < v200) dist[l1]++;
-            else if(v >= v200 && v < v500) dist[l2]++;
-            else if(v >= v500 && v < v700) dist[l3]++;
-            else if(v >= v700 && v < v1000) dist[l4]++;
-            else dist[l5]++;
-        });
-        const barContainer = document.getElementById('st-p-bar-container');
-        if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
-
-        // Heatmap modificado (Sin rojo invasivo)
-        const bk = userDoc.bad_keys || {};
-        document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
-            el.style.removeProperty('border-color');
-            el.style.removeProperty('color');
-            el.style.removeProperty('text-shadow');
-
-            const key = el.getAttribute('data-key');
-            const errs = bk[key] || 0;
+        try {
+            const u = window.CT.ses(); if(!u) return;
+            const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
             
-            if(errs >= 5) {
-                // Solo pinta el borde y la letra, sin fondo escandaloso
-                el.style.setProperty('border-color', 'var(--error)', 'important');
-                el.style.setProperty('color', 'var(--error)', 'important');
-                el.title = `Errores críticos: ${errs}`;
-            } else if (errs > 0) {
-                el.title = `Errores leves: ${errs}`;
-            } else {
-                el.title = 'Estable';
-            }
-        });
+            let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track));
+            compScores.sort((a,b) => a.id - b.id);
+            
+            const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
+            
+            const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
+            const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
+            
+            const last10Arr = [...compScores].slice(-10);
+            const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
+            const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
 
-        // Top 20 List (Relleno Fijo a 20)
-        const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
-        let top20Html = '';
-        for(let i=0; i<20; i++) {
-            if(compScoresDesc[i]) {
-                const s = compScoresDesc[i];
-                top20Html += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
-                    <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
-                </li>`;
-            } else {
-                top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+            const maxVal = compScores.length ? Math.max(...compScores.map(s => s.c)) : 0;
+            const elRec = document.getElementById('st-p-record-val'); if(elRec) elRec.innerText = window.UI.formatValue(maxVal);
+            
+            let catAvgs = {};
+            compScores.forEach(s => { const cat = window.UI.getTrackCat(s.track); if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
+            let bestCat = "-"; let maxCatAvg = -1; let bestCatCount = 0;
+            for (let c in catAvgs) { 
+                let avg = catAvgs[c].sum / catAvgs[c].count; 
+                if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } 
             }
-        }
-        const elTop10 = document.getElementById('st-p-top10-races');
-        if(elTop10) elTop10.innerHTML = top20Html;
+            const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
 
-        // Bottom 20 List (Relleno Fijo a 20)
-        let trackAvgs = {};
-        compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
-        let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
-        let bottom20 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 20);
-        if(bottom20.length === 0) bottom20 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 20);
-        
-        let bottom20Html = '';
-        for(let i=0; i<20; i++) {
-            if(bottom20[i]) {
-                const tr = bottom20[i];
-                bottom20Html += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div>
-                    <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
-                </li>`;
-            } else {
-                bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+            const first10 = [...compScores].slice(0, 10);
+            const avgF = first10.length ? first10.reduce((a,b)=>a+b.c,0)/first10.length : 0;
+            let trend = 0;
+            if(avgF > 0) trend = ((avgLast10 - avgF) / avgF) * 100;
+            const elTrend = document.getElementById('st-p-trend-val');
+            if(elTrend) {
+                elTrend.innerText = (trend > 0 ? '+' : '') + trend.toFixed(1) + '%';
+                elTrend.style.color = trend >= 0 ? 'var(--p)' : 'var(--error)';
+                elTrend.style.textShadow = trend >= 0 ? '0 0 10px color-mix(in srgb, var(--p) 30%, transparent)' : 'none';
             }
-        }
-        const elBottom = document.getElementById('st-p-worst-tracks');
-        if(elBottom) elBottom.innerHTML = bottom20Html;
 
-        // Words 20 (Relleno Fijo a 20, con "XX errores")
-        const bw = userDoc.bad_words || {};
-        let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
-        let wordsHtml = '';
-        for(let i=0; i<20; i++) {
-            if(badWordsList[i]) {
-                const bwItem = badWordsList[i];
-                wordsHtml += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name">${bwItem.w}</div>
-                    <div class="st-list-val" style="font-size:0.75rem; width:80px;">${bwItem.errs} errores</div>
-                </li>`;
-            } else {
-                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
+            const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
+            const elDonut = document.getElementById('st-p-donut-acc');
+            if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
+            
+            const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
+            const svgContainer = document.getElementById('st-p-svg-container');
+            if(svgContainer) {
+                svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
             }
-        }
-        const elWords = document.getElementById('st-p-worst-words');
-        if(elWords) elWords.innerHTML = wordsHtml;
 
-        window.UI.applyStatsLayout();
+            const v200 = window.UI.formatValue(200);
+            const v500 = window.UI.formatValue(500);
+            const v700 = window.UI.formatValue(700);
+            const v1000 = window.UI.formatValue(1000);
+            
+            const l1 = `<${v200}`;
+            const l2 = `${v200}-${v500}`;
+            const l3 = `${v500}-${v700}`;
+            const l4 = `${v700}-999`;
+            const l5 = `≥${v1000}`;
+
+            let dist = { [l1]: 0, [l2]: 0, [l3]: 0, [l4]: 0, [l5]: 0 };
+            compScores.forEach(s => {
+                let v = window.UI.formatValue(s.c);
+                if(v < v200) dist[l1]++;
+                else if(v >= v200 && v < v500) dist[l2]++;
+                else if(v >= v500 && v < v700) dist[l3]++;
+                else if(v >= v700 && v < v1000) dist[l4]++;
+                else dist[l5]++;
+            });
+            const barContainer = document.getElementById('st-p-bar-container');
+            if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
+
+            const bk = userDoc.bad_keys || {};
+            const maxErr = Math.max(...Object.values(bk), 5); 
+            document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
+                el.style.removeProperty('border-color');
+                el.style.removeProperty('color');
+                el.style.removeProperty('text-shadow');
+
+                const key = el.getAttribute('data-key');
+                const errs = bk[key] || 0;
+                
+                if(errs >= 5) {
+                    el.style.setProperty('border-color', 'var(--error)', 'important');
+                    el.style.setProperty('color', 'var(--error)', 'important');
+                    el.title = `Errores críticos: ${errs}`;
+                } else if (errs > 0) {
+                    el.title = `Errores leves: ${errs}`;
+                } else {
+                    el.title = 'Estable';
+                }
+            });
+
+            const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
+            let top20Html = '';
+            for(let i=0; i<20; i++) {
+                if(compScoresDesc[i]) {
+                    const s = compScoresDesc[i];
+                    top20Html += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
+                        <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
+                    </li>`;
+                } else {
+                    top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elTop10 = document.getElementById('st-p-top10-races');
+            if(elTop10) elTop10.innerHTML = top20Html;
+
+            let trackAvgs = {};
+            compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
+            let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
+            let bottom20 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 20);
+            if(bottom20.length === 0) bottom20 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 20);
+            
+            let bottom20Html = '';
+            for(let i=0; i<20; i++) {
+                if(bottom20[i]) {
+                    const tr = bottom20[i];
+                    bottom20Html += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div>
+                        <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
+                    </li>`;
+                } else {
+                    bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elBottom = document.getElementById('st-p-worst-tracks');
+            if(elBottom) elBottom.innerHTML = bottom20Html;
+
+            const bw = userDoc.bad_words || {};
+            let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
+            let wordsHtml = '';
+            for(let i=0; i<20; i++) {
+                if(badWordsList[i]) {
+                    const bwItem = badWordsList[i];
+                    wordsHtml += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name">${bwItem.w}</div>
+                        <div class="st-list-val" style="font-size:0.75rem; width:80px;">${bwItem.errs} errores</div>
+                    </li>`;
+                } else {
+                    wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
+                }
+            }
+            const elWords = document.getElementById('st-p-worst-words');
+            if(elWords) elWords.innerHTML = wordsHtml;
+
+            window.UI.applyStatsLayout();
+        } catch(e) { console.error("Error renderPersonalStats:", e); }
     },
 
     renderEliteStats() {
-        const users = window.CT.dbLocal('u'); if (users.length === 0) return;
-        const topS = (window.CT.data.s_top || []).filter(s => window.UI.isCompetitiveTrack(s.track));
-        const recentS = (window.CT.data.s_recent || []).filter(s => window.UI.isCompetitiveTrack(s.track) && !s.hc).sort((a,b) => a.id - b.id);
-        
-        let mostRacesUser = users.reduce((p, c) => {
-            let cH = (c.hi||[]).length; let pH = (p.hi||[]).length;
-            return cH > pH ? c : p;
-        }, users[0]);
-        const elMostVal = document.getElementById('st-e-most-races-val'); if(elMostVal) elMostVal.innerText = (mostRacesUser.hi||[]).length;
-        const elMostUsr = document.getElementById('st-e-most-races-user'); if(elMostUsr) elMostUsr.innerText = mostRacesUser.n || "-";
+        try {
+            const users = window.CT.dbLocal('u'); if (users.length === 0) return;
+            const topS = (window.CT.data.s_top || []).filter(s => window.UI.isCompetitiveTrack(s.track));
+            const recentS = (window.CT.data.s_recent || []).filter(s => window.UI.isCompetitiveTrack(s.track) && !s.hc).sort((a,b) => a.id - b.id);
+            
+            let mostRacesUser = users.reduce((p, c) => {
+                let cH = (c.hi||[]).length; let pH = (p.hi||[]).length;
+                return cH > pH ? c : p;
+            }, users[0]);
+            const elMostVal = document.getElementById('st-e-most-races-val'); if(elMostVal) elMostVal.innerText = (mostRacesUser.hi||[]).length;
+            const elMostUsr = document.getElementById('st-e-most-races-user'); if(elMostUsr) elMostUsr.innerText = mostRacesUser.n || "-";
 
-        let recordUser = users.reduce((p, c) => {
-            let maxC = Math.max(...(c.hi||[0]), 0);
-            let maxP = Math.max(...(p.hi||[0]), 0);
-            return maxC > maxP ? c : p;
-        }, users[0]);
-        const elRecVal = document.getElementById('st-e-record-val'); if(elRecVal) elRecVal.innerText = window.UI.formatValue(Math.max(...(recordUser.hi||[0]), 0));
-        const elRecUsr = document.getElementById('st-e-record-user'); if(elRecUsr) elRecUsr.innerText = recordUser.n || "-";
+            let recordUser = users.reduce((p, c) => {
+                let maxC = Math.max(...(c.hi||[0]), 0);
+                let maxP = Math.max(...(p.hi||[0]), 0);
+                return maxC > maxP ? c : p;
+            }, users[0]);
+            const elRecVal = document.getElementById('st-e-record-val'); if(elRecVal) elRecVal.innerText = window.UI.formatValue(Math.max(...(recordUser.hi||[0]), 0));
+            const elRecUsr = document.getElementById('st-e-record-user'); if(elRecUsr) elRecUsr.innerText = recordUser.n || "-";
 
-        let avgUser = users.reduce((p, c) => {
-            let avgC = (c.hi||[]).length >= 5 ? (c.hi.reduce((a,b)=>a+b,0)/(c.hi.length)) : 0;
-            let avgP = (p.hi||[]).length >= 5 ? (p.hi.reduce((a,b)=>a+b,0)/(p.hi.length)) : 0;
-            return avgC > avgP ? c : p;
-        }, users[0]);
-        let bestAvg = (avgUser.hi||[]).length ? (avgUser.hi.reduce((a,b)=>a+b,0)/(avgUser.hi.length)) : 0;
-        const elAvgVal = document.getElementById('st-e-bestavg-val'); if(elAvgVal) elAvgVal.innerText = window.UI.formatValue(Math.round(bestAvg));
-        const elAvgUsr = document.getElementById('st-e-bestavg-user'); if(elAvgUsr) elAvgUsr.innerText = avgUser.n || "-";
+            let avgUser = users.reduce((p, c) => {
+                let avgC = (c.hi||[]).length >= 5 ? (c.hi.reduce((a,b)=>a+b,0)/(c.hi.length)) : 0;
+                let avgP = (p.hi||[]).length >= 5 ? (p.hi.reduce((a,b)=>a+b,0)/(p.hi.length)) : 0;
+                return avgC > avgP ? c : p;
+            }, users[0]);
+            let bestAvg = (avgUser.hi||[]).length ? (avgUser.hi.reduce((a,b)=>a+b,0)/(avgUser.hi.length)) : 0;
+            const elAvgVal = document.getElementById('st-e-bestavg-val'); if(elAvgVal) elAvgVal.innerText = window.UI.formatValue(Math.round(bestAvg));
+            const elAvgUsr = document.getElementById('st-e-bestavg-user'); if(elAvgUsr) elAvgUsr.innerText = avgUser.n || "-";
 
-        let tm = {}; topS.forEach(s => { if(!tm[s.track] || s.c > tm[s.track].c) tm[s.track] = s; });
-        let top1c = {}; Object.values(tm).forEach(s => { top1c[s.h] = (top1c[s.h]||0)+1; });
-        let mTop1h = Object.keys(top1c).reduce((a,b) => top1c[a] > top1c[b] ? a : b, "");
-        let mTop1Name = mTop1h ? (users.find(u=>u.h===mTop1h)||{n:"-"}).n : "-";
-        const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
-        const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
+            let tm = {}; topS.forEach(s => { if(!tm[s.track] || s.c > tm[s.track].c) tm[s.track] = s; });
+            let top1c = {}; Object.values(tm).forEach(s => { top1c[s.h] = (top1c[s.h]||0)+1; });
+            let mTop1h = Object.keys(top1c).reduce((a,b) => top1c[a] > top1c[b] ? a : b, "");
+            let mTop1Name = mTop1h ? (users.find(u=>u.h===mTop1h)||{n:"-"}).n : "-";
+            const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
+            const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
 
-        const totalTop1s = Object.values(top1c).reduce((a,b) => a+b, 0);
-        const monopolyRate = totalTop1s > 0 ? (top1c[mTop1h] / totalTop1s) * 100 : 0;
-        const elDonutE = document.getElementById('st-e-donut-monopoly');
-        if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(monopolyRate, 'var(--p)');
-        const elDonutUser = document.getElementById('st-e-donut-user');
-        if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
-        
-        const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
-        const eSvgContainer = document.getElementById('st-e-svg-container');
-        if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
+            const totalTop1s = Object.values(top1c).reduce((a,b) => a+b, 0);
+            const monopolyRate = totalTop1s > 0 ? (top1c[mTop1h] / totalTop1s) * 100 : 0;
+            const elDonutE = document.getElementById('st-e-donut-monopoly');
+            if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(monopolyRate, 'var(--p)');
+            const elDonutUser = document.getElementById('st-e-donut-user');
+            if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
+            
+            const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
+            const eSvgContainer = document.getElementById('st-e-svg-container');
+            if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
 
-        let playerStats = users.map(us => {
-            const hist = (us.hi||[]); 
-            return hist.length ? Math.round(hist.reduce((a,b)=>a+b)/hist.length) : 0;
-        }).filter(v => v > 0);
+            let playerStats = users.map(us => {
+                const hist = (us.hi||[]); 
+                return hist.length ? Math.round(hist.reduce((a,b)=>a+b)/hist.length) : 0;
+            }).filter(v => v > 0);
 
-        const v40 = window.UI.formatValue(40);
-        const v80 = window.UI.formatValue(80);
-        const v120 = window.UI.formatValue(120);
-        const l1 = `<${v40}`;
-        const l2 = `${v40}-${v80}`;
-        const l3 = `${v80}-${v120}`;
-        const l4 = `>${v120}`;
+            const v40 = window.UI.formatValue(40);
+            const v80 = window.UI.formatValue(80);
+            const v120 = window.UI.formatValue(120);
+            const l1 = `<${v40}`;
+            const l2 = `${v40}-${v80}`;
+            const l3 = `${v80}-${v120}`;
+            const l4 = `>${v120}`;
 
-        let tiers = { [l1]: 0, [l2]: 0, [l3]: 0, [l4]: 0 };
-        playerStats.forEach(v => {
-            let formV = window.UI.formatValue(v);
-            if(formV < v40) tiers[l1]++;
-            else if(formV >= v40 && formV < v80) tiers[l2]++;
-            else if(formV >= v80 && formV < v120) tiers[l3]++;
-            else tiers[l4]++;
-        });
-        const tierContainer = document.getElementById('st-e-bar-tier');
-        if(tierContainer) tierContainer.innerHTML = window.UI.generateBarChartSVG(tiers);
+            let tiers = { [l1]: 0, [l2]: 0, [l3]: 0, [l4]: 0 };
+            playerStats.forEach(v => {
+                let formV = window.UI.formatValue(v);
+                if(formV < v40) tiers[l1]++;
+                else if(formV >= v40 && formV < v80) tiers[l2]++;
+                else if(formV >= v80 && formV < v120) tiers[l3]++;
+                else tiers[l4]++;
+            });
+            const tierContainer = document.getElementById('st-e-bar-tier');
+            if(tierContainer) tierContainer.innerHTML = window.UI.generateBarChartSVG(tiers);
 
-        // Top 10 Textos
-        let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
-        let top10THtml = '';
-        for(let i=0; i<10; i++) {
-            if(top10T[i]) {
-                const tr = top10T[i];
-                let trMax = topS.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
-                top10THtml += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr}')">${window.UI.formatTrackNameFull(tr)}</div>
-                    <div class="st-list-meta player-link" onclick="window.UI.showProfile('${trMax.h}')">${trMax.n}</div>
-                    <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
-                </li>`;
-            } else {
-                top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+            let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
+            let top10THtml = '';
+            for(let i=0; i<10; i++) {
+                if(top10T[i]) {
+                    const tr = top10T[i];
+                    let trMax = topS.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
+                    top10THtml += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr}')">${window.UI.formatTrackNameFull(tr)}</div>
+                        <div class="st-list-meta player-link" onclick="window.UI.showProfile('${trMax.h}')">${trMax.n}</div>
+                        <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
+                    </li>`;
+                } else {
+                    top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                }
             }
-        }
-        const elTxts = document.getElementById('st-e-table-texts');
-        if(elTxts) elTxts.innerHTML = top10THtml;
-        
-        // Top 10 Cats
-        let scoresWithCat = topS.map(s => { return { ...s, cat: window.UI.getTrackCat(s.track) }; });
-        let cCounts = {}; scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; }); let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
-        let top10CHtml = '';
-        for(let i=0; i<10; i++) {
-            if(top10C[i]) {
-                const cat = top10C[i];
-                let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
-                top10CHtml += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name">${cat}</div>
-                    <div class="st-list-meta player-link" onclick="window.UI.showProfile('${catMax.h}')">${catMax.n}</div>
-                    <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
-                </li>`;
-            } else {
-                top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+            const elTxts = document.getElementById('st-e-table-texts');
+            if(elTxts) elTxts.innerHTML = top10THtml;
+            
+            let scoresWithCat = topS.map(s => { return { ...s, cat: window.UI.getTrackCat(s.track) }; });
+            let cCounts = {}; scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; }); let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
+            let top10CHtml = '';
+            for(let i=0; i<10; i++) {
+                if(top10C[i]) {
+                    const cat = top10C[i];
+                    let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
+                    top10CHtml += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name">${cat}</div>
+                        <div class="st-list-meta player-link" onclick="window.UI.showProfile('${catMax.h}')">${catMax.n}</div>
+                        <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
+                    </li>`;
+                } else {
+                    top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                }
             }
-        }
-        const elCats = document.getElementById('st-e-table-cats');
-        if(elCats) elCats.innerHTML = top10CHtml;
+            const elCats = document.getElementById('st-e-table-cats');
+            if(elCats) elCats.innerHTML = top10CHtml;
 
-        // Top 10 Players
-        let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
-        let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
-        let topActHtml = '';
-        for(let i=0; i<10; i++) {
-            if(topAct[i]) {
-                const h = topAct[i];
-                let n = (users.find(x=>x.h===h)||{n:h}).n;
-                topActHtml += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${h}')">${n}</div>
-                    <div class="st-list-meta">${h}</div>
-                    <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
-                </li>`;
-            } else {
-                topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+            let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
+            let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
+            let topActHtml = '';
+            for(let i=0; i<10; i++) {
+                if(topAct[i]) {
+                    const h = topAct[i];
+                    let n = (users.find(x=>x.h===h)||{n:h}).n;
+                    topActHtml += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${h}')">${n}</div>
+                        <div class="st-list-meta">${h}</div>
+                        <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
+                    </li>`;
+                } else {
+                    topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                }
             }
-        }
-        const elAct = document.getElementById('st-e-table-players');
-        if(elAct) elAct.innerHTML = topActHtml;
+            const elAct = document.getElementById('st-e-table-players');
+            if(elAct) elAct.innerHTML = topActHtml;
 
-        window.UI.applyStatsLayout();
+            window.UI.applyStatsLayout();
+        } catch(e) { console.error("Error renderEliteStats:", e); }
     },
 
     renderHardcoreStats() {
-        const users = window.CT.dbLocal('u');
-        const globalHcScores = (window.CT.data.s_hc_top || []); // Usamos el nuevo motor de consulta puro
-        
-        let globalDeaths = 0;
-        let globalSurvivals = 0;
-        let globalRecord = 0;
+        try {
+            const users = window.CT.dbLocal('u');
+            const globalHcScores = (window.CT.data.s_top || []).concat(window.CT.data.s_recent || []).filter(s => s.hc === true);
+            
+            let globalDeaths = 0;
+            let globalSurvivals = 0;
+            let globalRecord = 0;
 
-        users.forEach(us => {
-            globalDeaths += (us.hc_deaths || 0);
-            globalSurvivals += (us.hc_survivals || 0);
-            const userHcMax = us.hi_hc && us.hi_hc.length ? Math.max(...us.hi_hc) : 0;
-            if(userHcMax > globalRecord) globalRecord = userHcMax;
+            users.forEach(us => {
+                globalDeaths += (us.hc_deaths || 0);
+                globalSurvivals += (us.hc_survivals || 0);
+                const userHcMax = us.hi_hc && us.hi_hc.length ? Math.max(...us.hi_hc) : 0;
+                if(userHcMax > globalRecord) globalRecord = userHcMax;
+            });
+
+            const totalAttempts = globalSurvivals + globalDeaths;
+            const survRate = totalAttempts > 0 ? ((globalDeaths / totalAttempts) * 100) : 0;
+            
+            const elRec = document.getElementById('st-hc-record'); if(elRec) elRec.innerText = window.UI.formatValue(globalRecord);
+            const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = globalSurvivals;
+            const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = globalDeaths;
+            const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
+
+            const elDonut = document.getElementById('st-hc-donut-rate');
+            if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
+
+            const top10 = [...globalHcScores].sort((a,b) => b.c - a.c).slice(0, 10);
+            let hcTop10Html = '';
+            for(let i=0; i<10; i++) {
+                if(top10[i]) {
+                    const s = top10[i];
+                    hcTop10Html += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
+                        <div class="st-list-meta player-link" onclick="window.UI.showProfile('${s.h}')">${s.n}</div>
+                        <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
+                    </li>`;
+                } else {
+                    hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elHcTop = document.getElementById('st-hc-top10');
+            if(elHcTop) elHcTop.innerHTML = hcTop10Html;
+            
+            let trackDeaths = {};
+            users.forEach(us => {
+                let td = us.hc_track_deaths || {};
+                for(let k in td) { trackDeaths[k] = (trackDeaths[k] || 0) + td[k]; }
+            });
+            let deathList = Object.keys(trackDeaths).map(k => ({ t: k, d: trackDeaths[k] })).sort((a,b) => b.d - a.d).slice(0, 10);
+            let worstHtml = '';
+            for(let i=0; i<10; i++) {
+                if(deathList[i]) {
+                    const td = deathList[i];
+                    worstHtml += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackNameFull(td.t)}</div>
+                        <div class="st-list-val" style="font-size:0.75rem;">${td.d} ☠️</div>
+                    </li>`;
+                } else {
+                    worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elHcWorst = document.getElementById('st-hc-worst');
+            if(elHcWorst) elHcWorst.innerHTML = worstHtml;
+
+            let legends = users.filter(u => (u.hc_survivals || 0) > 0).sort((a,b) => b.hc_survivals - a.hc_survivals).slice(0, 10);
+            let legHtml = '';
+            for(let i=0; i<10; i++) {
+                if(legends[i]) {
+                    const lg = legends[i];
+                    legHtml += `
+                    <li class="st-list-item" style="border-bottom-color: color-mix(in srgb, var(--error) 20%, transparent);">
+                        <div class="st-list-rank" style="color:var(--error);">#${i+1}</div>
+                        <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${lg.h}')">${lg.n}</div>
+                        <div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} VICS</div>
+                    </li>`;
+                } else {
+                    legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elLeg = document.getElementById('st-hc-legends');
+            if(elLeg) elLeg.innerHTML = legHtml;
+
+            let victims = users.map(us => ({ n: us.n, h: us.h, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
+            let vicHtml = '';
+            for(let i=0; i<10; i++) {
+                if(victims[i]) {
+                    const v = victims[i];
+                    vicHtml += `
+                    <li class="st-list-item">
+                        <div class="st-list-rank">#${i+1}</div>
+                        <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${v.h}')">${v.n}</div>
+                        <div class="st-list-val" style="font-size:0.75rem;">${v.d} ☠️</div>
+                    </li>`;
+                } else {
+                    vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elVic = document.getElementById('st-hc-victims');
+            if(elVic) elVic.innerHTML = vicHtml;
+
+            let hcSurvivals = {};
+            globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
+            let safeTracks = Object.keys(hcSurvivals)
+                .map(k => ({ t: k, s: hcSurvivals[k] - (trackDeaths[k] || 0) }))
+                .sort((a,b) => b.s - a.s).slice(0, 10);
+            
+            let safeHtml = '';
+            for(let i=0; i<10; i++) {
+                if(safeTracks[i]) {
+                    const st = safeTracks[i];
+                    safeHtml += `
+                    <li class="st-list-item" style="border-bottom-color:#1a1a1a;">
+                        <div class="st-list-rank" style="color:var(--success);">#${i+1}</div>
+                        <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackNameFull(st.t)}</div>
+                        <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
+                    </li>`;
+                } else {
+                    safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                }
+            }
+            const elSafe = document.getElementById('st-hc-safe');
+            if(elSafe) elSafe.innerHTML = safeHtml;
+
+            window.UI.applyStatsLayout();
+        } catch(e) { console.error("Error renderHardcoreStats:", e); }
+    },
+
+    renderInfoPage() {
+        if(!window.CT.data.info) return;
+        document.getElementById('info-display-title').innerText = window.CT.data.info.title || "Información";
+        document.getElementById('info-display-content').innerHTML = window.CT.data.info.content || "";
+    },
+
+    refreshActiveViews: () => {
+        if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
+        if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
+        if(!document.getElementById('profile-screen').classList.contains('hidden')) {
+            window.UI.showProfile(window.CT.activeProfHandle || 'me');
+        }
+        if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
+        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) window.UI.renderEliteStats(); else window.UI.renderHardcoreStats(); }
+    },
+
+    setUnit: (unit) => {
+        if(window.CT.currentUnit === unit) return;
+        localStorage.removeItem('ct_custom_theme');
+        const u = window.CT.ses(); 
+        if(u && u.theme) { window.db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        document.documentElement.removeAttribute('data-custom-theme');
+
+        window.CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); 
+        window.UI.updateUnitVisuals(unit); 
+        window.UI.refreshActiveViews();
+    },
+
+    updateUnitVisuals: (unit) => {
+        document.documentElement.setAttribute('data-theme', unit);
+        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
+        const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
+        
+        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel', 'th_st_p_top10_vel'];
+        thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; document.getElementById(id).classList.add('active-unit'); } });
+        
+        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
+        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
+        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
+        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
+        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
+
+        const previewEl = document.getElementById('track-preview-modal');
+        if (previewEl && !previewEl.classList.contains('hidden')) {
+            const trackId = document.getElementById('tp-title').innerText.replace('Texto ', '').replace('#', '').split(' | ')[0];
+            window.UI.showTrackPreview(trackId);
+        }
+    },
+
+    updateFastModeVisuals: () => {
+        const textLabel = window.CT.data.ui && window.CT.data.ui['t_sett_fast'] ? window.CT.data.ui['t_sett_fast'].v : '⚡ Modo Rápido:';
+        const onVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_on'] ? window.CT.data.ui['t_sett_fast_on'].v : 'SI';
+        const offVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_off'] ? window.CT.data.ui['t_sett_fast_off'].v : 'NO';
+        const btn = document.getElementById('btn-fast-mode');
+        if(btn) btn.innerText = `${textLabel} ${window.CT.fastMode ? onVal : offVal}`;
+    },
+
+    toggleFastMode: () => {
+        window.CT.fastMode = !window.CT.fastMode;
+        localStorage.setItem('ct_fast_mode', window.CT.fastMode);
+        window.UI.updateFastModeVisuals();
+    },
+
+    updateCategorySelects() {
+        const cats = window.CT.dbLocal('c');
+        const trnCats = cats.filter(c => c.name.startsWith('[TRN]'));
+        const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
+        const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
+        const trnDelCatSel = document.getElementById('trn-delete-cat-select'); if(trnDelCatSel) trnDelCatSel.innerHTML = trnOptions;
+    },
+
+    renderTrainDropdown() {
+        const tPurge = window.CT.data.ui && window.CT.data.ui['t_btn_tr_purge'] ? window.CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
+        let html = `<button onclick="window.App.startPurge()">${tPurge}</button>`;
+        const trnCats = window.CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
+        trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => {
+            const cleanName = c.name.replace('[TRN] ', '');
+            html += `<button onclick="window.App.startTrnCategory('${c.name}')">⚡ ${cleanName}</button>`;
         });
-
-        const totalAttempts = globalSurvivals + globalDeaths;
-        const survRate = totalAttempts > 0 ? ((globalDeaths / totalAttempts) * 100) : 0;
-        
-        const elRec = document.getElementById('st-hc-record'); if(elRec) elRec.innerText = window.UI.formatValue(globalRecord);
-        const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = globalSurvivals;
-        const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = globalDeaths;
-        const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
-
-        const elDonut = document.getElementById('st-hc-donut-rate');
-        if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
-
-        // Top 10 Survivals
-        const top10 = [...globalHcScores].sort((a,b) => b.c - a.c).slice(0, 10);
-        let hcTop10Html = '';
-        for(let i=0; i<10; i++) {
-            if(top10[i]) {
-                const s = top10[i];
-                hcTop10Html += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
-                    <div class="st-list-meta player-link" onclick="window.UI.showProfile('${s.h}')">${s.n}</div>
-                    <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
-                </li>`;
-            } else {
-                hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
-            }
-        }
-        const elHcTop = document.getElementById('st-hc-top10');
-        if(elHcTop) elHcTop.innerHTML = hcTop10Html;
-        
-        // Worst 10 Mortales
-        let trackDeaths = {};
-        users.forEach(us => {
-            let td = us.hc_track_deaths || {};
-            for(let k in td) { trackDeaths[k] = (trackDeaths[k] || 0) + td[k]; }
-        });
-        let deathList = Object.keys(trackDeaths).map(k => ({ t: k, d: trackDeaths[k] })).sort((a,b) => b.d - a.d).slice(0, 10);
-        let worstHtml = '';
-        for(let i=0; i<10; i++) {
-            if(deathList[i]) {
-                const td = deathList[i];
-                worstHtml += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackNameFull(td.t)}</div>
-                    <div class="st-list-val" style="font-size:0.75rem;">${td.d} ☠️</div>
-                </li>`;
-            } else {
-                worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
-            }
-        }
-        const elHcWorst = document.getElementById('st-hc-worst');
-        if(elHcWorst) elHcWorst.innerHTML = worstHtml;
-
-        // Leyendas (Top 10 Survivals Player)
-        let legends = users.filter(u => (u.hc_survivals || 0) > 0).sort((a,b) => b.hc_survivals - a.hc_survivals).slice(0, 10);
-        let legHtml = '';
-        for(let i=0; i<10; i++) {
-            if(legends[i]) {
-                const lg = legends[i];
-                legHtml += `
-                <li class="st-list-item" style="border-bottom-color: color-mix(in srgb, var(--error) 20%, transparent);">
-                    <div class="st-list-rank" style="color:var(--error);">#${i+1}</div>
-                    <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${lg.h}')">${lg.n}</div>
-                    <div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} VICS</div>
-                </li>`;
-            } else {
-                legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
-            }
-        }
-        const elLeg = document.getElementById('st-hc-legends');
-        if(elLeg) elLeg.innerHTML = legHtml;
-
-        // Cementerio (Victims)
-        let victims = users.map(us => ({ n: us.n, h: us.h, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
-        let vicHtml = '';
-        for(let i=0; i<10; i++) {
-            if(victims[i]) {
-                const v = victims[i];
-                vicHtml += `
-                <li class="st-list-item">
-                    <div class="st-list-rank">#${i+1}</div>
-                    <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${v.h}')">${v.n}</div>
-                    <div class="st-list-val" style="font-size:0.75rem;">${v.d} ☠️</div>
-                </li>`;
-            } else {
-                vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
-            }
-        }
-        const elVic = document.getElementById('st-hc-victims');
-        if(elVic) elVic.innerHTML = vicHtml;
-
-        // Refugios Seguros
-        let hcSurvivals = {};
-        globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
-        let safeTracks = Object.keys(hcSurvivals)
-            .map(k => ({ t: k, s: hcSurvivals[k] - (trackDeaths[k] || 0) }))
-            .sort((a,b) => b.s - a.s).slice(0, 10);
-        
-        let safeHtml = '';
-        for(let i=0; i<10; i++) {
-            if(safeTracks[i]) {
-                const st = safeTracks[i];
-                safeHtml += `
-                <li class="st-list-item" style="border-bottom-color:#1a1a1a;">
-                    <div class="st-list-rank" style="color:var(--success);">#${i+1}</div>
-                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackNameFull(st.t)}</div>
-                    <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
-                </li>`;
-            } else {
-                safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
-            }
-        }
-        const elSafe = document.getElementById('st-hc-safe');
-        if(elSafe) elSafe.innerHTML = safeHtml;
-
-        window.UI.applyStatsLayout();
+        const drp = document.getElementById('train-dropdown');
+        if(drp) drp.innerHTML = html;
     },
 
     renderGlobal() {
@@ -823,44 +899,6 @@ window.UI = {
         } catch(e) { console.error("Error rendering global:", e); }
     },
 
-    async showProfile(who) {
-        try {
-            const currentSes = window.CT.ses(); 
-            if (!currentSes) return;
-            const targetHandle = (who === 'me') ? currentSes.h : who;
-            
-            let u = window.CT.dbLocal('u').find(x => x.h === targetHandle); 
-            if(!u) {
-                const doc = await window.db.collection('users').doc(targetHandle).get();
-                if(doc.exists) u = doc.data();
-                else return;
-            }
-            
-            window.CT.activeProfHandle = u.h;
-            
-            await window.App.getUserScores(u.h);
-            
-            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
-            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
-            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
-            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
-            const bestCPM = total ? Math.max(...hi) : 0;
-            document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
-            window.CT.profPage = 0; window.UI.renderProfileHistory();
-            const isMe = (currentSes && u.h === currentSes.h);
-            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
-            window.UI.show('profile-screen');
-        } catch (error) { console.error("Error en showProfile:", error); }
-    },
-    
-    closeProfile: () => {
-        window.UI.show('home-screen');
-    },
-
-    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
-    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
-    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
-    
     openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); window.UI.toggleSettings(); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
 
