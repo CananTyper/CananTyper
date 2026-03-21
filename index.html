@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CananTyper</title>
-    <link rel="stylesheet" href="style.css?v=3.0.0">
+    <link rel="stylesheet" href="style.css?v=3.1.0">
     <style>
         .sortable-ghost { opacity: 0.3; filter: grayscale(1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .drag-handle:active { cursor: grabbing !important; color: var(--p) !important; }
@@ -74,7 +74,7 @@
                             <button id="t_sett_clear" onclick="window.App.clearCache()" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-muted); width: 100%; border-bottom: 1px solid var(--border);">🧹 Limpiar Caché Local</button>
                             <button id="btn-direct-download" onclick="window.App.downloadSetup()" class="hidden" style="cursor: pointer; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--p); font-weight: bold; width: 100%;"><span id="t_sett_down">⬇️ Descargar App (PC)</span></button>
                             <div class="version-seal" style="border-top: 1px solid var(--border);">
-                                CananTyper v3.0.0 
+                                CananTyper v3.1.0 
                                 <span class="online-dot" data-tooltip="Conexión Estable"></span>
                             </div>
                         </div>
@@ -209,10 +209,11 @@
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-8" data-id="w-p-graph">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>EVOLUCIÓN TÉCNICA (ÚLT. 15 VÁLIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
-                            <div class="st-widget-content" style="padding: 10px 15px 15px 15px; min-height: 220px;">
-                                <div id="st-p-svg-container" class="st-chart-wrapper"></div>
+                        <div class="st-widget st-col-4" data-id="w-p-trend">
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>TENDENCIA DE MEJORA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center">
+                                <div class="st-val" id="st-p-trend-val" style="font-size:2.5rem;">0%</div>
+                                <div class="st-sub">VS PRIMERAS 10 CARRERAS</div>
                             </div>
                         </div>
 
@@ -234,10 +235,17 @@
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-8 st-widget-error" data-id="w-p-heat">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">MAPA DE CALOR (TECLAS CRÍTICAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                        <div class="st-widget st-col-8" data-id="w-p-graph">
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>EVOLUCIÓN TÉCNICA (ÚLT. 15 VÁLIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content" style="padding: 10px 15px 15px 15px; min-height: 220px;">
+                                <div id="st-p-svg-container" class="st-chart-wrapper"></div>
+                            </div>
+                        </div>
+
+                        <div class="st-widget st-col-4 st-widget-error" data-id="w-p-heat">
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">MAPA DE CALOR (CRÍTICAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content st-flex-center custom-scroll" style="min-height: 200px;">
-                                <div class="keyboard-container" style="transform: scale(0.9); margin-top:-10px;">
+                                <div class="keyboard-container" style="transform: scale(0.75); margin-top:-10px;">
                                     <div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div>
                                     <div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div>
@@ -253,7 +261,7 @@
                         </div>
 
                         <div class="st-widget st-col-6 st-widget-error" data-id="w-p-worst">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">ZONAS DE FRICCIÓN (PEORES PISTAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">ZONAS DE FRICCIÓN (PEORES PISTAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 300px;">
                                 <ul class="st-list st-list-err" id="st-p-worst-tracks"></ul>
                             </div>
@@ -298,10 +306,10 @@
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-8" data-id="w-e-graph">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PULSO DEL SERVIDOR (ÚLT. 20 CARRERAS GLOBALES)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
-                            <div class="st-widget-content" style="padding: 10px 15px 15px 15px; min-height: 200px;">
-                                <div id="st-e-svg-container" class="st-chart-wrapper"></div>
+                        <div class="st-widget st-col-8" data-id="w-e-tier">
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>DISTRIBUCIÓN DE RANGOS GLOBALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content st-flex-center" style="padding: 15px 10px 5px 10px; min-height: 200px;">
+                                <div id="st-e-bar-tier" class="st-chart-wrapper" style="margin-top:0;"></div>
                             </div>
                         </div>
 
@@ -311,8 +319,15 @@
                                 <div id="st-e-donut-monopoly"></div>
                                 <div style="text-align:left;">
                                     <div class="st-sub" style="color:#fff;">TOP 1 HELD BY</div>
-                                    <div class="st-val" id="st-e-donut-user" style="font-size:1.1rem; color:var(--p);">#1</div>
+                                    <div class="st-val" id="st-e-donut-user" style="font-size:1.1rem; color:var(--p); word-break: break-all;">#1</div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="st-widget st-col-12" data-id="w-e-graph">
+                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span>PULSO DEL SERVIDOR (ÚLT. 20 CARRERAS VÁLIDAS GLOBALES)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content" style="padding: 10px 15px 15px 15px; min-height: 250px;">
+                                <div id="st-e-svg-container" class="st-chart-wrapper"></div>
                             </div>
                         </div>
 
@@ -344,28 +359,28 @@
                     <div class="st-grid" id="grid-stats-hc">
                         
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-rec">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CÚSPIDE</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CÚSPIDE</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-hc-record" style="color:var(--error);">0</div>
                                 <div class="st-sub">RÉCORD SERVER HC</div>
                             </div>
                         </div>
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-surv">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">VICTORIAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">VICTORIAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-hc-surv" style="color:#fff;">0</div>
                                 <div class="st-sub">PISTAS SUPERADAS (GLOBAL)</div>
                             </div>
                         </div>
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-death">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DERROTAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">DERROTAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="st-val" id="st-hc-deaths" style="color:#fff;">0</div>
                                 <div class="st-sub">MUERTES SÚBITAS (GLOBAL)</div>
                             </div>
                         </div>
                         <div class="st-widget st-col-3 st-widget-error" data-id="w-h-rate">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PROBABILIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PROBABILIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content st-flex-center" style="flex-direction: row; gap: 20px;">
                                 <div id="st-hc-donut-rate"></div>
                                 <div style="text-align:left;">
@@ -375,22 +390,29 @@
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-top">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
-                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
-                                <ul class="st-list st-list-err" id="st-hc-top10"></ul>
+                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-safe" style="border-color:var(--border);">
+                            <div class="st-widget-header" style="border-bottom-color:#1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--success);">REFUGIOS GLOBALES (MÁS SEGURAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll" style="max-height: 400px;">
+                                <ul class="st-list" id="st-hc-safe"></ul>
                             </div>
                         </div>
 
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-worst">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PISTAS MÁS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-worst">
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">PISTAS MÁS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-worst"></ul>
                             </div>
                         </div>
+
+                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-top">
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">HALL OF FAME (SOBREVIVIDAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                            <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
+                                <ul class="st-list st-list-err" id="st-hc-top10"></ul>
+                            </div>
+                        </div>
                         
-                        <div class="st-widget st-col-4 st-widget-error" data-id="w-h-victims">
-                            <div class="st-widget-header"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CEMENTERIO DE PILOTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
+                        <div class="st-widget st-col-6 st-widget-error" data-id="w-h-victims">
+                            <div class="st-widget-header" style="border-bottom-color: #1a1a1a;"><span class="drag-handle admin-only hidden" title="Mover">☰</span><span style="color:var(--error);">CEMENTERIO DE PILOTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">↗</button></div>
                             <div class="st-widget-content custom-scroll error-scroll" style="max-height: 400px;">
                                 <ul class="st-list st-list-err" id="st-hc-victims"></ul>
                             </div>
