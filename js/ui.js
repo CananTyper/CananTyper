@@ -6,7 +6,6 @@ window.UI = {
     listLayout: 'layout-list', trackPage: 0, activeTrackCat: null, filterFavs: false,
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeStatsTab: 'personal',
     
-    // Motor inteligente para listas (Ahorra cientos de líneas de código)
     _genList: (arr, limit, hasMeta, rowFn) => {
         let html = '';
         for(let i=0; i<limit; i++) {
@@ -16,12 +15,11 @@ window.UI = {
         return html;
     },
 
-    formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
-    formatTrackName: (t) => { return !t ? 'Desconocido' : (isNaN(t) ? t : '#' + t); },
+    formatValue: (cpm) => Math.round((window.CT.currentUnit === 'wpm') ? cpm / window.CT.charPerWord : cpm),
+    formatTrackName: (t) => (!t ? 'Desconocido' : (isNaN(t) ? t : '#' + t)),
     formatTrackNameFull: (t) => { 
         if(!t) return 'Desconocido';
-        const cat = window.UI.getTrackCat(t);
-        const name = isNaN(t) ? t : 'Texto ' + t;
+        const cat = window.UI.getTrackCat(t); const name = isNaN(t) ? t : 'Texto ' + t;
         return (cat && cat !== 'General' && cat !== '-') ? name + ' | ' + cat.replace('[TRN] ', '') : name + ' | ' + cat; 
     },
 
@@ -31,7 +29,6 @@ window.UI = {
         if (!container) return;
         if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
         if (type === 'track' && !window.UI.filterFavs) return;
-
         container._sortable = Sortable.create(container, {
             handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
             onEnd: (evt) => {
@@ -123,6 +120,7 @@ window.UI = {
     },
 
     toggleWidgetsMenu: () => { document.getElementById('widgets-menu').classList.toggle('hidden'); window.UI.renderWidgetsMenu(); },
+    
     renderWidgetsMenu: () => {
         const layout = window.CT.data.statsLayout; if (!layout) return;
         const tab = window.UI.activeStatsTab; let html = '';
@@ -172,7 +170,6 @@ window.UI = {
         return tObj ? (tObj.c || 'General').trim() : 'General';
     },
 
-    // Modal de Pista Completa inyectado
     showTrackPreview: (trackId) => {
         if(!trackId) return;
         const track = window.CT.dbLocal('p').find(t => (t.id && t.id.toString() === trackId.toString()) || (t.title && t.title.toString() === trackId.toString()));
@@ -189,7 +186,48 @@ window.UI = {
 
     setUnit: (unit) => {
         if(window.CT.currentUnit === unit) return;
-    ('c').filter(c => c.name.startsWith('[TRN]'));
+        localStorage.removeItem('ct_custom_theme');
+        const u = window.CT.ses(); 
+        if(u && u.theme) { window.db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        document.documentElement.removeAttribute('data-custom-theme');
+        window.CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); 
+        window.UI.updateUnitVisuals(unit); window.UI.refreshActiveViews();
+    },
+
+    updateUnitVisuals: (unit) => {
+        document.documentElement.setAttribute('data-theme', unit);
+        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
+        const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
+        
+        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
+        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel', 'th_st_p_top10_vel'];
+        thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; document.getElementById(id).classList.add('active-unit'); } });
+        
+        const els = { 'th-unit-rank': 'PROMEDIO ', 'lbl-st-avg': 'PROM. ', 'lbl-st-last': 'ÚLT. 10 ', 'lbl-st-best': 'RÉCORD ', 'game-unit-label': '' };
+        Object.keys(els).forEach(k => { if(document.getElementById(k)) document.getElementById(k).innerText = els[k] + label; });
+    },
+
+    updateFastModeVisuals: () => {
+        const textLabel = window.CT.data.ui && window.CT.data.ui['t_sett_fast'] ? window.CT.data.ui['t_sett_fast'].v : '⚡ Modo Rápido:';
+        const onVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_on'] ? window.CT.data.ui['t_sett_fast_on'].v : 'SI';
+        const offVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_off'] ? window.CT.data.ui['t_sett_fast_off'].v : 'NO';
+        const btn = document.getElementById('btn-fast-mode');
+        if(btn) btn.innerText = `${textLabel} ${window.CT.fastMode ? onVal : offVal}`;
+    },
+
+    toggleFastMode: () => { window.CT.fastMode = !window.CT.fastMode; localStorage.setItem('ct_fast_mode', window.CT.fastMode); window.UI.updateFastModeVisuals(); },
+    
+    updateCategorySelects() {
+        const trnCats = window.CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
+        const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
+        const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
+        const trnDelCatSel = document.getElementById('trn-delete-cat-select'); if(trnDelCatSel) trnDelCatSel.innerHTML = trnOptions;
+    },
+
+    renderTrainDropdown() {
+        const tPurge = window.CT.data.ui && window.CT.data.ui['t_btn_tr_purge'] ? window.CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
+        let html = `<button onclick="window.App.startPurge()">${tPurge}</button>`;
+        const trnCats = window.CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
         trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => { html += `<button onclick="window.App.startTrnCategory('${c.name}')">⚡ ${c.name.replace('[TRN] ', '')}</button>`; });
         const drp = document.getElementById('train-dropdown'); if(drp) drp.innerHTML = html;
     },
@@ -208,12 +246,10 @@ window.UI = {
         });
     },
 
-    // FIN DE LA PARTE 1 - CONTINÚA EN EL SIGUIENTE MENSAJE
     renderPersonalStats: () => {
         try {
             const u = window.CT.ses(); if(!u) return;
             const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-            
             let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track)).sort((a,b) => a.id - b.id);
             
             const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
@@ -278,36 +314,6 @@ window.UI = {
             
             if(window.UI.applyStatsLayout) window.UI.applyStatsLayout();
         } catch(e) { console.error("Error renderPersonalStats:", e); }
-    },
-
-    renderGlobalStats: () => {
-        try {
-            const users = window.CT.dbLocal('u');
-            const elUsers = document.getElementById('st-g-users-val'); if(elUsers) elUsers.innerText = users.length; 
-            
-            let totalRaces = 0; let totalSum = 0; let globalMax = 0;
-            users.forEach(u => {
-                totalRaces += (u.hi || []).length;
-                totalSum += (u.hi || []).reduce((a,b)=>a+b, 0);
-                let uMax = Math.max(...(u.hi || [0]), 0);
-                if(uMax > globalMax) globalMax = uMax;
-            });
-            
-            const elRaces = document.getElementById('st-g-races-val'); if(elRaces) elRaces.innerText = totalRaces;
-            const elAvg = document.getElementById('st-g-avg'); if(elAvg) elAvg.innerText = window.UI.formatValue(totalRaces ? Math.round(totalSum/totalRaces) : 0);
-            const elRecord = document.getElementById('st-g-record'); if(elRecord) elRecord.innerText = window.UI.formatValue(globalMax);
-            
-            let textCounts = {}; (window.CT.data.s_recent || []).forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
-            const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count);
-            const elTopTexts = document.getElementById('st-g-top-texts'); 
-            if(elTopTexts) elTopTexts.innerHTML = window.UI._genList(topTexts, 10, false, (tr, r) => `<tr><td><b style="color:var(--p)">#${r}</b></td><td><div class="track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div></td><td>${tr.count}</td></tr>`);
-            
-            const phrases = window.CT.dbLocal('p'); let catCounts = {}; 
-            (window.CT.data.s_recent || []).forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; catCounts[cat] = (catCounts[cat] || 0) + 1; });
-            let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count);
-            const elTopCats = document.getElementById('st-g-top-cats'); 
-            if(elTopCats) elTopCats.innerHTML = window.UI._genList(topCats, 10, false, (tc, r) => `<tr><td><b style="color:var(--p)">#${r}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`);
-        } catch(e) { console.error("Error renderGlobalStats:", e); }
     },
 
     renderEliteStats: () => {
@@ -586,6 +592,8 @@ window.UI = {
     }
 };
 
+// En tu archivo `app.js` y `state.js` ya borramos este eventListener de la última línea,
+// así que ahora solo se ejecutará UNA vez aquí:
 document.addEventListener('DOMContentLoaded', () => { 
     if(window.CT && window.CT.init) window.CT.init(); 
 });
