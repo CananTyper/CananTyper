@@ -331,22 +331,24 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
 .st-dashboard { flex-grow: 1; padding: 30px; background: #080808; overflow-y: auto; overflow-x: hidden; }
 .st-pane { width: 100%; }
 .st-pane.hidden { display: none !important; }
-.st-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; width: 100%; max-width: 1600px; margin: 0 auto; grid-auto-flow: dense; }
+.st-grid { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; max-width: 1600px; margin: 0 auto; align-items: flex-start;}
 
-.st-col-3 { grid-column: span 3; }
-.st-col-4 { grid-column: span 4; }
-.st-col-6 { grid-column: span 6; }
-.st-col-8 { grid-column: span 8; }
-.st-col-12 { grid-column: span 12; }
-
-@media (max-width: 1200px) {
-    .st-col-3, .st-col-4 { grid-column: span 6; }
-    .st-col-6, .st-col-8, .st-col-12 { grid-column: span 12; }
-}
-
-.st-widget { background: #111111; border: 1px solid #222222; border-radius: 4px; display: flex; flex-direction: column; transition: all 0.3s; position: relative; overflow: hidden; min-height: 120px; }
+.st-widget { background: #111111; border: 1px solid #222222; border-radius: 4px; display: flex; flex-direction: column; transition: all 0.3s; position: relative; overflow: hidden; height: 100%; }
 .st-widget.hidden { display: none !important; }
 .st-widget:hover { border-color: #333; }
+
+/* Grid Flex Classes */
+.st-col-3 { width: calc(25% - 15px); }
+.st-col-4 { width: calc(33.333% - 13.33px); }
+.st-col-6 { width: calc(50% - 10px); }
+.st-col-8 { width: calc(66.666% - 6.66px); }
+.st-col-12 { width: 100%; }
+
+@media (max-width: 1200px) {
+    .st-col-3, .st-col-4 { width: calc(50% - 10px); }
+    .st-col-6, .st-col-8, .st-col-12 { width: 100%; }
+}
+
 .st-widget-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; background: rgba(0,0,0,0.2); }
 .st-widget-header span { color: #888; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display:flex; align-items:center; gap:8px;}
 .st-resize-btn { background: transparent; border: none; color: #555; cursor: pointer; font-size: 0.9rem; padding: 0; outline: none; transition: color 0.2s; font-weight:bold;}
