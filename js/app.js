@@ -25,10 +25,12 @@ window.App = {
         }
     },
 
+    // LÓGICA PRO DE REORDENAMIENTO DE WIDGETS BASADA EN DOM REAL
     saveWidgetOrderFromDOM: (tab, gridElementId) => {
         const grid = document.getElementById(gridElementId);
         if(!grid) return;
         
+        // Obtenemos el orden de los IDs visuales (solo los visibles)
         const visibleDomIds = Array.from(grid.children)
             .filter(el => !el.classList.contains('hidden'))
             .map(el => el.getAttribute('data-id'));
@@ -37,6 +39,7 @@ window.App = {
         
         layout.forEach(w => {
             const domIdx = visibleDomIds.indexOf(w.id);
+            // Si está visible le damos su nuevo orden, si está oculto lo mandamos al final
             w.order = domIdx !== -1 ? domIdx : 999;
         });
 
@@ -60,6 +63,7 @@ window.App = {
         
         let w = layout[tab].find(x => x.id === widgetId);
         if (w) {
+            // Ciclo: 3 -> 4 -> 6 -> 8 -> 12 -> 3
             if (w.s === 3) w.s = 4;
             else if (w.s === 4) w.s = 6;
             else if (w.s === 6) w.s = 8;
@@ -116,6 +120,7 @@ window.App = {
     },
     
     startHardcoreRace: () => { 
+        window.App.currentRaceContext = { type: 'hardcore' };
         let tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]')); 
         if(!tracks || tracks.length === 0) return alert("No hay textos disponibles."); 
         window.App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)]; 
@@ -124,7 +129,7 @@ window.App = {
     },
     
     startGhostRace: (trackTitle, cpm) => {
-        window.App.currentRaceContext = { type: 'random' }; // Ghost overrides continuity
+        window.App.currentRaceContext = { type: 'ghost' };
         let track = window.CT.dbLocal('p').find(t => t.title.toString() === trackTitle.toString());
         if(!track) return alert("Pista no encontrada o eliminada.");
         window.App.currentTrack = track;
@@ -133,6 +138,7 @@ window.App = {
     },
 
     startPurge: () => {
+        window.App.currentRaceContext = { type: 'training' };
         const u = window.CT.ses(); let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         const bw = userDoc.bad_words || {}; let words = Object.keys(bw);
         if(words.length < 5) return alert("No tienes suficientes errores registrados aún. ¡Juega más partidas normales!");
@@ -144,6 +150,7 @@ window.App = {
     },
 
     startTrnCategory: (catName) => {
+        window.App.currentRaceContext = { type: 'training' };
         let extTracks = window.CT.dbLocal('p').filter(t => t.c === catName);
         if(extTracks.length === 0) return alert("No hay textos en esta modalidad.");
         window.App.currentTrack = extTracks[Math.floor(Math.random() * extTracks.length)];
@@ -187,3 +194,137 @@ window.App = {
                             return;
                         }
                     } else if (window.App.currentRaceContext.type === 'cat') {
+                        let tracks = window.CT.dbLocal('p').filter(t => (t.c || 'General').trim() === window.App.currentRaceContext.val.trim());
+                        if(tracks.length > 0) {
+                            window.App.currentTrack = tracks[Math.floor(Math.random() * tracks.length)];
+                            window.App.activeEngine = new window.Engine(window.App.currentTrack, 'normal');
+                            return;
+                        }
+                    }
+                }
+                window.App.startRandomRace(); 
+            }
+        } 
+    },
+    
+    quitRace: () => { 
+        if(window.App.activeEngine) { window.App.activeEngine.stop(); window.App.activeEngine = null; } 
+        window.App.currentRaceContext = null; // Resetea contexto al salir al lobby
+        window.UI.showLobby(); 
+    },
+    
+    toggleFav: (idStr) => {
+        const u = window.CT.ses(); if(!u) return;
+        let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        let favs = userDoc.favs || [];
+        if (favs.includes(idStr.toString())) { favs = favs.filter(f => f !== idStr.toString()); } 
+        else { favs.push(idStr.toString()); }
+        userDoc.favs = favs; 
+        window.db.collection('users').doc(u.h).update({ favs: favs });
+        window.UI.renderTrackList(); 
+    },
+
+    saveTheme: (themeName) => {
+        let themeObj;
+        if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
+        else if (themeName === 'hacker') { themeObj = { p: '#00ff00', bg: '#050505', surface: '#0a0a0a' }; }
+        else { themeObj = { p: '#a6ff00', bg: '#000000', surface: '#141414' }; } 
+        
+        localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
+        const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ theme: themeObj }); }
+        window.UI.applySavedTheme(); window.UI.closeThemeModal();
+    },
+
+    resetTheme: () => {
+        localStorage.removeItem('ct_custom_theme');
+        const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
+        window.UI.applySavedTheme(); window.UI.closeThemeModal();
+    },
+
+    listenShortcutInput: (e, id) => { e.preventDefault(); document.getElementById(id).value = e.key; },
+
+    handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(window.ipcRenderer) window.ipcRenderer.send('apply-update'); } },
+    toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } window.UI.toggleSettings(); },
+    
+    downloadSetup: () => {
+        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
+        const link = document.createElement('a'); link.href = directUrl; link.download = 'CananTyper_Setup.exe';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); window.UI.toggleSettings();
+    },
+
+    clearCache: () => {
+        if(confirm("¿Seguro que deseas limpiar la caché local? Se volverán a descargar los textos y usuarios de la nube.")) {
+            localStorage.removeItem('ct_cache_u'); localStorage.removeItem('ct_cache_s');
+            localStorage.removeItem('ct_cache_p'); localStorage.removeItem('ct_cache_c');
+            localStorage.removeItem('ct_cache_ui');
+            location.reload();
+        }
+    },
+
+    editDisplayName: () => { const u = window.CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); window.db.collection('users').doc(u.h).update({ n: newName }); window.db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = window.db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
+    
+    login: async () => { 
+        const hInp = document.getElementById('login-user').value.toLowerCase(); 
+        const p = document.getElementById('login-pass').value; 
+        const handle = hInp.startsWith('@') ? hInp : '@' + hInp; 
+        
+        if(!hInp || !p) return alert("Por favor, ingresa usuario y contraseña.");
+
+        const btn = document.getElementById('t_btn_login');
+        const originalText = btn.innerText;
+        btn.innerText = "CONECTANDO...";
+        btn.disabled = true;
+
+        const cachedUser = window.CT.data.u.find(u => u.h === handle);
+        if (cachedUser && cachedUser.p === p) {
+            localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+            window.UI.initLobby();
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return; 
+        }
+
+        const attemptLogin = async (retries = 3) => {
+            for (let i = 0; i < retries; i++) {
+                try { 
+                    const docRef = await window.db.collection('users').doc(handle).get(); 
+                    if(docRef.exists && docRef.data().p === p) { 
+                        localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
+                        if(!window.CT.data.u.find(u => u.h === handle)) window.CT.data.u.push(docRef.data()); 
+                        window.UI.initLobby(); 
+                        return true;
+                    } else { 
+                        alert("Usuario o contraseña incorrectos"); 
+                        return true; 
+                    } 
+                } catch(e) { 
+                    if (i === retries - 1) throw e; 
+                    await new Promise(r => setTimeout(r, 1000)); 
+                }
+            }
+            return false;
+        };
+
+        try {
+            const success = await attemptLogin();
+            if(!success) throw new Error("Timeout");
+        } catch(e) {
+            console.error("Error en DB:", e); 
+            btn.innerText = "REINTENTAR";
+            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+            return;
+        }
+
+        btn.innerText = originalText;
+        btn.disabled = false;
+    },
+
+    register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await window.db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await window.db.collection('users').doc(handle).set(newUser); window.UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
+    
+    logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
+
+    saveCrop: () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; const sW = (imgW * 220) / (viewerImgW * window.UI.cropScale); const sH = (imgH * 220) / (viewerImgH * window.UI.cropScale); const sX = (((viewerImgW * window.UI.cropScale) / 2) - window.UI.cropX - 110) * (imgW / (viewerImgW * window.UI.cropScale)); const sY = (((viewerImgH * window.UI.cropScale) / 2) - window.UI.cropY - 110) * (imgH / (viewerImgH * window.UI.cropScale)); ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ a: compressedBase64 }); window.db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = window.db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); document.getElementById('prof-img').src = compressedBase64; } window.UI.closeCropModal(); }
+};
+
+// Arranque de la aplicación
+document.addEventListener('DOMContentLoaded', () => { window.CT.init(); });
