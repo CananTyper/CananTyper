@@ -8,6 +8,7 @@ window.UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
+    formatTrackName: (t) => { return isNaN(t) ? t : 'Texto ' + t; },
 
     initSortable: (containerId, type, pageContext = 0) => {
         if (typeof Sortable === 'undefined') return;
@@ -292,6 +293,26 @@ window.UI = {
         const tObj = phrases.find(p => p.title.toString() === trackTitle.toString());
         return tObj ? (tObj.c || 'General').trim() : 'General';
     },
+
+    // PREVIEW DE PISTAS (MODAL)
+    showTrackPreview: (trackId) => {
+        const track = window.CT.dbLocal('p').find(t => t.id.toString() === trackId.toString());
+        if(!track) return;
+        document.getElementById('tp-title').innerText = window.UI.formatTrackName(track.title);
+        document.getElementById('tp-cat').innerText = (track.c || 'General').trim();
+        document.getElementById('tp-words').innerText = track.text.split(' ').length + " PALABRAS";
+        document.getElementById('tp-content').innerText = track.text;
+        
+        document.getElementById('tp-btn-play').onclick = () => {
+            window.App.startRaceWithTrack(track.id);
+            window.UI.closeTrackPreview();
+        };
+        document.getElementById('track-preview-modal').classList.remove('hidden');
+    },
+
+    closeTrackPreview: () => {
+        document.getElementById('track-preview-modal').classList.add('hidden');
+    },
     
     applyUITexts: () => {
         if(!window.CT.data.ui) return;
@@ -335,7 +356,6 @@ window.UI = {
         }
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
 
-        // Tendencia de Mejora
         const first10 = [...compScores].slice(0, 10);
         const avgF = first10.length ? first10.reduce((a,b)=>a+b.c,0)/first10.length : 0;
         let trend = 0;
@@ -397,7 +417,7 @@ window.UI = {
         if(elTop10) elTop10.innerHTML = top10.map((s, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${s.track}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </li>`).join('');
 
@@ -410,7 +430,7 @@ window.UI = {
         if(elBottom) elBottom.innerHTML = bottom5.map((tr, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${tr.t}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackName(tr.t)}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
             </li>`).join('');
 
@@ -464,7 +484,6 @@ window.UI = {
         const eSvgContainer = document.getElementById('st-e-svg-container');
         if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
 
-        // Distribución de Rangos (Bar Chart)
         let playerStats = users.map(us => {
             const hist = (us.hi||[]); 
             return hist.length ? Math.round(hist.reduce((a,b)=>a+b)/hist.length) : 0;
@@ -491,7 +510,7 @@ window.UI = {
             return `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${tr}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr}')">${window.UI.formatTrackName(tr)}</div>
                 <div class="st-list-meta">${trMax.n}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
             </li>`; 
@@ -559,7 +578,7 @@ window.UI = {
         if(elHcTop) elHcTop.innerHTML = top10.map((s, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${s.track}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</div>
                 <div class="st-list-meta" style="color:var(--text-muted);">${s.n}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </li>`).join('');
@@ -574,7 +593,7 @@ window.UI = {
         if(elHcWorst) elHcWorst.innerHTML = deathList.map((td, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${td.t}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackName(td.t)}</div>
                 <div class="st-list-val" style="font-size:0.75rem;">${td.d} X_X</div>
             </li>`).join('');
 
@@ -587,7 +606,6 @@ window.UI = {
                 <div class="st-list-val" style="font-size:0.75rem;">${v.d} X_X</div>
             </li>`).join('');
 
-        // Refugios Seguros (Survivals - Deaths)
         let hcSurvivals = {};
         globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
         let safeTracks = Object.keys(hcSurvivals)
@@ -598,7 +616,7 @@ window.UI = {
         if(elSafe) elSafe.innerHTML = safeTracks.map((st, i) => `
             <li class="st-list-item" style="border-bottom-color:#1a1a1a;">
                 <div class="st-list-rank" style="color:var(--success);">#${i+1}</div>
-                <div class="st-list-name" style="color:#ccc;">${st.t}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackName(st.t)}</div>
                 <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
             </li>`).join('');
 
@@ -614,7 +632,10 @@ window.UI = {
     refreshActiveViews: () => {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
-        if(!document.getElementById('profile-screen').classList.contains('hidden')) window.UI.showProfile(window.CT.activeProfHandle || 'me');
+        if(!document.getElementById('profile-screen').classList.contains('hidden')) {
+            // Aseguramos que se lea correctamente si es 'me' o el ID real.
+            window.UI.showProfile(window.CT.activeProfHandle || 'me');
+        }
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
         if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) window.UI.renderEliteStats(); else window.UI.renderHardcoreStats(); }
     },
@@ -697,7 +718,7 @@ window.UI = {
                 <td><div class="player-link" onclick="window.UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || window.CT.defAvatar}"></div><span>${s.n}</span></div></td>
                 <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td>
                 <td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">
-                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${s.track}</span>
+                    <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${window.UI.formatTrackName(s.track)}</span>
                     <button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Competir contra el Fantasma">👻</button>
                 </div></td>
             </tr>`;
@@ -740,7 +761,7 @@ window.UI = {
     renderProfileHistory() {
         const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc).sort((a,b) => b.id - a.id);
         const start = window.CT.profPage * 10; const pageData = userScores.slice(start, start + 10);
-        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td><td>${s.track}</td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
+        document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td><td><span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</span></td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
         document.getElementById('prof-prev').disabled = window.CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${window.CT.profPage + 1}`;
     },
     changeProfPage(delta) { const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (window.CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { window.CT.profPage += delta; this.renderProfileHistory(); } },
@@ -756,7 +777,7 @@ window.UI = {
         }
     },
 
-    showTrackSelect() { document.getElementById('track-search').value = ''; window.UI.activeTrackCat = null; window.UI.filterFavs = false; window.UI.showTrackCategorySelect(); this.show('track-screen'); },
+    showTrackSelect() { document.getElementById('track-search').value = ''; window.UI.activeTrackCat = null; window.UI.filterFavs = false; window.UI.showTrackCategorySelect(); window.UI.show('track-screen'); },
     showTrackCategorySelect() {
         document.getElementById('track-list-view').classList.add('hidden'); document.getElementById('track-category-view').classList.remove('hidden');
         const tracks = window.CT.dbLocal('p'); let cats = window.CT.dbLocal('c'); let catCounts = {}; 
@@ -824,7 +845,7 @@ window.UI = {
             else { const c = document.getElementById('track-list-full'); if (c && c._sortable) { c._sortable.destroy(); c._sortable = null; } }
         }, 50);
     },
-    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = window.CT.dbLocal('p'); const u = window.CT.ses(); let favs = (window.CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (window.UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === window.UI.activeTrackCat.trim()); } const nextStart = (window.UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { window.UI.trackPage += delta; this.renderTrackList(); } },
+    changeTrackPage(delta) { const query = (document.getElementById('track-search').value || "").toLowerCase(); let filtered = window.CT.dbLocal('p'); const u = window.CT.ses(); let favs = (window.CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; if (query) { filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); } else if (window.UI.filterFavs) { filtered = filtered.filter(t => favs.includes(t.id.toString())); } else { filtered = filtered.filter(t => (t.c || 'General').trim() === window.UI.activeTrackCat.trim()); } const nextStart = (window.UI.trackPage + delta) * 20; if(nextStart >= 0 && nextStart < filtered.length) { window.UI.trackPage += delta; window.UI.renderTrackList(); } },
 
     showAnnouncement(data) { if(!data.id) return; window.UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
     closeAnnouncement() { if(window.UI.currentAnnId) { localStorage.setItem('ct_last_announcement', window.UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); },
