@@ -375,3 +375,25 @@ body.zen-focus .game-controls { opacity: 0.05; pointer-events: none; }
 .st-slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: #555; transition: .3s; border-radius: 50%; }
 input:checked + .st-slider { background-color: color-mix(in srgb, var(--p) 30%, #222); }
 input:checked + .st-slider:before { transform: translateX(14px); background-color: var(--p); box-shadow: 0 0 5px var(--p); }
+
+/* =========================================================================
+   ESTADÍSTICAS: PESTAÑAS ELEGANTES Y TRANSICIONES
+   ========================================================================= */
+.stats-nav-tabs { background: var(--surface-light); padding: 6px 10px; border-radius: 50px; border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
+.st-nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 10px 22px; border-radius: 40px; font-weight: bold; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; outline: none; }
+.st-nav-btn:hover { color: var(--text-main); }
+.st-nav-btn.active { background: var(--p); color: #000 !important; box-shadow: 0 0 15px color-mix(in srgb, var(--p) 30%, transparent); transform: scale(1.05); }
+
+/* RANKING HIGHLIGHT */
+.st-nav-ranking { font-size: 0.95rem; padding: 12px 28px; color: #ffd700; border: 1px solid transparent; }
+.st-nav-ranking:hover { color: #fff; text-shadow: 0 0 10px #ffd700; }
+.st-nav-ranking.active { background: linear-gradient(45deg, #ffd700, #ffaa00); color: #000 !important; box-shadow: 0 5px 20px rgba(255,215,0,0.4); border-color: #ffe600; transform: scale(1.1); }
+
+.st-nav-hc.active { background: var(--error); color: #fff !important; box-shadow: 0 0 15px color-mix(in srgb, var(--error) 40%, transparent); }
+
+/* TRANSICIÓN SUAVE PANELES */
+.st-fade-in { animation: stFadeIn 0.35s ease-out forwards; }
+@keyframes stFadeIn {
+    0% { opacity: 0; transform: translateY(15px) scale(0.99); filter: blur(3px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
