@@ -127,7 +127,8 @@ input:focus, textarea:focus { border-color: var(--p); box-shadow: 0 0 10px color
 .switch-text span { color: var(--text-main); font-weight: bold; cursor: pointer; transition: color 0.2s; }
 .switch-text span:hover { color: var(--p); text-decoration: underline; text-shadow: 0 0 10px color-mix(in srgb, var(--p) 40%, transparent); }
 
-.top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border); flex-shrink: 0; transition: opacity 0.5s ease; }
+/* BLINDAJE DE Z-INDEX PARA ASEGURAR CLICS DEL MENÚ */
+.top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border); flex-shrink: 0; transition: opacity 0.5s ease; position: relative; z-index: 1000; }
 .nav-left, .nav-right { display: flex; align-items: center; gap: 20px; }
 .user-pill { display: flex; align-items: center; gap: 12px; background: var(--surface-light); padding: 6px 20px 6px 6px; border-radius: 50px; border: 1px solid var(--border); cursor: pointer; transition: all 0.3s; }
 .user-pill:hover { border-color: var(--p); box-shadow: 0 0 15px color-mix(in srgb, var(--p) 15%, transparent); }
