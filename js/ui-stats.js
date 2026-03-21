@@ -10,12 +10,26 @@ Object.assign(window.UI, {
     },
 
     switchStatsTab: (tab) => {
+        // Disparar animación elegante
+        const wrapper = document.getElementById('st-transition-wrapper');
+        if(wrapper) {
+            wrapper.classList.remove('st-fade-in');
+            void wrapper.offsetWidth; // Forzar el reflow del navegador
+            wrapper.classList.add('st-fade-in');
+        }
+
         window.UI.activeStatsTab = tab;
         document.querySelectorAll('#stats-screen .st-pane').forEach(p => p.classList.add('hidden'));
-        document.querySelectorAll('.st-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.st-nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
-        const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`); if (activeBtn) activeBtn.classList.add('active');
-        if (tab === 'personal') window.UI.renderPersonalStats(); else if (tab === 'general') window.UI.renderGlobalStats(); else if (tab === 'elite') window.UI.renderEliteStats(); else if (tab === 'hc') window.UI.renderHardcoreStats();
+        
+        const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`); 
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        if (tab === 'personal') window.UI.renderPersonalStats(); 
+        else if (tab === 'elite') window.UI.renderEliteStats(); 
+        else if (tab === 'hc') window.UI.renderHardcoreStats();
+        
         if(window.CT.ses() && window.CT.ses().r === 'admin') window.UI.renderWidgetsMenu();
     },
 
@@ -86,6 +100,10 @@ Object.assign(window.UI, {
             const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
             let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track)).sort((a,b) => a.id - b.id);
             
+            // TITULO PERSONALIZADO
+            const subTitle = document.getElementById('t_hd_stats_sub');
+            if(subTitle) subTitle.innerText = `Rendimiento táctico de ${userDoc.n} (${userDoc.h})`;
+
             const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
             const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
             const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
@@ -150,42 +168,16 @@ Object.assign(window.UI, {
         } catch(e) { console.error("Error renderPersonalStats:", e); }
     },
 
-    renderGlobalStats: () => {
-        try {
-            const users = window.CT.dbLocal('u');
-            const elUsers = document.getElementById('st-g-users-val'); if(elUsers) elUsers.innerText = users.length; 
-            
-            let totalRaces = 0; let totalSum = 0; let globalMax = 0;
-            users.forEach(u => {
-                totalRaces += (u.hi || []).length;
-                totalSum += (u.hi || []).reduce((a,b)=>a+b, 0);
-                let uMax = Math.max(...(u.hi || [0]), 0);
-                if(uMax > globalMax) globalMax = uMax;
-            });
-            
-            const elRaces = document.getElementById('st-g-races-val'); if(elRaces) elRaces.innerText = totalRaces;
-            const elAvg = document.getElementById('st-g-avg'); if(elAvg) elAvg.innerText = window.UI.formatValue(totalRaces ? Math.round(totalSum/totalRaces) : 0);
-            const elRecord = document.getElementById('st-g-record'); if(elRecord) elRecord.innerText = window.UI.formatValue(globalMax);
-            
-            let textCounts = {}; (window.CT.data.s_recent || []).forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
-            const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count);
-            const elTopTexts = document.getElementById('st-g-top-texts'); 
-            if(elTopTexts) elTopTexts.innerHTML = window.UI._genList(topTexts, 10, false, (tr, r) => `<tr><td><b style="color:var(--p)">#${r}</b></td><td><div class="track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div></td><td>${tr.count}</td></tr>`);
-            
-            const phrases = window.CT.dbLocal('p'); let catCounts = {}; 
-            (window.CT.data.s_recent || []).forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; catCounts[cat] = (catCounts[cat] || 0) + 1; });
-            let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count);
-            const elTopCats = document.getElementById('st-g-top-cats'); 
-            if(elTopCats) elTopCats.innerHTML = window.UI._genList(topCats, 10, false, (tc, r) => `<tr><td><b style="color:var(--p)">#${r}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`);
-        } catch(e) { console.error("Error renderGlobalStats:", e); }
-    },
-
     renderEliteStats: () => {
         try {
             const users = window.CT.dbLocal('u'); if (users.length === 0) return;
             const topS = (window.CT.data.s_top || []).filter(s => window.UI.isCompetitiveTrack(s.track));
             const recentS = (window.CT.data.s_recent || []).filter(s => window.UI.isCompetitiveTrack(s.track) && !s.hc).sort((a,b) => a.id - b.id);
             
+            // CAMBIO DE SUBTÍTULO
+            const subTitle = document.getElementById('t_hd_stats_sub');
+            if(subTitle) subTitle.innerText = `Los mejores pilotos del servidor`;
+
             let mostRacesUser = users.reduce((p, c) => ((c.hi||[]).length > (p.hi||[]).length ? c : p), users[0]);
             const elMostVal = document.getElementById('st-e-most-races-val'); if(elMostVal) elMostVal.innerText = (mostRacesUser.hi||[]).length;
             const elMostUsr = document.getElementById('st-e-most-races-user'); if(elMostUsr) elMostUsr.innerText = mostRacesUser.n || "-";
@@ -211,6 +203,9 @@ Object.assign(window.UI, {
             const elDonutE = document.getElementById('st-e-donut-monopoly'); if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(Object.values(top1c).reduce((a,b)=>a+b,0) > 0 ? (top1c[mTop1h] / Object.values(top1c).reduce((a,b)=>a+b,0)) * 100 : 0, 'var(--p)');
             const elDonutUser = document.getElementById('st-e-donut-user'); if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
             
+            // CORRECCIÓN DE MAYOR DOMINIO (Nombre debajo del número)
+            const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
+
             const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
             const eSvgContainer = document.getElementById('st-e-svg-container');
             if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
@@ -255,6 +250,10 @@ Object.assign(window.UI, {
             const users = window.CT.dbLocal('u');
             const globalHcScores = (window.CT.data.s_top || []).concat(window.CT.data.s_recent || []).filter(s => s.hc === true);
             
+            // CAMBIO DE SUBTÍTULO
+            const subTitle = document.getElementById('t_hd_stats_sub');
+            if(subTitle) subTitle.innerText = `Cementerio y Supervivientes`;
+
             let globalDeaths = 0; let globalSurvivals = 0; let globalRecord = 0;
             users.forEach(us => {
                 globalDeaths += (us.hc_deaths || 0); globalSurvivals += (us.hc_survivals || 0);
