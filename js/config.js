@@ -26,6 +26,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 window.db = firebase.firestore();
-window.db.settings({
-    localCache: firebase.firestore.persistentLocalCache()
+
+// CORRECCIÓN VITAL: Habilitar caché local con sintaxis correcta para Firebase v8
+window.db.enablePersistence().catch(function(err) {
+    console.error("Error al habilitar caché offline de Firebase:", err);
 });
