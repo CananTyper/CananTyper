@@ -56,9 +56,9 @@ window.CT = {
 
         window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
             const defLayout = {
-                personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-record', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-donut', v:true, s:4}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-heat', v:true, s:8}, {id:'w-p-top', v:true, s:6}, {id:'w-p-worst', v:true, s:6}],
-                elite: [{id:'w-e-vol', v:true, s:3}, {id:'w-e-dom', v:true, s:3}, {id:'w-e-eff', v:true, s:3}, {id:'w-e-rec', v:true, s:3}, {id:'w-e-graph', v:true, s:8}, {id:'w-e-donut', v:true, s:4}, {id:'w-e-texts', v:true, s:4}, {id:'w-e-cats', v:true, s:4}, {id:'w-e-players', v:true, s:4}],
-                hc: [{id:'w-h-rec', v:true, s:3}, {id:'w-h-surv', v:true, s:3}, {id:'w-h-death', v:true, s:3}, {id:'w-h-rate', v:true, s:3}, {id:'w-h-top', v:true, s:4}, {id:'w-h-worst', v:true, s:4}, {id:'w-h-victims', v:true, s:4}]
+                personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-record', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-donut', v:true, s:4}, {id:'w-p-trend', v:true, s:4}, {id:'w-p-heat', v:true, s:4}, {id:'w-p-top', v:true, s:6}, {id:'w-p-worst', v:true, s:6}],
+                elite: [{id:'w-e-vol', v:true, s:3}, {id:'w-e-dom', v:true, s:3}, {id:'w-e-eff', v:true, s:3}, {id:'w-e-rec', v:true, s:3}, {id:'w-e-graph', v:true, s:12}, {id:'w-e-donut', v:true, s:4}, {id:'w-e-tier', v:true, s:8}, {id:'w-e-texts', v:true, s:4}, {id:'w-e-cats', v:true, s:4}, {id:'w-e-players', v:true, s:4}],
+                hc: [{id:'w-h-rec', v:true, s:3}, {id:'w-h-surv', v:true, s:3}, {id:'w-h-death', v:true, s:3}, {id:'w-h-rate', v:true, s:3}, {id:'w-h-top', v:true, s:4}, {id:'w-h-worst', v:true, s:4}, {id:'w-h-victims', v:true, s:4}, {id:'w-h-safe', v:true, s:6}]
             };
 
             let data = snap.exists ? snap.data() : {};
