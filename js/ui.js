@@ -8,7 +8,17 @@ window.UI = {
     cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
     activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
-    formatTrackName: (t) => { return isNaN(t) ? t : 'Texto ' + t; },
+    
+    // Formateadores de Texto
+    formatTrackName: (t) => { return isNaN(t) ? t : '#' + t; },
+    formatTrackNameFull: (t) => { 
+        const cat = window.UI.getTrackCat(t);
+        const name = isNaN(t) ? t : 'Texto ' + t;
+        if (cat && cat !== 'General' && cat !== '-') {
+            return name + ' | ' + cat.replace('[TRN] ', '');
+        }
+        return name + ' | ' + cat; 
+    },
 
     initSortable: (containerId, type, pageContext = 0) => {
         if (typeof Sortable === 'undefined') return;
@@ -377,16 +387,26 @@ window.UI = {
             svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
         }
 
-        const v50 = window.UI.formatValue(50);
-        const v100 = window.UI.formatValue(100);
-        const v150 = window.UI.formatValue(150);
-        let dist = { [`<${v50}`]: 0, [`${v50}-${v100}`]: 0, [`${v100}-${v150}`]: 0, [`>${v150}`]: 0 };
+        // Distribución inteligente adaptable a la métrica seleccionada
+        const v200 = window.UI.formatValue(200);
+        const v500 = window.UI.formatValue(500);
+        const v700 = window.UI.formatValue(700);
+        const v1000 = window.UI.formatValue(1000);
+        
+        const l1 = `<${v200}`;
+        const l2 = `${v200}-${v500}`;
+        const l3 = `${v500}-${v700}`;
+        const l4 = `${v700}-999`;
+        const l5 = `≥${v1000}`;
+
+        let dist = { [l1]: 0, [l2]: 0, [l3]: 0, [l4]: 0, [l5]: 0 };
         compScores.forEach(s => {
-            let v = window.UI.formatValue(s.c);
-            if(v < v50) dist[`<${v50}`]++;
-            else if(v >= v50 && v < v100) dist[`${v50}-${v100}`]++;
-            else if(v >= v100 && v < v150) dist[`${v100}-${v150}`]++;
-            else dist[`>${v150}`]++;
+            let cpm = s.c;
+            if(cpm < 200) dist[l1]++;
+            else if(cpm >= 200 && cpm < 500) dist[l2]++;
+            else if(cpm >= 500 && cpm < 700) dist[l3]++;
+            else if(cpm >= 700 && cpm < 1000) dist[l4]++;
+            else dist[l5]++;
         });
         const barContainer = document.getElementById('st-p-bar-container');
         if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
@@ -417,7 +437,7 @@ window.UI = {
         if(elTop10) elTop10.innerHTML = top10.map((s, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </li>`).join('');
 
@@ -430,7 +450,7 @@ window.UI = {
         if(elBottom) elBottom.innerHTML = bottom5.map((tr, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackName(tr.t)}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
             </li>`).join('');
 
@@ -489,16 +509,24 @@ window.UI = {
             return hist.length ? Math.round(hist.reduce((a,b)=>a+b)/hist.length) : 0;
         }).filter(v => v > 0);
 
-        const v40 = window.UI.formatValue(40);
-        const v80 = window.UI.formatValue(80);
-        const v120 = window.UI.formatValue(120);
-        let tiers = { [`<${v40}`]: 0, [`${v40}-${v80}`]: 0, [`${v80}-${v120}`]: 0, [`>${v120}`]: 0 };
+        const v200 = window.UI.formatValue(200);
+        const v500 = window.UI.formatValue(500);
+        const v700 = window.UI.formatValue(700);
+        const v1000 = window.UI.formatValue(1000);
+        const l1 = `<${v200}`;
+        const l2 = `${v200}-${v500}`;
+        const l3 = `${v500}-${v700}`;
+        const l4 = `${v700}-999`;
+        const l5 = `≥${v1000}`;
+
+        let tiers = { [l1]: 0, [l2]: 0, [l3]: 0, [l4]: 0, [l5]: 0 };
         playerStats.forEach(v => {
             let formV = window.UI.formatValue(v);
-            if(formV < v40) tiers[`<${v40}`]++;
-            else if(formV >= v40 && formV < v80) tiers[`${v40}-${v80}`]++;
-            else if(formV >= v80 && formV < v120) tiers[`${v80}-${v120}`]++;
-            else tiers[`>${v120}`]++;
+            if(formV < v200) tiers[l1]++;
+            else if(formV >= v200 && formV < v500) tiers[l2]++;
+            else if(formV >= v500 && formV < v700) tiers[l3]++;
+            else if(formV >= v700 && formV < v1000) tiers[l4]++;
+            else tiers[l5]++;
         });
         const tierContainer = document.getElementById('st-e-bar-tier');
         if(tierContainer) tierContainer.innerHTML = window.UI.generateBarChartSVG(tiers);
@@ -510,7 +538,7 @@ window.UI = {
             return `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr}')">${window.UI.formatTrackName(tr)}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr}')">${window.UI.formatTrackNameFull(tr)}</div>
                 <div class="st-list-meta">${trMax.n}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
             </li>`; 
@@ -538,7 +566,7 @@ window.UI = {
             return `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${n}</div>
+                <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${h}')">${n}</div>
                 <div class="st-list-meta">${h}</div>
                 <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
             </li>`;
@@ -578,8 +606,8 @@ window.UI = {
         if(elHcTop) elHcTop.innerHTML = top10.map((s, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</div>
-                <div class="st-list-meta" style="color:var(--text-muted);">${s.n}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
+                <div class="st-list-meta player-link" onclick="window.UI.showProfile('${s.h}')">${s.n}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </li>`).join('');
         
@@ -593,16 +621,16 @@ window.UI = {
         if(elHcWorst) elHcWorst.innerHTML = deathList.map((td, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackName(td.t)}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackNameFull(td.t)}</div>
                 <div class="st-list-val" style="font-size:0.75rem;">${td.d} X_X</div>
             </li>`).join('');
 
-        let victims = users.map(us => ({ n: us.n, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
+        let victims = users.map(us => ({ n: us.n, h: us.h, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
         const elVic = document.getElementById('st-hc-victims');
         if(elVic) elVic.innerHTML = victims.map((v, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
-                <div class="st-list-name">${v.n}</div>
+                <div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${v.h}')">${v.n}</div>
                 <div class="st-list-val" style="font-size:0.75rem;">${v.d} X_X</div>
             </li>`).join('');
 
@@ -616,7 +644,7 @@ window.UI = {
         if(elSafe) elSafe.innerHTML = safeTracks.map((st, i) => `
             <li class="st-list-item" style="border-bottom-color:#1a1a1a;">
                 <div class="st-list-rank" style="color:var(--success);">#${i+1}</div>
-                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackName(st.t)}</div>
+                <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackNameFull(st.t)}</div>
                 <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
             </li>`).join('');
 
@@ -633,7 +661,6 @@ window.UI = {
         if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
         if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
         if(!document.getElementById('profile-screen').classList.contains('hidden')) {
-            // Aseguramos que se lea correctamente si es 'me' o el ID real.
             window.UI.showProfile(window.CT.activeProfHandle || 'me');
         }
         if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
@@ -764,7 +791,7 @@ window.UI = {
         document.getElementById('prof-history-list').innerHTML = pageData.map(s => `<tr><td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td><td><span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackName(s.track)}</span></td><td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">${s.d}<button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Fantasma">👻</button></div></td></tr>`).join('');
         document.getElementById('prof-prev').disabled = window.CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${window.CT.profPage + 1}`;
     },
-    changeProfPage(delta) { const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (window.CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { window.CT.profPage += delta; this.renderProfileHistory(); } },
+    changeProfPage(delta) { const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (window.CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { window.CT.profPage += delta; window.UI.renderProfileHistory(); } },
 
     checkAnnouncements: () => {
         const anns = window.CT.dbLocal('a').filter(x => x.active);
@@ -831,7 +858,7 @@ window.UI = {
 
             return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}">
                 <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">
-                    #${t.title}
+                    ${window.UI.formatTrackName(t.title)}
                     <button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
                     ${reorderFavHtml}
                 </div>
