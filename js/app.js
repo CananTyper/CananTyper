@@ -3,38 +3,54 @@
    ================================================================ */
 
 window.App = {
-    currentTrack: null, activeEngine: null,
-    currentRaceContext: null, // Memoria de modalidad (Favs, Categ)
+    currentTrack: null, activeEngine: null, currentRaceContext: null,
     
     handleDragReorder: async (type, domOldIdx, domNewIdx, pageContext) => {
         if (type === 'favs') {
             const u = window.CT.ses(); if(!u) return;
             let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
             let favs = [...(userDoc.favs || [])];
-
             let actualOldIdx = (pageContext * 20) + domOldIdx;
             let actualNewIdx = (pageContext * 20) + domNewIdx;
-
             if(actualOldIdx < 0 || actualOldIdx >= favs.length || actualNewIdx < 0 || actualNewIdx >= favs.length) return;
-
             const [movedItem] = favs.splice(actualOldIdx, 1);
             favs.splice(actualNewIdx, 0, movedItem);
-
-            userDoc.favs = favs;
-            window.db.collection('users').doc(u.h).update({ favs: favs });
+            userDoc.favs = favs; window.db.collection('users').doc(u.h).update({ favs: favs });
         }
+    },
+
+    saveWidgetOrderFromDOM: (tab, gridElementId) => {
+        const grid = document.getElementById(gridElementId); if(!grid) return;
+        const visibleDomIds = Array.from(grid.children).filter(el => !el.classList.contains('hidden')).map(el => el.getAttribute('data-id'));
+        let layout = window.CT.data.statsLayout[tab];
+        layout.forEach(w => { const domIdx = visibleDomIds.indexOf(w.id); w.order = domIdx !== -1 ? domIdx : 999; });
+        window.App.saveStatsLayout();
+    },
+
+    toggleWidgetVisibility: (tab, widgetId) => {
+        let layout = window.CT.data.statsLayout; if (!layout || !layout[tab]) return;
+        let w = layout[tab].find(x => x.id === widgetId);
+        if (w) { w.v = !w.v; window.App.saveStatsLayout(); }
+    },
+
+    cycleWidgetSize: (tab, widgetId) => {
+        let layout = window.CT.data.statsLayout; if (!layout || !layout[tab]) return;
+        let w = layout[tab].find(x => x.id === widgetId);
+        if (w) {
+            if (w.s === 3) w.s = 4; else if (w.s === 4) w.s = 6; else if (w.s === 6) w.s = 8; else if (w.s === 8) w.s = 12; else w.s = 3;
+            window.App.saveStatsLayout();
+        }
+    },
+
+    saveStatsLayout: () => {
+        window.db.collection('config').doc('stats_layout').set(window.CT.data.statsLayout).catch(err => console.error(err));
     },
 
     loadDashboardData: async () => {
         try {
-            const topReq = await window.db.collection('scores').where('hc', '==', false).orderBy('c', 'desc').limit(50).get();
-            window.CT.data.s_top = topReq.docs.map(d => d.data());
-        } catch(e) {
-            try {
-                const topReqFb = await window.db.collection('scores').orderBy('c', 'desc').limit(50).get();
-                window.CT.data.s_top = topReqFb.docs.map(d => d.data()).filter(x => !x.hc);
-            } catch(err) { window.CT.data.s_top = []; }
-        }
+            const topReqFb = await window.db.collection('scores').orderBy('c', 'desc').limit(50).get();
+            window.CT.data.s_top = topReqFb.docs.map(d => d.data()).filter(x => !x.hc);
+        } catch(err) { window.CT.data.s_top = []; }
         
         try {
             const recReq = await window.db.collection('scores').orderBy('id', 'desc').limit(100).get();
@@ -270,5 +286,3 @@ window.App = {
 
     saveCrop: () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; const sW = (imgW * 220) / (viewerImgW * window.UI.cropScale); const sH = (imgH * 220) / (viewerImgH * window.UI.cropScale); const sX = (((viewerImgW * window.UI.cropScale) / 2) - window.UI.cropX - 110) * (imgW / (viewerImgW * window.UI.cropScale)); const sY = (((viewerImgH * window.UI.cropScale) / 2) - window.UI.cropY - 110) * (imgH / (viewerImgH * window.UI.cropScale)); ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ a: compressedBase64 }); window.db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = window.db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); document.getElementById('prof-img').src = compressedBase64; } window.UI.closeCropModal(); }
 };
-
-document.addEventListener('DOMContentLoaded', () => { window.CT.init(); });
