@@ -409,9 +409,8 @@ window.UI = {
         const barContainer = document.getElementById('st-p-bar-container');
         if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
 
-        // Heatmap corregido (sin fondos rojos invasivos)
+        // Heatmap modificado (Sin rojo invasivo)
         const bk = userDoc.bad_keys || {};
-        const maxErr = Math.max(...Object.values(bk), 5); // Requiere 5 errs minimo para alterar opacidad max
         document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
             el.style.removeProperty('border-color');
             el.style.removeProperty('color');
@@ -419,10 +418,11 @@ window.UI = {
 
             const key = el.getAttribute('data-key');
             const errs = bk[key] || 0;
+            
             if(errs >= 5) {
+                // Solo pinta el borde y la letra, sin fondo escandaloso
                 el.style.setProperty('border-color', 'var(--error)', 'important');
                 el.style.setProperty('color', 'var(--error)', 'important');
-                el.style.setProperty('text-shadow', '0 0 5px var(--error)', 'important');
                 el.title = `Errores críticos: ${errs}`;
             } else if (errs > 0) {
                 el.title = `Errores leves: ${errs}`;
@@ -431,7 +431,7 @@ window.UI = {
             }
         });
 
-        // Top 20 List - Rellenado Inteligente
+        // Top 20 List (Relleno Fijo a 20)
         const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
         let top20Html = '';
         for(let i=0; i<20; i++) {
@@ -450,7 +450,7 @@ window.UI = {
         const elTop10 = document.getElementById('st-p-top10-races');
         if(elTop10) elTop10.innerHTML = top20Html;
 
-        // Bottom 20 List - Rellenado Inteligente
+        // Bottom 20 List (Relleno Fijo a 20)
         let trackAvgs = {};
         compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
@@ -474,7 +474,7 @@ window.UI = {
         const elBottom = document.getElementById('st-p-worst-tracks');
         if(elBottom) elBottom.innerHTML = bottom20Html;
 
-        // Words 20 (Corregido 'errores' en vez de 'err')
+        // Words 20 (Relleno Fijo a 20, con "XX errores")
         const bw = userDoc.bad_words || {};
         let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
         let wordsHtml = '';
@@ -485,10 +485,10 @@ window.UI = {
                 <li class="st-list-item">
                     <div class="st-list-rank">#${i+1}</div>
                     <div class="st-list-name">${bwItem.w}</div>
-                    <div class="st-list-val" style="font-size:0.75rem;">${bwItem.errs} errores</div>
+                    <div class="st-list-val" style="font-size:0.75rem; width:80px;">${bwItem.errs} errores</div>
                 </li>`;
             } else {
-                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
             }
         }
         const elWords = document.getElementById('st-p-worst-words');
@@ -568,7 +568,7 @@ window.UI = {
         const tierContainer = document.getElementById('st-e-bar-tier');
         if(tierContainer) tierContainer.innerHTML = window.UI.generateBarChartSVG(tiers);
 
-        // Top 10 Textos (Elite)
+        // Top 10 Textos
         let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         let top10THtml = '';
         for(let i=0; i<10; i++) {
@@ -589,7 +589,7 @@ window.UI = {
         const elTxts = document.getElementById('st-e-table-texts');
         if(elTxts) elTxts.innerHTML = top10THtml;
         
-        // Top 10 Cats (Elite)
+        // Top 10 Cats
         let scoresWithCat = topS.map(s => { return { ...s, cat: window.UI.getTrackCat(s.track) }; });
         let cCounts = {}; scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; }); let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         let top10CHtml = '';
@@ -611,7 +611,7 @@ window.UI = {
         const elCats = document.getElementById('st-e-table-cats');
         if(elCats) elCats.innerHTML = top10CHtml;
 
-        // Top 10 Players (Elite)
+        // Top 10 Players
         let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
         let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
         let topActHtml = '';
@@ -638,7 +638,7 @@ window.UI = {
 
     renderHardcoreStats() {
         const users = window.CT.dbLocal('u');
-        const globalHcScores = (window.CT.data.s_top || []).concat(window.CT.data.s_recent || []).filter(s => s.hc === true);
+        const globalHcScores = (window.CT.data.s_hc_top || []); // Usamos el nuevo motor de consulta puro
         
         let globalDeaths = 0;
         let globalSurvivals = 0;
@@ -771,141 +771,69 @@ window.UI = {
         window.UI.applyStatsLayout();
     },
 
-    renderInfoPage() {
-        if(!window.CT.data.info) return;
-        document.getElementById('info-display-title').innerText = window.CT.data.info.title || "Información";
-        document.getElementById('info-display-content').innerHTML = window.CT.data.info.content || "";
-    },
-
-    refreshActiveViews: () => {
-        if(!document.getElementById('game-screen').classList.contains('hidden')) return; 
-        if(!document.getElementById('home-screen').classList.contains('hidden')) window.UI.renderGlobal();
-        if(!document.getElementById('profile-screen').classList.contains('hidden')) {
-            window.UI.showProfile(window.CT.activeProfHandle || 'me');
-        }
-        if(!document.getElementById('track-screen').classList.contains('hidden')) { if(window.UI.activeTrackCat || window.UI.filterFavs) window.UI.renderTrackList(); else window.UI.showTrackCategorySelect(); }
-        if(!document.getElementById('stats-screen').classList.contains('hidden')) { if(!document.getElementById('pane-stats-personal').classList.contains('hidden')) window.UI.renderPersonalStats(); else if(!document.getElementById('pane-stats-elite').classList.contains('hidden')) window.UI.renderEliteStats(); else window.UI.renderHardcoreStats(); }
-    },
-
-    setUnit: (unit) => {
-        if(window.CT.currentUnit === unit) return;
-        localStorage.removeItem('ct_custom_theme');
-        const u = window.CT.ses(); 
-        if(u && u.theme) { window.db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
-        document.documentElement.removeAttribute('data-custom-theme');
-
-        window.CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); 
-        window.UI.updateUnitVisuals(unit); 
-        window.UI.refreshActiveViews();
-    },
-
-    updateUnitVisuals: (unit) => {
-        document.documentElement.setAttribute('data-theme', unit);
-        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
-        const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
-        
-        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
-        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel', 'th_st_p_top10_vel'];
-        thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; document.getElementById(id).classList.add('active-unit'); } });
-        
-        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
-        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
-        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
-        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
-        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
-
-        const previewEl = document.getElementById('track-preview-modal');
-        if (previewEl && !previewEl.classList.contains('hidden')) {
-            const trackId = document.getElementById('tp-title').innerText.replace('Texto ', '').replace('#', '').split(' | ')[0];
-            window.UI.showTrackPreview(trackId);
-        }
-    },
-
-    updateFastModeVisuals: () => {
-        const textLabel = window.CT.data.ui && window.CT.data.ui['t_sett_fast'] ? window.CT.data.ui['t_sett_fast'].v : '⚡ Modo Rápido:';
-        const onVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_on'] ? window.CT.data.ui['t_sett_fast_on'].v : 'SI';
-        const offVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_off'] ? window.CT.data.ui['t_sett_fast_off'].v : 'NO';
-        const btn = document.getElementById('btn-fast-mode');
-        if(btn) btn.innerText = `${textLabel} ${window.CT.fastMode ? onVal : offVal}`;
-    },
-
-    toggleFastMode: () => {
-        window.CT.fastMode = !window.CT.fastMode;
-        localStorage.setItem('ct_fast_mode', window.CT.fastMode);
-        window.UI.updateFastModeVisuals();
-    },
-
-    updateCategorySelects() {
-        const cats = window.CT.dbLocal('c');
-        const trnCats = cats.filter(c => c.name.startsWith('[TRN]'));
-        const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
-        const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
-        const trnDelCatSel = document.getElementById('trn-delete-cat-select'); if(trnDelCatSel) trnDelCatSel.innerHTML = trnOptions;
-    },
-
-    renderTrainDropdown() {
-        const tPurge = window.CT.data.ui && window.CT.data.ui['t_btn_tr_purge'] ? window.CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
-        let html = `<button onclick="window.App.startPurge()">${tPurge}</button>`;
-        const trnCats = window.CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
-        trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => {
-            const cleanName = c.name.replace('[TRN] ', '');
-            html += `<button onclick="window.App.startTrnCategory('${c.name}')">⚡ ${cleanName}</button>`;
-        });
-        const drp = document.getElementById('train-dropdown');
-        if(drp) drp.innerHTML = html;
-    },
-
     renderGlobal() {
-        const todayAR = window.CT.getARDate();
-        const typeEl = document.getElementById('leaderboard-type'); const rankTypeEl = document.getElementById('ranking-type');
-        if(!typeEl || !rankTypeEl) return; 
+        try {
+            const todayAR = window.CT.getARDate();
+            const typeEl = document.getElementById('leaderboard-type'); 
+            const rankTypeEl = document.getElementById('ranking-type');
+            if(!typeEl || !rankTypeEl) return; 
 
-        let filteredScores = typeEl.value === 'today' ? (window.CT.data.s_recent || []).filter(s => !s.hc && s.d === todayAR) : (window.CT.data.s_top || []).filter(s => !s.hc);
-        let limitTimes = typeEl.value === 'today' ? 10 : 20; 
-        filteredScores.sort((a,b) => b.c - a.c);
-        
-        document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => {
-            const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
-            return `<tr>
-                <td class="${posClass}">${idx + 1}</td>
-                <td><div class="player-link" onclick="window.UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || window.CT.defAvatar}"></div><span>${s.n}</span></div></td>
-                <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td>
-                <td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">
-                    <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${window.UI.formatTrackName(s.track)}</span>
-                    <button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Competir contra el Fantasma">👻</button>
-                </div></td>
-            </tr>`;
-        }).join('');
+            let recent = window.CT.data.s_recent || [];
+            let top = window.CT.data.s_top || [];
 
-        const rankingMode = rankTypeEl.value;
-        const users = window.CT.dbLocal('u');
-        let playerStats = users.map(u => {
-            const history = u.hi || []; 
-            let averageCPM = (rankingMode === 'last10') ? (history.slice(-10).length ? Math.round(history.slice(-10).reduce((a,b)=>a+b)/history.slice(-10).length) : 0) : (history.length ? Math.round(history.reduce((a,b)=>a+b)/history.length) : 0);
-            return { n: u.n, a: u.a, h: u.h, avgCPM: averageCPM, total: history.length };
-        }).filter(u => u.total > 0).sort((a,b) => b.avgCPM - a.avgCPM);
+            let filteredScores = typeEl.value === 'today' ? recent.filter(s => !s.hc && s.d === todayAR) : top.filter(s => !s.hc);
+            let limitTimes = typeEl.value === 'today' ? 10 : 20; 
+            filteredScores.sort((a,b) => b.c - a.c);
+            
+            document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, limitTimes).map((s, idx) => {
+                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
+                return `<tr>
+                    <td class="${posClass}">${idx + 1}</td>
+                    <td><div class="player-link" onclick="window.UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || window.CT.defAvatar}"></div><span>${s.n}</span></div></td>
+                    <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td>
+                    <td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+                        <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${window.UI.formatTrackName(s.track)}</span>
+                        <button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Competir contra el Fantasma">👻</button>
+                    </div></td>
+                </tr>`;
+            }).join('');
 
-        document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => {
-            const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
-            return `<tr>
-                <td class="${posClass}">${idx + 1}</td>
-                <td><div class="player-link" onclick="window.UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || window.CT.defAvatar}"></div><span>${p.n}</span></div></td>
-                <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
-            </tr>`;
-        }).join('');
+            const rankingMode = rankTypeEl.value;
+            const users = window.CT.dbLocal('u');
+            let playerStats = users.map(u => {
+                const history = (u.hi || []).filter(val => typeof val === 'number' && !isNaN(val)); 
+                let averageCPM = 0;
+                if(rankingMode === 'last10') {
+                    const l10 = history.slice(-10);
+                    averageCPM = l10.length ? Math.round(l10.reduce((a,b)=>a+b, 0) / l10.length) : 0;
+                } else {
+                    averageCPM = history.length ? Math.round(history.reduce((a,b)=>a+b, 0) / history.length) : 0;
+                }
+                return { n: u.n, a: u.a, h: u.h, avgCPM: averageCPM, total: history.length };
+            }).filter(u => u.total > 0).sort((a,b) => b.avgCPM - a.avgCPM);
+
+            document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => {
+                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
+                return `<tr>
+                    <td class="${posClass}">${idx + 1}</td>
+                    <td><div class="player-link" onclick="window.UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || window.CT.defAvatar}"></div><span>${p.n}</span></div></td>
+                    <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
+                </tr>`;
+            }).join('');
+        } catch(e) { console.error("Error rendering global:", e); }
     },
 
     async showProfile(who) {
         try {
             const currentSes = window.CT.ses(); 
+            if (!currentSes) return;
             const targetHandle = (who === 'me') ? currentSes.h : who;
             
             let u = window.CT.dbLocal('u').find(x => x.h === targetHandle); 
             if(!u) {
-                // Failsafe: Búsqueda directa en DB si la caché falló o es un usuario viejo.
                 const doc = await window.db.collection('users').doc(targetHandle).get();
                 if(doc.exists) u = doc.data();
-                else return; // Usuario eliminado
+                else return;
             }
             
             window.CT.activeProfHandle = u.h;
@@ -922,13 +850,13 @@ window.UI = {
             const isMe = (currentSes && u.h === currentSes.h);
             document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
             window.UI.show('profile-screen');
-        } catch (error) { console.error(error); }
-    },
-
-    closeProfile: () => {
-        window.UI.show('home-screen'); // Vuelve al inicio en lugar de solo ocultar (mantenimiento de estado DOM correcto)
+        } catch (error) { console.error("Error en showProfile:", error); }
     },
     
+    closeProfile: () => {
+        window.UI.show('home-screen');
+    },
+
     toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
     toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
     toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
