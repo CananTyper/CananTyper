@@ -98,12 +98,10 @@ window.CT = {
 
         window.db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
-            if(this.data.p.length === 0) { window.db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: Date.now() }); }
             localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); window.UI.refreshActiveViews(); 
         });
         window.db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
-            if(this.data.c.length === 0) { window.db.collection('categories').doc("General").set({name: "General", order: Date.now()}); }
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); window.UI.updateCategorySelects(); window.UI.renderTrainDropdown(); window.UI.refreshActiveViews(); 
         });
         window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); window.UI.checkAnnouncements(); window.UI.refreshActiveViews(); });
