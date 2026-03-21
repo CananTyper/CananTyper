@@ -9,11 +9,11 @@ window.UI = {
     activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
     
-    // Formateadores de Texto ("Texto XX")
-    formatTrackName: (t) => { return isNaN(t) ? t : 'Texto ' + t; },
+    // Formateadores de Texto
+    formatTrackName: (t) => { return isNaN(t) ? t : '#' + t; },
     formatTrackNameFull: (t) => { 
         const cat = window.UI.getTrackCat(t);
-        const name = window.UI.formatTrackName(t);
+        const name = isNaN(t) ? t : 'Texto ' + t;
         if (cat && cat !== 'General' && cat !== '-') {
             return name + ' | ' + cat.replace('[TRN] ', '');
         }
@@ -304,9 +304,8 @@ window.UI = {
         return tObj ? (tObj.c || 'General').trim() : 'General';
     },
 
-    // PREVIEW DE PISTAS (MODAL)
     showTrackPreview: (trackId) => {
-        const track = window.CT.dbLocal('p').find(t => t.id.toString() === trackId.toString());
+        const track = window.CT.dbLocal('p').find(t => t.id.toString() === trackId.toString() || t.title.toString() === trackId.toString());
         if(!track) return;
         document.getElementById('tp-title').innerText = window.UI.formatTrackNameFull(track.title);
         document.getElementById('tp-cat').innerText = (track.c || 'General').trim();
@@ -413,71 +412,71 @@ window.UI = {
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 5); 
         document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
+            el.style.removeProperty('background');
+            el.style.removeProperty('border-color');
+            el.style.removeProperty('color');
+
             const key = el.getAttribute('data-key');
             const errs = bk[key] || 0;
-            if(errs > 0) {
-                const pct = (errs / maxErr) * 100;
-                const bgPct = Math.max(5, Math.min(pct * 0.5, 50)); 
-                el.style.setProperty('background', `color-mix(in srgb, var(--error) ${bgPct}%, #0a0a0a)`, 'important');
-                el.style.setProperty('border-color', `color-mix(in srgb, var(--error) ${bgPct + 20}%, #222)`, 'important');
-                el.style.setProperty('color', '#ffffff', 'important');
+            if(errs >= 5) {
+                el.style.setProperty('border-color', 'var(--error)', 'important');
+                el.style.setProperty('color', 'var(--error)', 'important');
                 el.title = `Errores críticos: ${errs}`;
+            } else if (errs > 0) {
+                el.title = `Errores leves: ${errs}`;
             } else {
-                el.style.removeProperty('background');
-                el.style.removeProperty('border-color');
-                el.style.removeProperty('color');
                 el.title = 'Estable';
             }
         });
 
-        // Top 10 List - Rellenado Inteligente
+        // Top 20 List
         const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
-        let top10Html = '';
-        for(let i=0; i<10; i++) {
+        let top20Html = '';
+        for(let i=0; i<20; i++) {
             if(compScoresDesc[i]) {
                 const s = compScoresDesc[i];
-                top10Html += `
+                top20Html += `
                 <li class="st-list-item">
                     <div class="st-list-rank">#${i+1}</div>
                     <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div>
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                 </li>`;
             } else {
-                top10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elTop10 = document.getElementById('st-p-top10-races');
-        if(elTop10) elTop10.innerHTML = top10Html;
+        if(elTop10) elTop10.innerHTML = top20Html;
 
-        // Zonas de Fricción (Bottom 10) - Rellenado Inteligente
+        // Bottom 20 List
         let trackAvgs = {};
         compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
-        let bottom10 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 10);
-        if(bottom10.length === 0) bottom10 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 10);
+        let bottom20 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 20);
+        if(bottom20.length === 0) bottom20 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 20);
         
-        let bottom10Html = '';
-        for(let i=0; i<10; i++) {
-            if(bottom10[i]) {
-                const tr = bottom10[i];
-                bottom10Html += `
+        let bottom20Html = '';
+        for(let i=0; i<20; i++) {
+            if(bottom20[i]) {
+                const tr = bottom20[i];
+                bottom20Html += `
                 <li class="st-list-item">
                     <div class="st-list-rank">#${i+1}</div>
                     <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div>
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
                 </li>`;
             } else {
-                bottom10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elBottom = document.getElementById('st-p-worst-tracks');
-        if(elBottom) elBottom.innerHTML = bottom10Html;
+        if(elBottom) elBottom.innerHTML = bottom20Html;
 
-        // Palabras Críticas (Top 10) - Rellenado Inteligente
+        // Words 20
         const bw = userDoc.bad_words || {};
-        let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 10);
+        let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
         let wordsHtml = '';
-        for(let i=0; i<10; i++) {
+        for(let i=0; i<20; i++) {
             if(badWordsList[i]) {
                 const bwItem = badWordsList[i];
                 wordsHtml += `
@@ -487,7 +486,7 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem;">${bwItem.errs} err</div>
                 </li>`;
             } else {
-                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elWords = document.getElementById('st-p-worst-words');
@@ -567,7 +566,7 @@ window.UI = {
         const tierContainer = document.getElementById('st-e-bar-tier');
         if(tierContainer) tierContainer.innerHTML = window.UI.generateBarChartSVG(tiers);
 
-        // Top 10 Textos
+        // Top 10 Textos (Elite)
         let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         let top10THtml = '';
         for(let i=0; i<10; i++) {
@@ -582,13 +581,13 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
                 </li>`;
             } else {
-                top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elTxts = document.getElementById('st-e-table-texts');
         if(elTxts) elTxts.innerHTML = top10THtml;
         
-        // Top 10 Cats
+        // Top 10 Cats (Elite)
         let scoresWithCat = topS.map(s => { return { ...s, cat: window.UI.getTrackCat(s.track) }; });
         let cCounts = {}; scoresWithCat.forEach(s => { cCounts[s.cat] = (cCounts[s.cat] || 0) + 1; }); let top10C = Object.keys(cCounts).sort((a,b) => cCounts[b] - cCounts[a]).slice(0, 10);
         let top10CHtml = '';
@@ -604,13 +603,13 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
                 </li>`;
             } else {
-                top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elCats = document.getElementById('st-e-table-cats');
         if(elCats) elCats.innerHTML = top10CHtml;
 
-        // Top 10 Players
+        // Top 10 Players (Elite)
         let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
         let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
         let topActHtml = '';
@@ -626,7 +625,7 @@ window.UI = {
                     <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
                 </li>`;
             } else {
-                topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elAct = document.getElementById('st-e-table-players');
@@ -675,7 +674,7 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                 </li>`;
             } else {
-                hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elHcTop = document.getElementById('st-hc-top10');
@@ -699,7 +698,7 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem;">${td.d} ☠️</div>
                 </li>`;
             } else {
-                worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elHcWorst = document.getElementById('st-hc-worst');
@@ -718,7 +717,7 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} VICS</div>
                 </li>`;
             } else {
-                legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elLeg = document.getElementById('st-hc-legends');
@@ -737,11 +736,35 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem;">${v.d} ☠️</div>
                 </li>`;
             } else {
-                vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
+                vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elVic = document.getElementById('st-hc-victims');
         if(elVic) elVic.innerHTML = vicHtml;
+
+        // Refugios Seguros
+        let hcSurvivals = {};
+        globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
+        let safeTracks = Object.keys(hcSurvivals)
+            .map(k => ({ t: k, s: hcSurvivals[k] - (trackDeaths[k] || 0) }))
+            .sort((a,b) => b.s - a.s).slice(0, 10);
+        
+        let safeHtml = '';
+        for(let i=0; i<10; i++) {
+            if(safeTracks[i]) {
+                const st = safeTracks[i];
+                safeHtml += `
+                <li class="st-list-item" style="border-bottom-color:#1a1a1a;">
+                    <div class="st-list-rank" style="color:var(--success);">#${i+1}</div>
+                    <div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackNameFull(st.t)}</div>
+                    <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
+                </li>`;
+            } else {
+                safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+            }
+        }
+        const elSafe = document.getElementById('st-hc-safe');
+        if(elSafe) elSafe.innerHTML = safeHtml;
 
         window.UI.applyStatsLayout();
     },
@@ -789,7 +812,6 @@ window.UI = {
         if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
         if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
 
-        // Force modal re-render to catch blurrable class update
         const previewEl = document.getElementById('track-preview-modal');
         if (previewEl && !previewEl.classList.contains('hidden')) {
             const trackId = document.getElementById('tp-title').innerText.replace('Texto ', '').replace('#', '').split(' | ')[0];
@@ -847,7 +869,7 @@ window.UI = {
                 <td><div class="player-link" onclick="window.UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || window.CT.defAvatar}"></div><span>${s.n}</span></div></td>
                 <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td>
                 <td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">
-                    <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${isNaN(s.track) ? s.track : '#' + s.track}</span>
+                    <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${window.UI.formatTrackName(s.track)}</span>
                     <button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Competir contra el Fantasma">👻</button>
                 </div></td>
             </tr>`;
