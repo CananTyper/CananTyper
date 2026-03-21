@@ -155,7 +155,7 @@
                     <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Análisis de rendimiento</p>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
-                    <button id="btn-stats-widgets" class="btn-outline hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color:#ffd700; color:#ffd700;">⚙️ Widgets</button>
+                    <button id="btn-stats-widgets" class="btn-outline admin-only hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color:#ffd700; color:#ffd700;">⚙️ Widgets</button>
                     <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
                 </div>
             </header>
@@ -168,9 +168,8 @@
             <div class="st-topbar" style="border-radius:12px; margin-bottom:15px;">
                 <div class="st-tabs">
                     <button id="t-st-pe" class="st-tab-btn active" onclick="window.UI.switchStatsTab('personal')">Personales</button>
-                    <button id="t-st-ge" class="st-tab-btn" onclick="window.UI.switchStatsTab('general')">Servidor</button>
                     <button id="t-st-el" class="st-tab-btn" onclick="window.UI.switchStatsTab('elite')">Élite</button>
-                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')">Hardcore 💀</button>
+                    <button id="t-st-hc" class="st-tab-btn st-tab-hc" onclick="window.UI.switchStatsTab('hc')" style="color:var(--error)">Hardcore 💀</button>
                 </div>
             </div>
 
@@ -210,7 +209,7 @@
                             <div class="st-widget-header"><span class="drag-handle">≡ TENDENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
                             <div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-trend-val">0%</div><div class="st-sub">VS PRIMERAS 10</div></div>
                         </div>
-                        <div class="st-widget st-widget-error st-col-4" data-id="w-p-heat">
+                        <div class="st-widget st-widget-error st-col-8" data-id="w-p-heat">
                             <div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div>
                             <div class="st-widget-content st-flex-center">
                                 <div class="keyboard-container heatmap-cananstudio" style="padding:0;">
@@ -233,17 +232,6 @@
                             <div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-words"></ul></div>
                         </div>
                     </div>
-                </div>
-
-                <div id="pane-stats-general" class="st-pane hidden">
-                     <div class="st-grid">
-                        <div class="st-widget st-col-3"><div class="st-widget-header"><span>≡ USUARIOS</span></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-g-users-val">0</div></div></div>
-                        <div class="st-widget st-col-3"><div class="st-widget-header"><span>≡ CARRERAS GLOBALES</span></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-g-races-val">0</div></div></div>
-                        <div class="st-widget st-col-3"><div class="st-widget-header"><span>≡ PROMEDIO SRV</span></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-g-avg">0</div></div></div>
-                        <div class="st-widget st-card-highlight st-col-3"><div class="st-widget-header"><span>≡ RÉCORD ABSOLUTO</span></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-g-record">0</div></div></div>
-                        <div class="st-widget st-col-6"><div class="st-widget-header"><span>≡ TEXTOS TOP</span></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><table class="data-table" style="width:100%;"><thead><tr><th>Texto</th><th>Jugadas</th></tr></thead><tbody id="st-g-top-texts"></tbody></table></div></div>
-                        <div class="st-widget st-col-6"><div class="st-widget-header"><span>≡ CATEGORÍAS TOP</span></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><table class="data-table" style="width:100%;"><thead><tr><th>Categoría</th><th>Jugadas</th></tr></thead><tbody id="st-g-top-cats"></tbody></table></div></div>
-                     </div>
                 </div>
 
                 <div id="pane-stats-elite" class="st-pane hidden">
