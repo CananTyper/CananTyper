@@ -93,7 +93,7 @@ window.UI = {
     
     initLobby() {
         if(window.CT.data.maint && window.CT.data.maint.active) { const u = window.CT.ses(); if(!u || u.r !== 'admin') { window.UI.checkMaintenance(); return; } }
-        const u = window.CT.ses(); if(!u) return this.show('auth-screen');
+        const u = window.CT.ses(); if(!u) return window.UI.show('auth-screen');
 
         window.updateDiscordStatus("En el menú principal", `Piloto: ${u.n}`, false);
 
@@ -102,13 +102,13 @@ window.UI = {
         document.getElementById('lobby-avatar').src = u.a || window.CT.defAvatar;
         
         window.UI.updateUnitVisuals(window.CT.currentUnit); 
-        this.renderGlobal(); 
+        window.UI.renderGlobal(); 
         window.UI.renderTrainDropdown();
-        this.show('home-screen');
+        window.UI.show('home-screen');
         window.UI.checkAnnouncements(); 
     },
 
-    showLobby() { this.initLobby(); },
+    showLobby() { window.UI.initLobby(); },
     
     async showStats() { 
         const u = window.CT.ses();
@@ -120,12 +120,12 @@ window.UI = {
                 document.getElementById('btn-stats-widgets').classList.add('hidden');
             }
         }
-        this.switchStatsTab('personal'); 
+        window.UI.switchStatsTab('personal'); 
         window.UI.updateUnitVisuals(window.CT.currentUnit); 
-        this.show('stats-screen'); 
+        window.UI.show('stats-screen'); 
     },
     
-    showInfo() { this.renderInfoPage(); this.show('info-screen'); },
+    showInfo() { window.UI.renderInfoPage(); window.UI.show('info-screen'); },
 
     switchStatsTab(tab) {
         window.UI.activeStatsTab = tab;
@@ -136,14 +136,22 @@ window.UI = {
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
         
-        if (tab === 'personal') this.renderPersonalStats(); 
-        else if (tab === 'elite') this.renderEliteStats();
-        else if (tab === 'hc') this.renderHardcoreStats();
+        if (tab === 'personal') window.UI.renderPersonalStats(); 
+        else if (tab === 'elite') window.UI.renderEliteStats();
+        else if (tab === 'hc') window.UI.renderHardcoreStats();
 
         const u = window.CT.ses();
         if(u && u.r === 'admin') {
             window.UI.renderWidgetsMenu();
         }
+    },
+
+    cycleWidgetSize: (btn) => {
+        const widget = btn.closest('.st-widget');
+        if (!widget) return;
+        const tab = window.UI.activeStatsTab;
+        const widgetId = widget.getAttribute('data-id');
+        window.App.cycleWidgetSize(tab, widgetId);
     },
 
     applyStatsLayout() {
@@ -159,13 +167,12 @@ window.UI = {
             
             const arr = layout[tab] || [];
             
-            // Ordenar por index antes de inyectar
             arr.sort((a,b) => (a.order || 0) - (b.order || 0));
 
             arr.forEach((widgetConf, idx) => {
                 const wEl = grid.querySelector(`[data-id="${widgetConf.id}"]`);
                 if(wEl) {
-                    wEl.style.order = idx; // CSS Flex/Grid Order estricto
+                    wEl.style.order = idx;
                     wEl.classList.toggle('hidden', !widgetConf.v);
                     
                     wEl.className = wEl.className.replace(/st-col-\d+/g, '').trim();
@@ -194,7 +201,6 @@ window.UI = {
         const arr = layout[tab] || [];
         
         let html = '';
-        // Respetamos el orden para el menú también
         [...arr].sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(w => {
             const el = document.querySelector(`[data-id="${w.id}"] .st-widget-header span:not(.drag-handle)`);
             const title = el ? el.innerText.trim() : w.id;
@@ -213,6 +219,7 @@ window.UI = {
     generateLineChartSVG: (dataArray) => {
         if(!dataArray || dataArray.length < 2) return '';
         const max = Math.max(...dataArray, 10); 
+        const min = Math.min(...dataArray, max);
         const width = 1000;
         const height = 220; 
         const stepX = width / (dataArray.length - 1);
@@ -230,11 +237,12 @@ window.UI = {
         let circles = dataArray.map((val, i) => {
             const x = i * stepX;
             const y = height - ((val / max) * (height - 20)) - 10;
-            return `<circle cx="${x}" cy="${y}" r="4" class="st-chart-point" style="stroke:var(--p);"></circle>`;
+            return `<circle cx="${x}" cy="${y}" r="4" class="st-chart-point" style="stroke:var(--p);"></circle>
+                    <text x="${x}" y="${y - 12}" fill="#aaa" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">${val}</text>`;
         }).join('');
 
         return `
-        <svg class="st-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+        <svg class="st-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;">
             <defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:transparent;stop-opacity:0" /></linearGradient></defs>
             <path class="st-chart-area" d="${pathD}" style="fill:url(#grad-p);"></path>
             <polyline class="st-chart-line" points="${points}" style="stroke:var(--p);"></polyline>
@@ -315,7 +323,6 @@ window.UI = {
         const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
         const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
 
-        // Nuevo: Récord Personal Absoluto
         const maxVal = compScores.length ? Math.max(...compScores.map(s => s.c)) : 0;
         const elRec = document.getElementById('st-p-record-val'); if(elRec) elRec.innerText = window.UI.formatValue(maxVal);
         
@@ -327,6 +334,10 @@ window.UI = {
             if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } 
         }
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
+
+        const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
+        const elDonut = document.getElementById('st-p-donut-acc');
+        if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
         
         const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
         const svgContainer = document.getElementById('st-p-svg-container');
@@ -347,6 +358,7 @@ window.UI = {
         });
         const barContainer = document.getElementById('st-p-bar-container');
         if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
+
 
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
@@ -429,10 +441,18 @@ window.UI = {
         let mTop1Name = mTop1h ? (users.find(u=>u.h===mTop1h)||{n:"-"}).n : "-";
         const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
         const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
+
+        // Donut Monopolio Global
+        const totalTop1s = Object.values(top1c).reduce((a,b) => a+b, 0);
+        const monopolyRate = totalTop1s > 0 ? (top1c[mTop1h] / totalTop1s) * 100 : 0;
+        const elDonutE = document.getElementById('st-e-donut-monopoly');
+        if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(monopolyRate, 'var(--p)');
+        const elDonutUser = document.getElementById('st-e-donut-user');
+        if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 8);
         
         const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
         const eSvgContainer = document.getElementById('st-e-svg-container');
-        if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '';
+        if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
 
         let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         const elTxts = document.getElementById('st-e-table-texts');
@@ -479,34 +499,46 @@ window.UI = {
     },
 
     renderHardcoreStats() {
-        const u = window.CT.ses(); if(!u) return;
-        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        const users = window.CT.dbLocal('u');
+        const globalHcScores = (window.CT.data.s_top || []).concat(window.CT.data.s_recent || []).filter(s => s.hc === true);
         
-        const hcScores = (window.CT.data.userScores[u.h] || []).filter(s => s.hc === true);
+        let globalDeaths = 0;
+        let globalSurvivals = 0;
+        let globalRecord = 0;
+
+        users.forEach(us => {
+            globalDeaths += (us.hc_deaths || 0);
+            globalSurvivals += (us.hc_survivals || 0);
+            const userHcMax = us.hi_hc && us.hi_hc.length ? Math.max(...us.hi_hc) : 0;
+            if(userHcMax > globalRecord) globalRecord = userHcMax;
+        });
+
+        const totalAttempts = globalSurvivals + globalDeaths;
+        const survRate = totalAttempts > 0 ? ((globalDeaths / totalAttempts) * 100) : 0;
         
-        const survCount = hcScores.length;
-        const deaths = userDoc.hc_deaths || 0;
-        const totalAttempts = survCount + deaths;
-        const survRate = totalAttempts > 0 ? ((deaths / totalAttempts) * 100) : 0;
-        
-        const elRec = document.getElementById('st-hc-record'); if(elRec) elRec.innerText = window.UI.formatValue(userDoc.hi_hc && userDoc.hi_hc.length > 0 ? Math.max(...userDoc.hi_hc) : 0);
-        const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = survCount;
-        const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = deaths;
+        const elRec = document.getElementById('st-hc-record'); if(elRec) elRec.innerText = window.UI.formatValue(globalRecord);
+        const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = globalSurvivals;
+        const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = globalDeaths;
         const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
 
         const elDonut = document.getElementById('st-hc-donut-rate');
         if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
 
-        const top10 = [...hcScores].sort((a,b) => b.c - a.c).slice(0, 10);
+        const top10 = [...globalHcScores].sort((a,b) => b.c - a.c).slice(0, 10);
         const elHcTop = document.getElementById('st-hc-top10');
         if(elHcTop) elHcTop.innerHTML = top10.map((s, i) => `
             <li class="st-list-item">
                 <div class="st-list-rank">#${i+1}</div>
                 <div class="st-list-name">${s.track}</div>
+                <div class="st-list-meta" style="color:var(--text-muted);">${s.n}</div>
                 <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
             </li>`).join('');
         
-        let trackDeaths = userDoc.hc_track_deaths || {};
+        let trackDeaths = {};
+        users.forEach(us => {
+            let td = us.hc_track_deaths || {};
+            for(let k in td) { trackDeaths[k] = (trackDeaths[k] || 0) + td[k]; }
+        });
         let deathList = Object.keys(trackDeaths).map(k => ({ t: k, d: trackDeaths[k] })).sort((a,b) => b.d - a.d).slice(0, 10);
         const elHcWorst = document.getElementById('st-hc-worst');
         if(elHcWorst) elHcWorst.innerHTML = deathList.map((td, i) => `
@@ -516,7 +548,6 @@ window.UI = {
                 <div class="st-list-val" style="font-size:0.75rem;">${td.d} X_X</div>
             </li>`).join('');
 
-        const users = window.CT.dbLocal('u');
         let victims = users.map(us => ({ n: us.n, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d).slice(0, 10);
         const elVic = document.getElementById('st-hc-victims');
         if(elVic) elVic.innerHTML = victims.map((v, i) => `
@@ -645,6 +676,31 @@ window.UI = {
         }).join('');
     },
 
+    async showProfile(who) {
+        try {
+            const currentSes = window.CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
+            const u = window.CT.dbLocal('u').find(x => x.h === targetHandle); if(!u) return;
+            window.CT.activeProfHandle = u.h;
+            
+            await window.App.getUserScores(u.h);
+            
+            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
+            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
+            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
+            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
+            const bestCPM = total ? Math.max(...hi) : 0;
+            document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
+            window.CT.profPage = 0; window.UI.renderProfileHistory();
+            const isMe = (currentSes && u.h === currentSes.h);
+            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
+            window.UI.show('profile-screen');
+        } catch (error) { console.error(error); }
+    },
+    
+    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
+    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
+    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
+    
     openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); window.UI.toggleSettings(); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
 
