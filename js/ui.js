@@ -1,62 +1,41 @@
 /* ================================================================
-    CANANTYPER - INTERFAZ DE USUARIO (UI) - PARTE 1
+    CANANTYPER - INTERFAZ DE USUARIO (UI) - UNIFICADO
    ================================================================ */
 
 window.UI = {
     listLayout: 'layout-list', trackPage: 0, activeTrackCat: null, filterFavs: false,
-    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null,
-    activeStatsTab: 'personal',
-    formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
-    
-    formatTrackName: (t) => { if(!t) return 'Desconocido'; return isNaN(t) ? t : '#' + t; },
+    cropX: 0, cropY: 0, cropScale: 1, isDragging: false, startX: 0, startY: 0, currentAnnId: null, activeStatsTab: 'personal',
+    formatValue: (cpm) => Math.round((window.CT.currentUnit === 'wpm') ? cpm / window.CT.charPerWord : cpm),
+    formatTrackName: (t) => (!t ? 'Desconocido' : (isNaN(t) ? t : '#' + t)),
     formatTrackNameFull: (t) => { 
         if(!t) return 'Desconocido';
         const cat = window.UI.getTrackCat(t);
         const name = isNaN(t) ? t : 'Texto ' + t;
-        if (cat && cat !== 'General' && cat !== '-') return name + ' | ' + cat.replace('[TRN] ', '');
-        return name + ' | ' + cat; 
+        return (cat && cat !== 'General' && cat !== '-') ? name + ' | ' + cat.replace('[TRN] ', '') : name + ' | ' + cat; 
     },
-
     initSortable: (containerId, type, pageContext = 0) => {
         if (typeof Sortable === 'undefined') return;
         const container = document.getElementById(containerId);
         if (!container) return;
         if (container._sortable) { container._sortable.destroy(); container._sortable = null; }
         if (type === 'track' && !window.UI.filterFavs) return;
-
-        if (type.startsWith('widgets-')) {
-            container._sortable = Sortable.create(container, {
-                handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
-                onEnd: (evt) => {
-                    if (evt.oldIndex === evt.newIndex) return;
-                    const tab = type.split('-')[1];
-                    window.App.saveWidgetOrderFromDOM(tab, containerId);
-                }
-            });
-            return;
-        }
-
         container._sortable = Sortable.create(container, {
             handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
             onEnd: (evt) => {
                 if (evt.oldIndex === evt.newIndex) return;
-                window.App.handleDragReorder('favs', evt.oldIndex, evt.newIndex, pageContext);
+                if (type.startsWith('widgets-')) window.App.saveWidgetOrderFromDOM(type.split('-')[1], containerId);
+                else window.App.handleDragReorder('favs', evt.oldIndex, evt.newIndex, pageContext);
             }
         });
     },
-
     setLayout: (mode) => {
         window.UI.listLayout = mode; localStorage.setItem('ct_layout', mode);
         document.querySelectorAll('.layout-btn').forEach(btn => {
-            if (btn.dataset.mode === mode) {
-                btn.style.borderColor = 'var(--p)'; btn.style.color = 'var(--p)'; btn.style.boxShadow = '0 0 10px color-mix(in srgb, var(--p) 20%, transparent)';
-            } else {
-                btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--text-muted)'; btn.style.boxShadow = 'none';
-            }
+            if (btn.dataset.mode === mode) { btn.style.borderColor = 'var(--p)'; btn.style.color = 'var(--p)'; btn.style.boxShadow = '0 0 10px color-mix(in srgb, var(--p) 20%, transparent)'; } 
+            else { btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--text-muted)'; btn.style.boxShadow = 'none'; }
         });
         window.UI.refreshActiveViews();
     },
-
     checkMaintenance: () => {
         const m = window.CT.data.maint || { active: false, info: true, theme: true };
         const u = window.CT.ses(); const isAdmin = u && u.r === 'admin';
@@ -65,178 +44,111 @@ window.UI = {
             document.getElementById('maint-title-display').innerText = m.title || 'Mantenimiento';
             document.getElementById('maint-msg-display').innerText = m.msg || 'Volvemos pronto.';
             window.UI.show('maintenance-screen');
-        } else {
-            if(!document.getElementById('maintenance-screen').classList.contains('hidden')) { if(u) window.UI.showLobby(); else window.UI.show('auth-screen'); }
+        } else if(!document.getElementById('maintenance-screen').classList.contains('hidden')) { 
+            if(u) window.UI.showLobby(); else window.UI.show('auth-screen'); 
         }
-        const infoEnabled = m.info !== false; const themeEnabled = m.theme !== false;
         const navInfoBtn = document.getElementById('btn-nav-info');
-        if(navInfoBtn) { if(!infoEnabled && !isAdmin) navInfoBtn.classList.add('hidden'); else navInfoBtn.classList.remove('hidden'); }
+        if(navInfoBtn) { if(m.info === false && !isAdmin) navInfoBtn.classList.add('hidden'); else navInfoBtn.classList.remove('hidden'); }
         const themeBtn = document.getElementById('t_theme_btn');
-        if(themeBtn) { if(!themeEnabled && !isAdmin) themeBtn.classList.add('hidden'); else themeBtn.classList.remove('hidden'); }
+        if(themeBtn) { if(m.theme === false && !isAdmin) themeBtn.classList.add('hidden'); else themeBtn.classList.remove('hidden'); }
     },
-    
     show: (id) => { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); },
     toggleAuth: (login) => { document.getElementById('login-form').classList.toggle('hidden', !login); document.getElementById('register-form').classList.toggle('hidden', login); },
-    
-    initLobby() {
+    initLobby: () => {
         if(window.CT.data.maint && window.CT.data.maint.active) { const u = window.CT.ses(); if(!u || u.r !== 'admin') { window.UI.checkMaintenance(); return; } }
         const u = window.CT.ses(); if(!u) return window.UI.show('auth-screen');
-
         window.updateDiscordStatus("En el menú principal", `Piloto: ${u.n}`, false);
         document.getElementById('val-display-name').innerText = u.n;
         document.getElementById('val-username').innerText = u.h;
         document.getElementById('lobby-avatar').src = u.a || window.CT.defAvatar;
-        
-        window.UI.updateUnitVisuals(window.CT.currentUnit); 
-        window.UI.renderGlobal(); 
-        window.UI.renderTrainDropdown();
-        window.UI.show('home-screen');
-        window.UI.checkAnnouncements(); 
+        window.UI.updateUnitVisuals(window.CT.currentUnit); window.UI.renderGlobal(); window.UI.renderTrainDropdown(); window.UI.show('home-screen'); window.UI.checkAnnouncements(); 
     },
-
-    showLobby() { window.UI.initLobby(); },
-    
+    showLobby: () => window.UI.initLobby(),
     async showStats() { 
         const u = window.CT.ses();
         if(u) {
             await window.App.getUserScores(u.h); 
-            if(u.r === 'admin') document.getElementById('btn-stats-widgets').classList.remove('hidden');
-            else document.getElementById('btn-stats-widgets').classList.add('hidden');
+            document.getElementById('btn-stats-widgets').classList.toggle('hidden', u.r !== 'admin');
         }
-        window.UI.switchStatsTab('personal'); 
-        window.UI.updateUnitVisuals(window.CT.currentUnit); 
-        window.UI.show('stats-screen'); 
+        window.UI.switchStatsTab('personal'); window.UI.updateUnitVisuals(window.CT.currentUnit); window.UI.show('stats-screen'); 
     },
-    
-    showInfo() { window.UI.renderInfoPage(); window.UI.show('info-screen'); },
-
-    switchStatsTab(tab) {
+    showInfo: () => { window.UI.renderInfoPage(); window.UI.show('info-screen'); },
+    switchStatsTab: (tab) => {
         window.UI.activeStatsTab = tab;
         document.querySelectorAll('#stats-screen .st-pane').forEach(p => p.classList.add('hidden'));
         document.querySelectorAll('.st-tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`pane-stats-${tab}`).classList.remove('hidden');
-        
         const activeBtn = document.getElementById(`t-st-${tab.substring(0,2)}`);
         if (activeBtn) activeBtn.classList.add('active');
-        
-        if (tab === 'personal') window.UI.renderPersonalStats(); 
-        else if (tab === 'elite') window.UI.renderEliteStats();
-        else if (tab === 'hc') window.UI.renderHardcoreStats();
-
-        const u = window.CT.ses();
-        if(u && u.r === 'admin') window.UI.renderWidgetsMenu();
+        if (tab === 'personal') window.UI.renderPersonalStats(); else if (tab === 'elite') window.UI.renderEliteStats(); else if (tab === 'hc') window.UI.renderHardcoreStats();
+        if(window.CT.ses() && window.CT.ses().r === 'admin') window.UI.renderWidgetsMenu();
     },
-
     cycleWidgetSize: (btn) => {
         const widget = btn.closest('.st-widget');
-        if (!widget) return;
-        const tab = window.UI.activeStatsTab;
-        const widgetId = widget.getAttribute('data-id');
-        window.App.cycleWidgetSize(tab, widgetId);
+        if (widget) window.App.cycleWidgetSize(window.UI.activeStatsTab, widget.getAttribute('data-id'));
     },
-
-    applyStatsLayout() {
-        const layout = window.CT.data.statsLayout;
-        if (!layout) return;
-        const u = window.CT.ses(); const isAdmin = u && u.r === 'admin';
-
+    applyStatsLayout: () => {
+        const layout = window.CT.data.statsLayout; if (!layout) return;
+        const isAdmin = window.CT.ses() && window.CT.ses().r === 'admin';
         ['personal', 'elite', 'hc'].forEach(tab => {
-            const grid = document.getElementById(`grid-stats-${tab}`);
-            if (!grid) return;
-            const arr = layout[tab] || [];
-            arr.sort((a,b) => (a.order || 0) - (b.order || 0));
-
-            arr.forEach((widgetConf, idx) => {
-                const wEl = grid.querySelector(`[data-id="${widgetConf.id}"]`);
+            const grid = document.getElementById(`grid-stats-${tab}`); if (!grid) return;
+            const arr = [...(layout[tab] || [])].sort((a,b) => (a.order || 0) - (b.order || 0));
+            arr.forEach((w, idx) => {
+                const wEl = grid.querySelector(`[data-id="${w.id}"]`);
                 if(wEl) {
-                    wEl.style.order = idx;
-                    wEl.classList.toggle('hidden', !widgetConf.v);
-                    wEl.className = wEl.className.replace(/st-col-\d+/g, '').trim();
-                    wEl.classList.add(`st-col-${widgetConf.s || 3}`);
-                    const handles = wEl.querySelectorAll('.admin-only');
-                    handles.forEach(h => h.classList.toggle('hidden', !isAdmin));
+                    wEl.style.order = idx; wEl.classList.toggle('hidden', !w.v);
+                    wEl.className = wEl.className.replace(/st-col-\d+/g, '').trim(); wEl.classList.add(`st-col-${w.s || 3}`);
+                    wEl.querySelectorAll('.admin-only').forEach(h => h.classList.toggle('hidden', !isAdmin));
                 }
             });
-
             if (isAdmin) window.UI.initSortable(`grid-stats-${tab}`, `widgets-${tab}`, 0);
         });
     },
-
     toggleWidgetsMenu: () => { document.getElementById('widgets-menu').classList.toggle('hidden'); window.UI.renderWidgetsMenu(); },
-
     renderWidgetsMenu: () => {
-        const layout = window.CT.data.statsLayout;
-        if (!layout) return;
+        const layout = window.CT.data.statsLayout; if (!layout) return;
         const tab = window.UI.activeStatsTab;
-        const arr = layout[tab] || [];
         let html = '';
-        [...arr].sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(w => {
+        [...(layout[tab] || [])].sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(w => {
             const el = document.querySelector(`[data-id="${w.id}"] .st-widget-header span:not(.drag-handle)`);
             const title = el ? el.innerText.trim() : w.id;
-            html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a1a1a; align-items:center;">
-                <span style="color:#ccc; font-size:0.75rem; font-weight:bold;">${title}</span>
-                <label class="st-switch"><input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')"><span class="st-slider"></span></label>
-            </div>`;
+            html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a1a1a; align-items:center;"><span style="color:#ccc; font-size:0.75rem; font-weight:bold;">${title}</span><label class="st-switch"><input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')"><span class="st-slider"></span></label></div>`;
         });
         document.getElementById('widgets-menu-list').innerHTML = html;
     },
-
     generateLineChartSVG: (dataArray) => {
         if(!dataArray || dataArray.length < 2) return '';
-        const max = Math.max(...dataArray, 10); 
-        const width = 1000; const height = 220; const stepX = width / (dataArray.length - 1);
-        let points = dataArray.map((val, i) => { return `${i * stepX},${height - ((val / max) * (height - 20)) - 10}`; }).join(' ');
+        const max = Math.max(...dataArray, 10); const width = 1000; const height = 220; const stepX = width / (dataArray.length - 1);
+        let points = dataArray.map((val, i) => `${i * stepX},${height - ((val / max) * (height - 20)) - 10}`).join(' ');
         let pathD = `M0,${height} L0,${height - ((dataArray[0] / max) * (height - 20)) - 10} ` + dataArray.map((val, i) => `L${i*stepX},${height - ((val/max)*(height-20)) - 10}`).join(' ') + ` L${width},${height} Z`;
         let circles = dataArray.map((val, i) => {
             const x = i * stepX; const y = height - ((val / max) * (height - 20)) - 10;
             return `<circle cx="${x}" cy="${y}" r="4" class="st-chart-point" style="stroke:var(--p);"></circle><text x="${x}" y="${y - 12}" fill="#aaa" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">${val}</text>`;
         }).join('');
-
-        return `<svg class="st-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;">
-            <defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:transparent;stop-opacity:0" /></linearGradient></defs>
-            <path class="st-chart-area" d="${pathD}" style="fill:url(#grad-p);"></path>
-            <polyline class="st-chart-line" points="${points}" style="stroke:var(--p);"></polyline>
-            ${circles}
-        </svg>`;
+        return `<svg class="st-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;"><defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:transparent;stop-opacity:0" /></linearGradient></defs><path class="st-chart-area" d="${pathD}" style="fill:url(#grad-p);"></path><polyline class="st-chart-line" points="${points}" style="stroke:var(--p);"></polyline>${circles}</svg>`;
     },
-
     generateBarChartSVG: (dataObj) => {
         const labels = Object.keys(dataObj); if (labels.length === 0) return '';
         const maxVal = Math.max(...Object.values(dataObj), 1);
         let html = `<div style="display:flex; width:100%; height:100%; justify-content:space-between; align-items:flex-end; padding-bottom:20px; gap:10px;">`;
-        labels.forEach(l => {
-            const hPct = (dataObj[l] / maxVal) * 100;
-            html += `<div class="st-bar-group"><span class="st-bar-val">${dataObj[l]}</span><div class="st-bar" style="height:${hPct}%;"></div><span class="st-bar-label">${l}</span></div>`;
-        });
-        html += `</div>`; return html;
+        labels.forEach(l => { html += `<div class="st-bar-group"><span class="st-bar-val">${dataObj[l]}</span><div class="st-bar" style="height:${(dataObj[l] / maxVal) * 100}%;"></div><span class="st-bar-label">${l}</span></div>`; });
+        return html + `</div>`;
     },
-
     generateDonutSVG: (percentage, colorVar) => {
         const p = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
-        const strokeDasharray = `${p}, 100`;
-        return `<svg viewBox="0 0 36 36" class="st-donut">
-            <path class="st-donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <path class="st-donut-fill" style="stroke:${colorVar};" stroke-dasharray="${strokeDasharray}" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <text x="18" y="21" class="st-donut-text" style="fill:${colorVar};">${Math.round(p)}%</text>
-        </svg>`;
+        return `<svg viewBox="0 0 36 36" class="st-donut"><path class="st-donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><path class="st-donut-fill" style="stroke:${colorVar};" stroke-dasharray="${p}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><text x="18" y="21" class="st-donut-text" style="fill:${colorVar};">${Math.round(p)}%</text></svg>`;
     },
-
     isCompetitiveTrack: (trackTitle) => {
         if(!trackTitle) return false;
-        const phrases = window.CT.dbLocal('p');
-        const tObj = phrases.find(p => p.title && p.title.toString() === trackTitle.toString());
+        const tObj = window.CT.dbLocal('p').find(p => p.title && p.title.toString() === trackTitle.toString());
         if(!tObj) return true;
-        const cat = (tObj.c || '').trim();
-        return cat !== 'General' && cat !== 'Entrenamiento' && !cat.includes('[TRN]');
+        const cat = (tObj.c || '').trim(); return cat !== 'General' && cat !== 'Entrenamiento' && !cat.includes('[TRN]');
     },
-
     getTrackCat: (trackTitle) => {
         if(!trackTitle) return 'General';
-        const phrases = window.CT.dbLocal('p');
-        const tObj = phrases.find(p => p.title && p.title.toString() === trackTitle.toString());
+        const tObj = window.CT.dbLocal('p').find(p => p.title && p.title.toString() === trackTitle.toString());
         return tObj ? (tObj.c || 'General').trim() : 'General';
     },
-
     showTrackPreview: (trackId) => {
         if(!trackId) return;
         const track = window.CT.dbLocal('p').find(t => t.id && t.id.toString() === trackId.toString() || t.title && t.title.toString() === trackId.toString());
@@ -245,156 +157,39 @@ window.UI = {
         document.getElementById('tp-cat').innerText = (track.c || 'General').trim();
         document.getElementById('tp-words').innerText = track.text.split(' ').length + " PALABRAS";
         document.getElementById('tp-content').innerText = track.text;
-        
         document.getElementById('tp-btn-play').onclick = () => { window.App.startRaceWithTrack(track.id); window.UI.closeTrackPreview(); };
         document.getElementById('track-preview-modal').classList.remove('hidden');
     },
-
     closeTrackPreview: () => { document.getElementById('track-preview-modal').classList.add('hidden'); },
-
-    setUnit: (unit) => {
-        if(window.CT.currentUnit === unit) return;
-        localStorage.removeItem('ct_custom_theme');
-        const u = window.CT.ses(); 
-        if(u && u.theme) window.db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() });
-        document.documentElement.removeAttribute('data-custom-theme');
-        window.CT.currentUnit = unit; localStorage.setItem('ct_unit_pref', unit); 
-        window.UI.updateUnitVisuals(unit); 
-        window.UI.refreshActiveViews();
-    },
-
-    updateUnitVisuals: (unit) => {
-        document.documentElement.setAttribute('data-theme', unit);
-        document.querySelectorAll('.unit-switcher .sw-btn').forEach(s => s.classList.remove('active'));
-        const activeBtn = document.getElementById(`btn-${unit}`); if(activeBtn) activeBtn.classList.add('active');
-        
-        const label = unit === 'zen' ? 'ZEN' : unit.toUpperCase();
-        const thIds = ['th-unit-times', 'th-unit-hist', 'th-unit-admin', 'th-st-p-vel', 'th-st-p-t-max', 'th-st-e-t-vel', 'th-st-e-c-vel', 'th_st_p_top10_vel'];
-        thIds.forEach(id => { if(document.getElementById(id)) { document.getElementById(id).innerText = 'VEL. (' + label + ')'; document.getElementById(id).classList.add('active-unit'); } });
-        
-        if(document.getElementById('th-unit-rank')) document.getElementById('th-unit-rank').innerText = 'PROMEDIO ' + label;
-        if(document.getElementById('lbl-st-avg')) document.getElementById('lbl-st-avg').innerText = 'PROM. ' + label;
-        if(document.getElementById('lbl-st-last')) document.getElementById('lbl-st-last').innerText = 'ÚLT. 10 ' + label;
-        if(document.getElementById('lbl-st-best')) document.getElementById('lbl-st-best').innerText = 'RÉCORD ' + label;
-        if(document.getElementById('game-unit-label')) document.getElementById('game-unit-label').innerText = label;
-
-        const previewEl = document.getElementById('track-preview-modal');
-        if (previewEl && !previewEl.classList.contains('hidden')) {
-            const trackId = document.getElementById('tp-title').innerText.replace('Texto ', '').replace('#', '').split(' | ')[0];
-            window.UI.showTrackPreview(trackId);
-        }
-    },
-
-    updateFastModeVisuals: () => {
-        const textLabel = window.CT.data.ui && window.CT.data.ui['t_sett_fast'] ? window.CT.data.ui['t_sett_fast'].v : '⚡ Modo Rápido:';
-        const onVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_on'] ? window.CT.data.ui['t_sett_fast_on'].v : 'SI';
-        const offVal = window.CT.data.ui && window.CT.data.ui['t_sett_fast_off'] ? window.CT.data.ui['t_sett_fast_off'].v : 'NO';
-        const btn = document.getElementById('btn-fast-mode');
-        if(btn) btn.innerText = `${textLabel} ${window.CT.fastMode ? onVal : offVal}`;
-    },
-
-    toggleFastMode: () => { window.CT.fastMode = !window.CT.fastMode; localStorage.setItem('ct_fast_mode', window.CT.fastMode); window.UI.updateFastModeVisuals(); },
-    
-    updateCategorySelects() {
-        const cats = window.CT.dbLocal('c'); const trnCats = cats.filter(c => c.name.startsWith('[TRN]'));
-        const trnOptions = trnCats.map(c => `<option value="${c.name}">${c.name.replace('[TRN] ', '')}</option>`).join('');
-        const trnNewCatSel = document.getElementById('trn-new-cat'); if(trnNewCatSel) trnNewCatSel.innerHTML = trnOptions;
-        const trnDelCatSel = document.getElementById('trn-delete-cat-select'); if(trnDelCatSel) trnDelCatSel.innerHTML = trnOptions;
-    },
-
-    renderTrainDropdown() {
-        const tPurge = window.CT.data.ui && window.CT.data.ui['t_btn_tr_purge'] ? window.CT.data.ui['t_btn_tr_purge'].v : '🔥 Purgar Errores';
-        let html = `<button onclick="window.App.startPurge()">${tPurge}</button>`;
-        const trnCats = window.CT.dbLocal('c').filter(c => c.name.startsWith('[TRN]'));
-        trnCats.sort((a,b) => (a.order||0) - (b.order||0)).forEach(c => { html += `<button onclick="window.App.startTrnCategory('${c.name}')">⚡ ${c.name.replace('[TRN] ', '')}</button>`; });
-        const drp = document.getElementById('train-dropdown'); if(drp) drp.innerHTML = html;
-    },
-
-    renderGlobal() {
-        try {
-            const todayAR = window.CT.getARDate();
-            const typeEl = document.getElementById('leaderboard-type'); const rankTypeEl = document.getElementById('ranking-type');
-            if(!typeEl || !rankTypeEl) return; 
-
-            let recent = window.CT.data.s_recent || []; let top = window.CT.data.s_top || [];
-            let filteredScores = typeEl.value === 'today' ? recent.filter(s => !s.hc && s.d === todayAR) : top.filter(s => !s.hc);
-            filteredScores.sort((a,b) => b.c - a.c);
-            
-            document.getElementById('global-rank-times').innerHTML = filteredScores.slice(0, (typeEl.value === 'today' ? 10 : 20)).map((s, idx) => {
-                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
-                return `<tr>
-                    <td class="${posClass}">${idx + 1}</td>
-                    <td><div class="player-link" onclick="window.UI.showProfile('${s.h}')"><div class="avatar-xs"><img src="${s.a || window.CT.defAvatar}"></div><span>${s.n}</span></div></td>
-                    <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(s.c)}</b></td>
-                    <td><div style="display:flex; justify-content:center; align-items:center; gap:8px;">
-                        <span class="track-link" onclick="window.UI.showTrackPreview('${s.track}')" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100px;">${window.UI.formatTrackName(s.track)}</span>
-                        <button class="ghost-btn" onclick="window.App.startGhostRace('${s.track}', ${s.c})" title="Competir contra el Fantasma">👻</button>
-                    </div></td>
-                </tr>`;
-            }).join('');
-
-            const rankingMode = rankTypeEl.value; const users = window.CT.dbLocal('u');
-            let playerStats = users.map(u => {
-                const history = (u.hi || []).filter(val => typeof val === 'number' && !isNaN(val)); 
-                let averageCPM = 0;
-                if(rankingMode === 'last10') { const l10 = history.slice(-10); averageCPM = l10.length ? Math.round(l10.reduce((a,b)=>a+b, 0) / l10.length) : 0; } 
-                else { averageCPM = history.length ? Math.round(history.reduce((a,b)=>a+b, 0) / history.length) : 0; }
-                return { n: u.n, a: u.a, h: u.h, avgCPM: averageCPM, total: history.length };
-            }).filter(u => u.total > 0).sort((a,b) => b.avgCPM - a.avgCPM);
-
-            document.getElementById('global-rank-players').innerHTML = playerStats.slice(0, 10).map((p, idx) => {
-                const posClass = idx === 0 ? 'podium-1' : (idx === 1 ? 'podium-2' : (idx === 2 ? 'podium-3' : ''));
-                return `<tr>
-                    <td class="${posClass}">${idx + 1}</td>
-                    <td><div class="player-link" onclick="window.UI.showProfile('${p.h}')"><div class="avatar-xs"><img src="${p.a || window.CT.defAvatar}"></div><span>${p.n}</span></div></td>
-                    <td><b style="color:var(--p)" class="val-blurrable">${window.UI.formatValue(p.avgCPM)}</b></td><td>${p.total}</td>
-                </tr>`;
-            }).join('');
-        } catch(e) { console.error("Error rendering global:", e); }
-    }
-}; // Fin de PARTE 1. Continúa abajo.
-/* ================================================================
-    CANANTYPER - INTERFAZ DE USUARIO (UI) - PARTE 2
-   ================================================================ */
-
-Object.assign(window.UI, {
-    
     applyUITexts: () => {
         if(!window.CT.data.ui) return;
         Object.keys(window.CT.data.ui).forEach(k => {
             const el = document.getElementById(k);
             if(el) {
-                if(k === 't_txt_new') { el.innerHTML = window.CT.data.ui[k].v.replace('Registrarse', '<span onclick="window.UI.toggleAuth(false)">Registrarse</span>'); }
-                else if(k === 't_txt_haveacc') { el.innerHTML = window.CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="window.UI.toggleAuth(true)">Inicia sesión</span>'); }
-                else if(['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off', 't_adm_btn_maint_on', 't_adm_btn_maint_off', 't_adm_srv_feat_info', 't_adm_srv_feat_theme'].includes(k)) { }
-                else if(el.tagName === 'INPUT' && el.type === 'text') { el.placeholder = window.CT.data.ui[k].v; }
-                else { el.innerText = window.CT.data.ui[k].v; }
+                if(k === 't_txt_new') el.innerHTML = window.CT.data.ui[k].v.replace('Registrarse', '<span onclick="window.UI.toggleAuth(false)">Registrarse</span>');
+                else if(k === 't_txt_haveacc') el.innerHTML = window.CT.data.ui[k].v.replace('Inicia sesión', '<span onclick="window.UI.toggleAuth(true)">Inicia sesión</span>');
+                else if(!['t_sett_fast', 't_sett_fast_on', 't_sett_fast_off', 't_btn_pin_on', 't_btn_pin_off', 't_adm_btn_maint_on', 't_adm_btn_maint_off', 't_adm_srv_feat_info', 't_adm_srv_feat_theme'].includes(k)) {
+                    if(el.tagName === 'INPUT' && el.type === 'text') el.placeholder = window.CT.data.ui[k].v; else el.innerText = window.CT.data.ui[k].v;
+                }
             }
         });
     },
-
     renderPersonalStats: () => {
         try {
             const u = window.CT.ses(); if(!u) return;
             const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-            
-            let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track));
-            compScores.sort((a,b) => a.id - b.id);
+            let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track)).sort((a,b) => a.id - b.id);
             
             const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
-            
             const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
             const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
-            
             const last10Arr = [...compScores].slice(-10);
             const avgLast10 = last10Arr.length ? Math.round(last10Arr.reduce((a,b)=>a+b.c, 0) / last10Arr.length) : 0;
             const elLast10 = document.getElementById('st-p-last10-avg'); if(elLast10) elLast10.innerText = window.UI.formatValue(avgLast10);
-
             const maxVal = compScores.length ? Math.max(...compScores.map(s => s.c)) : 0;
             const elRec = document.getElementById('st-p-record-val'); if(elRec) elRec.innerText = window.UI.formatValue(maxVal);
             
-            let catAvgs = {};
-            compScores.forEach(s => { const cat = window.UI.getTrackCat(s.track); if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
+            let catAvgs = {}; compScores.forEach(s => { const cat = window.UI.getTrackCat(s.track); if(!catAvgs[cat]) catAvgs[cat] = { sum: 0, count: 0 }; catAvgs[cat].sum += s.c; catAvgs[cat].count++; });
             let bestCat = "-"; let maxCatAvg = -1; let bestCatCount = 0;
             for (let c in catAvgs) { let avg = catAvgs[c].sum / catAvgs[c].count; if(avg > maxCatAvg) { maxCatAvg = avg; bestCat = c; bestCatCount = catAvgs[c].count; } }
             const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
@@ -409,10 +204,7 @@ Object.assign(window.UI, {
                 elTrend.style.textShadow = trend >= 0 ? '0 0 10px color-mix(in srgb, var(--p) 30%, transparent)' : 'none';
             }
 
-            const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
-            const elDonut = document.getElementById('st-p-donut-acc');
-            if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
-            
+            const elDonut = document.getElementById('st-p-donut-acc'); if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0, 'var(--p)');
             const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
             const svgContainer = document.getElementById('st-p-svg-container');
             if(svgContainer) svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
@@ -424,61 +216,42 @@ Object.assign(window.UI, {
                 let v = window.UI.formatValue(s.c);
                 if(v < v200) dist[l1]++; else if(v >= v200 && v < v500) dist[l2]++; else if(v >= v500 && v < v700) dist[l3]++; else if(v >= v700 && v < v1000) dist[l4]++; else dist[l5]++;
             });
-            const barContainer = document.getElementById('st-p-bar-container');
-            if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
+            const barContainer = document.getElementById('st-p-bar-container'); if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
 
-            const bk = userDoc.bad_keys || {};
-            const maxErr = Math.max(...Object.values(bk), 5); 
+            const bk = userDoc.bad_keys || {}; const maxErr = Math.max(...Object.values(bk), 5); 
             document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
                 el.style.removeProperty('border-color'); el.style.removeProperty('color'); el.style.removeProperty('text-shadow');
-                const key = el.getAttribute('data-key'); const errs = bk[key] || 0;
-                if(errs >= 5) {
-                    el.style.setProperty('border-color', 'var(--error)', 'important'); el.style.setProperty('color', 'var(--error)', 'important'); el.title = `Errores críticos: ${errs}`;
-                } else if (errs > 0) { el.title = `Errores leves: ${errs}`; } else { el.title = 'Estable'; }
+                const errs = bk[el.getAttribute('data-key')] || 0;
+                if(errs >= 5) { el.style.setProperty('border-color', 'var(--error)', 'important'); el.style.setProperty('color', 'var(--error)', 'important'); el.title = `Errores críticos: ${errs}`; } 
+                else if (errs > 0) el.title = `Errores leves: ${errs}`; else el.title = 'Estable';
             });
 
             const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
             let top20Html = '';
             for(let i=0; i<20; i++) {
-                if(compScoresDesc[i]) {
-                    const s = compScoresDesc[i];
-                    top20Html += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div><div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div></li>`;
-                } else {
-                    top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
-                }
+                if(compScoresDesc[i]) top20Html += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${compScoresDesc[i].track}')">${window.UI.formatTrackNameFull(compScoresDesc[i].track)}</div><div class="st-list-val val-blurrable">${window.UI.formatValue(compScoresDesc[i].c)}</div></li>`;
+                else top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
             const elTop10 = document.getElementById('st-p-top10-races'); if(elTop10) elTop10.innerHTML = top20Html;
 
-            let trackAvgs = {};
-            compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
+            let trackAvgs = {}; compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
             let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
             let bottom20 = trackList.filter(t => t.count >= 2).sort((a,b) => a.avg - b.avg).slice(0, 20);
             if(bottom20.length === 0) bottom20 = trackList.sort((a,b) => a.avg - b.avg).slice(0, 20);
-            
             let bottom20Html = '';
             for(let i=0; i<20; i++) {
-                if(bottom20[i]) {
-                    const tr = bottom20[i];
-                    bottom20Html += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div><div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div></li>`;
-                } else {
-                    bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
-                }
+                if(bottom20[i]) bottom20Html += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${bottom20[i].t}')">${window.UI.formatTrackNameFull(bottom20[i].t)}</div><div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(bottom20[i].avg))}</div></li>`;
+                else bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
             const elBottom = document.getElementById('st-p-worst-tracks'); if(elBottom) elBottom.innerHTML = bottom20Html;
 
-            const bw = userDoc.bad_words || {};
-            let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
+            const bw = userDoc.bad_words || {}; let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
             let wordsHtml = '';
             for(let i=0; i<20; i++) {
-                if(badWordsList[i]) {
-                    const bwItem = badWordsList[i];
-                    wordsHtml += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">${bwItem.w}</div><div class="st-list-val" style="font-size:0.75rem; width:80px;">${bwItem.errs} errores</div></li>`;
-                } else {
-                    wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
-                }
+                if(badWordsList[i]) wordsHtml += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">${badWordsList[i].w}</div><div class="st-list-val" style="font-size:0.75rem; width:80px;">${badWordsList[i].errs} errores</div></li>`;
+                else wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
             }
             const elWords = document.getElementById('st-p-worst-words'); if(elWords) elWords.innerHTML = wordsHtml;
-
             window.UI.applyStatsLayout();
         } catch(e) { console.error("Error renderPersonalStats:", e); }
     },
@@ -515,10 +288,8 @@ Object.assign(window.UI, {
 
             const totalTop1s = Object.values(top1c).reduce((a,b) => a+b, 0);
             const monopolyRate = totalTop1s > 0 ? (top1c[mTop1h] / totalTop1s) * 100 : 0;
-            const elDonutE = document.getElementById('st-e-donut-monopoly');
-            if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(monopolyRate, 'var(--p)');
-            const elDonutUser = document.getElementById('st-e-donut-user');
-            if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
+            const elDonutE = document.getElementById('st-e-donut-monopoly'); if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(monopolyRate, 'var(--p)');
+            const elDonutUser = document.getElementById('st-e-donut-user'); if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
             
             const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
             const eSvgContainer = document.getElementById('st-e-svg-container');
@@ -538,8 +309,7 @@ Object.assign(window.UI, {
             let top10THtml = '';
             for(let i=0; i<10; i++) {
                 if(top10T[i]) {
-                    const tr = top10T[i];
-                    let trMax = topS.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
+                    const tr = top10T[i]; let trMax = topS.filter(s => s.track === tr).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
                     top10THtml += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${tr}')">${window.UI.formatTrackNameFull(tr)}</div><div class="st-list-meta player-link" onclick="window.UI.showProfile('${trMax.h}')">${trMax.n}</div><div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div></li>`;
                 } else {
                     top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
@@ -552,8 +322,7 @@ Object.assign(window.UI, {
             let top10CHtml = '';
             for(let i=0; i<10; i++) {
                 if(top10C[i]) {
-                    const cat = top10C[i];
-                    let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
+                    const cat = top10C[i]; let catMax = scoresWithCat.filter(s => s.cat === cat).reduce((p, c) => (c.c > p.c) ? c : p, {n:'-', c:0, h:'-'}); 
                     top10CHtml += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">${cat}</div><div class="st-list-meta player-link" onclick="window.UI.showProfile('${catMax.h}')">${catMax.n}</div><div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div></li>`;
                 } else {
                     top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
@@ -561,20 +330,17 @@ Object.assign(window.UI, {
             }
             const elCats = document.getElementById('st-e-table-cats'); if(elCats) elCats.innerHTML = top10CHtml;
 
-            let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; });
-            let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
+            let pAct = {}; recentS.forEach(s => { pAct[s.h] = (pAct[s.h] || 0) + 1; }); let topAct = Object.keys(pAct).sort((a,b) => pAct[b] - pAct[a]).slice(0,10);
             let topActHtml = '';
             for(let i=0; i<10; i++) {
                 if(topAct[i]) {
-                    const h = topAct[i];
-                    let n = (users.find(x=>x.h===h)||{n:h}).n;
+                    const h = topAct[i]; let n = (users.find(x=>x.h===h)||{n:h}).n;
                     topActHtml += `<li class="st-list-item"><div class="st-list-rank">#${i+1}</div><div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${h}')">${n}</div><div class="st-list-meta">${h}</div><div class="st-list-val" style="color:#fff;">${pAct[h]}</div></li>`;
                 } else {
                     topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elAct = document.getElementById('st-e-table-players'); if(elAct) elAct.innerHTML = topActHtml;
-
             window.UI.applyStatsLayout();
         } catch(e) { console.error("Error renderEliteStats:", e); }
     },
@@ -598,9 +364,7 @@ Object.assign(window.UI, {
             const elSurv = document.getElementById('st-hc-surv'); if(elSurv) elSurv.innerText = globalSurvivals;
             const elDeath = document.getElementById('st-hc-deaths'); if(elDeath) elDeath.innerText = globalDeaths;
             const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
-
-            const elDonut = document.getElementById('st-hc-donut-rate');
-            if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
+            const elDonut = document.getElementById('st-hc-donut-rate'); if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
 
             const top10 = [...globalHcScores].sort((a,b) => b.c - a.c).slice(0, 10);
             let hcTop10Html = '';
@@ -652,10 +416,8 @@ Object.assign(window.UI, {
             }
             const elVic = document.getElementById('st-hc-victims'); if(elVic) elVic.innerHTML = vicHtml;
 
-            let hcSurvivals = {};
-            globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
+            let hcSurvivals = {}; globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
             let safeTracks = Object.keys(hcSurvivals).map(k => ({ t: k, s: hcSurvivals[k] - (trackDeaths[k] || 0) })).sort((a,b) => b.s - a.s).slice(0, 10);
-            
             let safeHtml = '';
             for(let i=0; i<10; i++) {
                 if(safeTracks[i]) {
@@ -673,20 +435,15 @@ Object.assign(window.UI, {
 
     async showProfile(who) {
         try {
-            const currentSes = window.CT.ses(); 
-            if (!currentSes) return;
+            const currentSes = window.CT.ses(); if (!currentSes) return;
             const targetHandle = (who === 'me') ? currentSes.h : who;
-            
             let u = window.CT.dbLocal('u').find(x => x.h === targetHandle); 
             if(!u) {
                 const doc = await window.db.collection('users').doc(targetHandle).get();
-                if(doc.exists) u = doc.data();
-                else return;
+                if(doc.exists) u = doc.data(); else return;
             }
-            
             window.CT.activeProfHandle = u.h;
             await window.App.getUserScores(u.h);
-            
             document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
             const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
@@ -696,7 +453,6 @@ Object.assign(window.UI, {
             window.CT.profPage = 0; window.UI.renderProfileHistory();
             const isMe = (currentSes && u.h === currentSes.h);
             document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
-            
             window.UI.show('profile-screen');
         } catch (error) { console.error("Error en showProfile:", error); }
     },
@@ -729,10 +485,7 @@ Object.assign(window.UI, {
 
     checkAnnouncements: () => {
         const anns = window.CT.dbLocal('a').filter(x => x.active);
-        if (anns.length > 0) {
-            const latest = anns[0]; const lastSeen = localStorage.getItem('ct_last_announcement');
-            if (latest.id.toString() !== lastSeen) window.UI.showAnnouncement(latest);
-        }
+        if (anns.length > 0) { const latest = anns[0]; const lastSeen = localStorage.getItem('ct_last_announcement'); if (latest.id.toString() !== lastSeen) window.UI.showAnnouncement(latest); }
     },
 
     showTrackSelect() { document.getElementById('track-search').value = ''; window.UI.activeTrackCat = null; window.UI.filterFavs = false; window.UI.showTrackCategorySelect(); window.UI.show('track-screen'); },
@@ -780,19 +533,11 @@ Object.assign(window.UI, {
         listContainer.innerHTML = pageData.map(t => {
             let isFav = favs.includes(t.id.toString());
             let starClass = isFav ? 'fav-active' : 'fav-inactive';
-            
             let reorderFavHtml = (window.UI.filterFavs && !query) ? `<span class="drag-handle" style="cursor:grab; font-size:1.5rem; color:#ffd700; margin-top:5px; display:inline-block;" title="Arrastrar para ordenar" onclick="event.stopPropagation()">⠿</span>` : '';
             let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
             let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
 
-            return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}">
-                <div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">
-                    ${window.UI.formatTrackName(t.title)}
-                    <button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>
-                    ${reorderFavHtml}
-                </div>
-                <div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div>
-            </div>`;
+            return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}"><div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">${window.UI.formatTrackName(t.title)}<button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>${reorderFavHtml}</div><div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div></div>`;
         }).join('');
         document.getElementById('track-prev').disabled = window.UI.trackPage === 0; document.getElementById('track-next').disabled = (start + 20) >= filtered.length; document.getElementById('track-page-num').innerText = `Página ${window.UI.trackPage + 1}`;
         
@@ -809,5 +554,15 @@ Object.assign(window.UI, {
     openCropModal(src) { const img = document.getElementById('crop-image'); img.src = src; img.onload = () => { window.UI.cropScale = 1; window.UI.cropX = 0; window.UI.cropY = 0; document.getElementById('crop-zoom').value = 1; const containerW = 220; const containerH = 220; const imgW = img.naturalWidth; const imgH = img.naturalHeight; if (imgW > imgH) { img.style.height = containerH + 'px'; img.style.width = 'auto'; } else { img.style.width = containerW + 'px'; img.style.height = 'auto'; } window.UI.updateCropTransform(); document.getElementById('crop-modal').classList.remove('hidden'); window.UI.setupCropEvents(); }; },
     closeCropModal() { document.getElementById('crop-modal').classList.add('hidden'); document.getElementById('img-input').value = ''; },
     updateCropTransform() { const img = document.getElementById('crop-image'); img.style.transform = `translate(-50%, -50%) translate(${window.UI.cropX}px, ${window.UI.cropY}px) scale(${window.UI.cropScale})`; img.style.left = '50%'; img.style.top = '50%'; },
-    setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { window.UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; window.UI.startX = cx - window.UI.cropX; window.UI.startY = cy - window.UI.cropY; }; const moveDrag = (e) => { if(!window.UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; window.UI.cropX = cx - window.UI.startX; window.UI.cropY = cy - window.UI.startY; window.UI.updateCropTransform(); }; const endDrag = () => { window.UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { window.UI.cropScale = e.target.value; window.UI.updateCropTransform(); }; }
+    setupCropEvents() { const area = document.getElementById('crop-area'); const startDrag = (e) => { window.UI.isDragging = true; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; window.UI.startX = cx - window.UI.cropX; window.UI.startY = cy - window.UI.cropY; }; const moveDrag = (e) => { if(!window.UI.isDragging) return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; window.UI.cropX = cx - window.UI.startX; window.UI.cropY = cy - window.UI.startY; window.UI.updateCropTransform(); }; const endDrag = () => { window.UI.isDragging = false; }; area.onmousedown = startDrag; window.onmousemove = moveDrag; window.onmouseup = endDrag; area.ontouchstart = startDrag; window.ontouchmove = moveDrag; window.ontouchend = endDrag; document.getElementById('crop-zoom').oninput = (e) => { window.UI.cropScale = e.target.value; window.UI.updateCropTransform(); }; },
+    
+    // Fallback robusto para sesión
+    ses: () => { 
+        const s = JSON.parse(localStorage.getItem('ct_ses')); 
+        if(!s) return null;
+        const found = (window.CT.data.u || []).find(x => x.h === s.h);
+        return found || { h: s.h, n: s.h, r: 'usuario' }; 
+    }
 };
+
+// Fin del archivo
