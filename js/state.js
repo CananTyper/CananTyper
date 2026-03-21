@@ -3,7 +3,7 @@
    ================================================================ */
 
 window.CT = {
-    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {}, statsLayout: null }, 
+    data: { u: [], p: [], c: [], a: [], ui: null, maint: null, info: null, shortcuts: null, s_top: null, s_recent: null, userScores: {} }, 
     defAvatar: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
     currentUnit: 'cpm', charPerWord: 5, editIdx: null, profPage: 0, activeProfHandle: null, fastMode: false,
     getARDate: () => { return new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); },
@@ -16,11 +16,7 @@ window.CT = {
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
         this.fastMode = localStorage.getItem('ct_fast_mode') === 'true';
-        
-        // Escudo de seguridad por si UI no está instanciado aún
-        if(window.UI) {
-            window.UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
-        }
+        window.UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
 
         const cU = localStorage.getItem('ct_cache_u'); 
         const cP = localStorage.getItem('ct_cache_p'); const cC = localStorage.getItem('ct_cache_c');
@@ -28,16 +24,13 @@ window.CT = {
         
         if(cU) this.data.u = JSON.parse(cU); 
         if(cP) this.data.p = JSON.parse(cP); if(cC) this.data.c = JSON.parse(cC);
-        if(cUi) { 
-            this.data.ui = JSON.parse(cUi); 
-            if(window.UI && window.UI.applyUITexts) window.UI.applyUITexts(); 
-        }
+        if(cUi) { this.data.ui = JSON.parse(cUi); window.UI.applyUITexts(); }
 
-        if(window.UI && window.UI.updateUnitVisuals) window.UI.updateUnitVisuals(this.currentUnit);
-        if(window.UI && window.UI.updateFastModeVisuals) window.UI.updateFastModeVisuals();
-        if(window.UI && window.UI.applySavedTheme) window.UI.applySavedTheme();
+        window.UI.updateUnitVisuals(this.currentUnit);
+        window.UI.updateFastModeVisuals();
+        window.UI.applySavedTheme();
         
-        setTimeout(() => { if(window.UI && window.UI.setLayout && window.UI.listLayout) window.UI.setLayout(window.UI.listLayout); }, 100);
+        setTimeout(() => { if(window.UI.setLayout) window.UI.setLayout(window.UI.listLayout); }, 100);
         
         if (!window.isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
@@ -46,7 +39,7 @@ window.CT = {
 
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-            if (!window.App || !window.App.activeEngine) return;
+            if (!window.App.activeEngine) return;
             const sc = window.CT.data.shortcuts || { restart: 'Tab', next: 'Enter', quit: 'Escape' };
             if (e.key === sc.restart) { e.preventDefault(); window.App.retryRace(); }
             else if (e.key === sc.next) { e.preventDefault(); window.App.nextRace(); }
@@ -58,63 +51,36 @@ window.CT = {
                 this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Actualizando.', info: true, theme: true };
                 if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('maintenance').set(this.data.maint);
             }
-            if(window.UI && window.UI.checkMaintenance) window.UI.checkMaintenance();
-        });
-
-        window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
-            const defLayout = {
-                personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-record', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-donut', v:true, s:4}, {id:'w-p-trend', v:true, s:4}, {id:'w-p-heat', v:true, s:4}, {id:'w-p-top', v:true, s:6}, {id:'w-p-worst', v:true, s:6}, {id:'w-p-words', v:true, s:6}],
-                elite: [{id:'w-e-vol', v:true, s:3}, {id:'w-e-dom', v:true, s:3}, {id:'w-e-eff', v:true, s:3}, {id:'w-e-rec', v:true, s:3}, {id:'w-e-graph', v:true, s:12}, {id:'w-e-donut', v:true, s:4}, {id:'w-e-tier', v:true, s:8}, {id:'w-e-texts', v:true, s:4}, {id:'w-e-cats', v:true, s:4}, {id:'w-e-players', v:true, s:4}],
-                hc: [{id:'w-h-rec', v:true, s:3}, {id:'w-h-surv', v:true, s:3}, {id:'w-h-death', v:true, s:3}, {id:'w-h-rate', v:true, s:3}, {id:'w-h-top', v:true, s:4}, {id:'w-h-worst', v:true, s:4}, {id:'w-h-victims', v:true, s:4}, {id:'w-h-safe', v:true, s:6}, {id:'w-h-legends', v:true, s:6}]
-            };
-
-            let data = snap.exists ? snap.data() : {};
-            
-            ['personal', 'elite', 'hc'].forEach(t => {
-                if(!data[t]) data[t] = defLayout[t];
-                else {
-                    defLayout[t].forEach(defW => {
-                        if(!data[t].find(w => w.id === defW.id)) data[t].push(defW);
-                    });
-                }
-            });
-
-            this.data.statsLayout = data;
-            
-            if(!snap.exists && this.ses() && this.ses().r === 'admin') {
-                window.db.collection('config').doc('stats_layout').set(this.data.statsLayout);
-            }
-            if(window.UI && window.UI.applyStatsLayout) window.UI.applyStatsLayout();
+            window.UI.checkMaintenance();
         });
 
         window.db.collection('config').doc('info_page').onSnapshot(snap => {
             if(snap.exists) { this.data.info = snap.data(); } else { this.data.info = { title: "Información", content: "Bienvenido a CananTyper." }; }
-            if(window.UI && window.UI.renderInfoPage) window.UI.renderInfoPage();
+            window.UI.renderInfoPage();
         });
 
         window.db.collection('config').doc('shortcuts').onSnapshot(snap => {
             if(snap.exists) { this.data.shortcuts = snap.data(); } else { this.data.shortcuts = { restart: 'Tab', next: 'Enter', quit: 'Escape' }; }
         });
 
-        if(this.ses()) { if(window.UI && window.UI.initLobby) window.UI.initLobby(); } 
-        else { 
-            if(window.UI && window.UI.show) window.UI.show('auth-screen'); 
-            if(window.updateDiscordStatus) window.updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); 
-        }
+        if(this.ses()) { window.UI.initLobby(); } 
+        else { window.UI.show('auth-screen'); window.updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
 
-        window.db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); });
+        window.db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); window.UI.refreshActiveViews(); });
         
-        if(window.App && window.App.loadDashboardData) window.App.loadDashboardData();
+        window.App.loadDashboardData();
 
         window.db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
+            if(this.data.p.length === 0) { window.db.collection('phrases').doc("1").set({ id: 1, title: "1", c: "General", text: "La programación es un arte.", order: Date.now() }); }
+            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); window.UI.refreshActiveViews(); 
         });
         window.db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); if(window.UI && window.UI.updateCategorySelects) window.UI.updateCategorySelects(); if(window.UI && window.UI.renderTrainDropdown) window.UI.renderTrainDropdown(); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
+            if(this.data.c.length === 0) { window.db.collection('categories').doc("General").set({name: "General", order: Date.now()}); }
+            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); window.UI.updateCategorySelects(); window.UI.renderTrainDropdown(); window.UI.refreshActiveViews(); 
         });
-        window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); if(window.UI && window.UI.checkAnnouncements) window.UI.checkAnnouncements(); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); });
+        window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); window.UI.checkAnnouncements(); window.UI.refreshActiveViews(); });
 
         window.db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
@@ -217,16 +183,8 @@ window.CT = {
                 }
             });
             localStorage.setItem('ct_cache_ui', JSON.stringify(window.CT.data.ui));
-            if(window.UI && window.UI.applyUITexts) window.UI.applyUITexts(); 
-            if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews();
+            window.UI.applyUITexts(); window.UI.refreshActiveViews();
         });
     },
-    
-    // Fallback robusto para sesión en caso de que la DB aún no cargue
-    ses: () => { 
-        const s = JSON.parse(localStorage.getItem('ct_ses')); 
-        if(!s) return null;
-        const found = (window.CT.data.u || []).find(x => x.h === s.h);
-        return found || { h: s.h, n: s.h, r: 'usuario' }; 
-    }
+    ses: () => { const s = JSON.parse(localStorage.getItem('ct_ses')); return s ? (window.CT.data.u || []).find(x => x.h === s.h) : null; }
 };
