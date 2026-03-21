@@ -374,7 +374,6 @@ window.UI = {
             }
         });
     },
-
     renderPersonalStats: () => {
         try {
             const u = window.CT.ses(); if(!u) return;
