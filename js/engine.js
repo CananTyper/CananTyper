@@ -187,7 +187,7 @@ window.Engine = class Engine {
             let updatePayload = { bad_keys: bk, bad_words: prunedBw };
             if (isHC) { 
                 updatePayload.hi_hc = firebase.firestore.FieldValue.arrayUnion(finalCPM); 
-                updatePayload.hc_survivals = (userDoc.hc_survivals || 0) + 1; // Incremento de supervivencias
+                updatePayload.hc_survivals = (userDoc.hc_survivals || 0) + 1;
                 if (!userDoc.hi_hc) userDoc.hi_hc = []; userDoc.hi_hc.push(finalCPM); 
                 userDoc.hc_survivals = updatePayload.hc_survivals;
             } 
