@@ -352,6 +352,7 @@ window.UI = {
             }).join('');
         } catch(e) { console.error("Error rendering global:", e); }
     }
+}; // Fin de PARTE 1. Continúa abajo.
 /* ================================================================
     CANANTYPER - INTERFAZ DE USUARIO (UI) - PARTE 2
    ================================================================ */
