@@ -16,7 +16,11 @@ window.CT = {
         document.documentElement.setAttribute('data-theme', this.currentUnit);
 
         this.fastMode = localStorage.getItem('ct_fast_mode') === 'true';
-        window.UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
+        
+        // Escudo de seguridad por si UI no está instanciado aún
+        if(window.UI) {
+            window.UI.listLayout = localStorage.getItem('ct_layout') || 'layout-list';
+        }
 
         const cU = localStorage.getItem('ct_cache_u'); 
         const cP = localStorage.getItem('ct_cache_p'); const cC = localStorage.getItem('ct_cache_c');
@@ -24,13 +28,16 @@ window.CT = {
         
         if(cU) this.data.u = JSON.parse(cU); 
         if(cP) this.data.p = JSON.parse(cP); if(cC) this.data.c = JSON.parse(cC);
-        if(cUi) { this.data.ui = JSON.parse(cUi); window.UI.applyUITexts(); }
+        if(cUi) { 
+            this.data.ui = JSON.parse(cUi); 
+            if(window.UI && window.UI.applyUITexts) window.UI.applyUITexts(); 
+        }
 
-        window.UI.updateUnitVisuals(this.currentUnit);
-        window.UI.updateFastModeVisuals();
-        window.UI.applySavedTheme();
+        if(window.UI && window.UI.updateUnitVisuals) window.UI.updateUnitVisuals(this.currentUnit);
+        if(window.UI && window.UI.updateFastModeVisuals) window.UI.updateFastModeVisuals();
+        if(window.UI && window.UI.applySavedTheme) window.UI.applySavedTheme();
         
-        setTimeout(() => { if(window.UI.setLayout) window.UI.setLayout(window.UI.listLayout); }, 100);
+        setTimeout(() => { if(window.UI && window.UI.setLayout && window.UI.listLayout) window.UI.setLayout(window.UI.listLayout); }, 100);
         
         if (!window.isDesktopEnv) {
             const dlBtn = document.getElementById('btn-direct-download');
@@ -39,7 +46,7 @@ window.CT = {
 
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-            if (!window.App.activeEngine) return;
+            if (!window.App || !window.App.activeEngine) return;
             const sc = window.CT.data.shortcuts || { restart: 'Tab', next: 'Enter', quit: 'Escape' };
             if (e.key === sc.restart) { e.preventDefault(); window.App.retryRace(); }
             else if (e.key === sc.next) { e.preventDefault(); window.App.nextRace(); }
@@ -51,7 +58,7 @@ window.CT = {
                 this.data.maint = { active: false, icon: '🛠️', title: 'Mantenimiento', msg: 'Actualizando.', info: true, theme: true };
                 if(this.ses() && this.ses().r === 'admin') window.db.collection('config').doc('maintenance').set(this.data.maint);
             }
-            window.UI.checkMaintenance();
+            if(window.UI && window.UI.checkMaintenance) window.UI.checkMaintenance();
         });
 
         window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
@@ -77,34 +84,37 @@ window.CT = {
             if(!snap.exists && this.ses() && this.ses().r === 'admin') {
                 window.db.collection('config').doc('stats_layout').set(this.data.statsLayout);
             }
-            window.UI.applyStatsLayout();
+            if(window.UI && window.UI.applyStatsLayout) window.UI.applyStatsLayout();
         });
 
         window.db.collection('config').doc('info_page').onSnapshot(snap => {
             if(snap.exists) { this.data.info = snap.data(); } else { this.data.info = { title: "Información", content: "Bienvenido a CananTyper." }; }
-            window.UI.renderInfoPage();
+            if(window.UI && window.UI.renderInfoPage) window.UI.renderInfoPage();
         });
 
         window.db.collection('config').doc('shortcuts').onSnapshot(snap => {
             if(snap.exists) { this.data.shortcuts = snap.data(); } else { this.data.shortcuts = { restart: 'Tab', next: 'Enter', quit: 'Escape' }; }
         });
 
-        if(this.ses()) { window.UI.initLobby(); } 
-        else { window.UI.show('auth-screen'); window.updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); }
+        if(this.ses()) { if(window.UI && window.UI.initLobby) window.UI.initLobby(); } 
+        else { 
+            if(window.UI && window.UI.show) window.UI.show('auth-screen'); 
+            if(window.updateDiscordStatus) window.updateDiscordStatus("En la pantalla de acceso", "Esperando credenciales...", false); 
+        }
 
-        window.db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); window.UI.refreshActiveViews(); });
+        window.db.collection('users').onSnapshot(snap => { this.data.u = snap.docs.map(d => d.data()); localStorage.setItem('ct_cache_u', JSON.stringify(this.data.u)); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); });
         
-        window.App.loadDashboardData();
+        if(window.App && window.App.loadDashboardData) window.App.loadDashboardData();
 
         window.db.collection('phrases').onSnapshot(snap => { 
             this.data.p = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); window.UI.refreshActiveViews(); 
+            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
         });
         window.db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); window.UI.updateCategorySelects(); window.UI.renderTrainDropdown(); window.UI.refreshActiveViews(); 
+            localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); if(window.UI && window.UI.updateCategorySelects) window.UI.updateCategorySelects(); if(window.UI && window.UI.renderTrainDropdown) window.UI.renderTrainDropdown(); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
         });
-        window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); window.UI.checkAnnouncements(); window.UI.refreshActiveViews(); });
+        window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { this.data.a = snap.docs.map(d => d.data()); if(window.UI && window.UI.checkAnnouncements) window.UI.checkAnnouncements(); if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); });
 
         window.db.collection('config').doc('ui_texts').onSnapshot(snap => {
             const defaults = {
@@ -207,7 +217,8 @@ window.CT = {
                 }
             });
             localStorage.setItem('ct_cache_ui', JSON.stringify(window.CT.data.ui));
-            window.UI.applyUITexts(); window.UI.refreshActiveViews();
+            if(window.UI && window.UI.applyUITexts) window.UI.applyUITexts(); 
+            if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews();
         });
     },
     
