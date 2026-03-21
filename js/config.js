@@ -26,7 +26,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 window.db = firebase.firestore();
-
-window.db.enablePersistence({ synchronizeTabs: true }).catch((err) => { 
-    console.error("Persistencia falló:", err); 
+window.db.settings({
+    localCache: firebase.firestore.persistentLocalCache()
 });
