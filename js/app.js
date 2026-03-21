@@ -60,7 +60,6 @@ window.App = {
         
         let w = layout[tab].find(x => x.id === widgetId);
         if (w) {
-            // Ciclo: 3 -> 4 -> 6 -> 8 -> 12 -> 3
             if (w.s === 3) w.s = 4;
             else if (w.s === 4) w.s = 6;
             else if (w.s === 6) w.s = 8;
@@ -283,7 +282,11 @@ window.App = {
         const attemptLogin = async (retries = 3) => {
             for (let i = 0; i < retries; i++) {
                 try { 
-                    const docRef = await window.db.collection('users').doc(handle).get(); 
+                    // Blindaje contra cuelgues de Firebase
+                    const fetchPromise = window.db.collection('users').doc(handle).get();
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT_DB")), 5000));
+                    const docRef = await Promise.race([fetchPromise, timeoutPromise]);
+                    
                     if(docRef.exists && docRef.data().p === p) { 
                         localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                         if(!window.CT.data.u.find(u => u.h === handle)) window.CT.data.u.push(docRef.data()); 
@@ -294,6 +297,10 @@ window.App = {
                         return true; 
                     } 
                 } catch(e) { 
+                    if (e.message === "TIMEOUT_DB") {
+                        alert("La base de datos no responde. Probablemente la caché local esté corrupta. Por favor, limpia la caché de tu navegador e intenta de nuevo.");
+                        return true; // Abortamos reintentos
+                    }
                     if (i === retries - 1) throw e; 
                     await new Promise(r => setTimeout(r, 1000)); 
                 }
@@ -355,5 +362,4 @@ window.App = {
     }
 };
 
-// Arranque de la aplicación
 document.addEventListener('DOMContentLoaded', () => { window.CT.init(); });
