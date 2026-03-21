@@ -4,7 +4,7 @@
 
 window.App = {
     currentTrack: null, activeEngine: null,
-    currentRaceContext: null, // Sistema de continuidad
+    currentRaceContext: null,
     
     handleDragReorder: async (type, domOldIdx, domNewIdx, pageContext) => {
         if (type === 'favs') {
@@ -25,12 +25,10 @@ window.App = {
         }
     },
 
-    // LÓGICA PRO DE REORDENAMIENTO DE WIDGETS BASADA EN DOM REAL
     saveWidgetOrderFromDOM: (tab, gridElementId) => {
         const grid = document.getElementById(gridElementId);
         if(!grid) return;
         
-        // Obtenemos el orden de los IDs visuales (solo los visibles)
         const visibleDomIds = Array.from(grid.children)
             .filter(el => !el.classList.contains('hidden'))
             .map(el => el.getAttribute('data-id'));
@@ -39,7 +37,6 @@ window.App = {
         
         layout.forEach(w => {
             const domIdx = visibleDomIds.indexOf(w.id);
-            // Si está visible le damos su nuevo orden, si está oculto lo mandamos al final
             w.order = domIdx !== -1 ? domIdx : 999;
         });
 
@@ -181,7 +178,6 @@ window.App = {
                 else if (track && track.c && track.c.startsWith('[TRN]')) window.App.startTrnCategory(track.c);
                 else window.App.startPurge(); 
             } else {
-                // Lógica de Continuidad de Contexto (Fase Pro)
                 if (window.App.currentRaceContext) {
                     if (window.App.currentRaceContext.type === 'favs') {
                         const u = window.CT.ses();
@@ -209,7 +205,7 @@ window.App = {
     
     quitRace: () => { 
         if(window.App.activeEngine) { window.App.activeEngine.stop(); window.App.activeEngine = null; } 
-        window.App.currentRaceContext = null; // Resetea contexto al salir al lobby
+        window.App.currentRaceContext = null; 
         window.UI.showLobby(); 
     },
     
@@ -323,7 +319,40 @@ window.App = {
     
     logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
 
-    saveCrop: () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d'); const img = document.getElementById('crop-image'); const imgW = img.naturalWidth; const imgH = img.naturalHeight; let baseScale; if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } const viewerImgW = imgW * baseScale; const viewerImgH = imgH * baseScale; const sW = (imgW * 220) / (viewerImgW * window.UI.cropScale); const sH = (imgH * 220) / (viewerImgH * window.UI.cropScale); const sX = (((viewerImgW * window.UI.cropScale) / 2) - window.UI.cropX - 110) * (imgW / (viewerImgW * window.UI.cropScale)); const sY = (((viewerImgH * window.UI.cropScale) / 2) - window.UI.cropY - 110) * (imgH / (viewerImgH * window.UI.cropScale)); ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,256); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ a: compressedBase64 }); window.db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = window.db.batch(); q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); batch.commit(); }); document.getElementById('prof-img').src = compressedBase64; } window.UI.closeCropModal(); }
+    saveCrop: () => { 
+        const canvas = document.createElement('canvas'); 
+        canvas.width = 256; 
+        canvas.height = 256; 
+        const ctx = canvas.getContext('2d'); 
+        const img = document.getElementById('crop-image'); 
+        const imgW = img.naturalWidth; 
+        const imgH = img.naturalHeight; 
+        let baseScale; 
+        if (imgW > imgH) { baseScale = 220 / imgH; } else { baseScale = 220 / imgW; } 
+        const viewerImgW = imgW * baseScale; 
+        const viewerImgH = imgH * baseScale; 
+        const sW = (imgW * 220) / (viewerImgW * window.UI.cropScale); 
+        const sH = (imgH * 220) / (viewerImgH * window.UI.cropScale); 
+        const sX = (((viewerImgW * window.UI.cropScale) / 2) - window.UI.cropX - 110) * (imgW / (viewerImgW * window.UI.cropScale)); 
+        const sY = (((viewerImgH * window.UI.cropScale) / 2) - window.UI.cropY - 110) * (imgH / (viewerImgH * window.UI.cropScale)); 
+        ctx.fillStyle = '#000'; 
+        ctx.fillRect(0,0,256,256); 
+        ctx.imageSmoothingEnabled = true; 
+        ctx.imageSmoothingQuality = 'high'; 
+        ctx.drawImage(img, sX, sY, sW, sH, 0, 0, 256, 256); 
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85); 
+        const u = window.CT.ses(); 
+        if(u) { 
+            window.db.collection('users').doc(u.h).update({ a: compressedBase64 }); 
+            window.db.collection('scores').where('h', '==', u.h).get().then(q => { 
+                const batch = window.db.batch(); 
+                q.forEach(doc => { batch.update(doc.ref, { a: compressedBase64 }); }); 
+                batch.commit(); 
+            }); 
+            document.getElementById('prof-img').src = compressedBase64; 
+        } 
+        window.UI.closeCropModal(); 
+    }
 };
 
 // Arranque de la aplicación
