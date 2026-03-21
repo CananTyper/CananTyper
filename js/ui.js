@@ -335,6 +335,18 @@ window.UI = {
         }
         const elBestCat = document.getElementById('st-p-best-cat'); if(elBestCat) elBestCat.innerText = bestCat;
 
+        // Tendencia de Mejora
+        const first10 = [...compScores].slice(0, 10);
+        const avgF = first10.length ? first10.reduce((a,b)=>a+b.c,0)/first10.length : 0;
+        let trend = 0;
+        if(avgF > 0) trend = ((avgLast10 - avgF) / avgF) * 100;
+        const elTrend = document.getElementById('st-p-trend-val');
+        if(elTrend) {
+            elTrend.innerText = (trend > 0 ? '+' : '') + trend.toFixed(1) + '%';
+            elTrend.style.color = trend >= 0 ? 'var(--p)' : 'var(--error)';
+            elTrend.style.textShadow = trend >= 0 ? '0 0 10px color-mix(in srgb, var(--p) 30%, transparent)' : 'none';
+        }
+
         const accuracy = compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0;
         const elDonut = document.getElementById('st-p-donut-acc');
         if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(accuracy, 'var(--p)');
@@ -358,7 +370,6 @@ window.UI = {
         });
         const barContainer = document.getElementById('st-p-bar-container');
         if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
-
 
         const bk = userDoc.bad_keys || {};
         const maxErr = Math.max(...Object.values(bk), 1); 
@@ -442,17 +453,36 @@ window.UI = {
         const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
         const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
 
-        // Donut Monopolio Global
         const totalTop1s = Object.values(top1c).reduce((a,b) => a+b, 0);
         const monopolyRate = totalTop1s > 0 ? (top1c[mTop1h] / totalTop1s) * 100 : 0;
         const elDonutE = document.getElementById('st-e-donut-monopoly');
         if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(monopolyRate, 'var(--p)');
         const elDonutUser = document.getElementById('st-e-donut-user');
-        if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 8);
+        if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
         
         const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
         const eSvgContainer = document.getElementById('st-e-svg-container');
         if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
+
+        // Distribución de Rangos (Bar Chart)
+        let playerStats = users.map(us => {
+            const hist = (us.hi||[]); 
+            return hist.length ? Math.round(hist.reduce((a,b)=>a+b)/hist.length) : 0;
+        }).filter(v => v > 0);
+
+        const v40 = window.UI.formatValue(40);
+        const v80 = window.UI.formatValue(80);
+        const v120 = window.UI.formatValue(120);
+        let tiers = { [`<${v40}`]: 0, [`${v40}-${v80}`]: 0, [`${v80}-${v120}`]: 0, [`>${v120}`]: 0 };
+        playerStats.forEach(v => {
+            let formV = window.UI.formatValue(v);
+            if(formV < v40) tiers[`<${v40}`]++;
+            else if(formV >= v40 && formV < v80) tiers[`${v40}-${v80}`]++;
+            else if(formV >= v80 && formV < v120) tiers[`${v80}-${v120}`]++;
+            else tiers[`>${v120}`]++;
+        });
+        const tierContainer = document.getElementById('st-e-bar-tier');
+        if(tierContainer) tierContainer.innerHTML = window.UI.generateBarChartSVG(tiers);
 
         let tCounts = {}; topS.forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; }); let top10T = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a]).slice(0, 10);
         const elTxts = document.getElementById('st-e-table-texts');
@@ -555,6 +585,21 @@ window.UI = {
                 <div class="st-list-rank">#${i+1}</div>
                 <div class="st-list-name">${v.n}</div>
                 <div class="st-list-val" style="font-size:0.75rem;">${v.d} X_X</div>
+            </li>`).join('');
+
+        // Refugios Seguros (Survivals - Deaths)
+        let hcSurvivals = {};
+        globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
+        let safeTracks = Object.keys(hcSurvivals)
+            .map(k => ({ t: k, s: hcSurvivals[k] - (trackDeaths[k] || 0) }))
+            .sort((a,b) => b.s - a.s).slice(0, 10);
+        
+        const elSafe = document.getElementById('st-hc-safe');
+        if(elSafe) elSafe.innerHTML = safeTracks.map((st, i) => `
+            <li class="st-list-item" style="border-bottom-color:#1a1a1a;">
+                <div class="st-list-rank" style="color:var(--success);">#${i+1}</div>
+                <div class="st-list-name" style="color:#ccc;">${st.t}</div>
+                <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
             </li>`).join('');
 
         window.UI.applyStatsLayout();
@@ -676,31 +721,6 @@ window.UI = {
         }).join('');
     },
 
-    async showProfile(who) {
-        try {
-            const currentSes = window.CT.ses(); const targetHandle = (who === 'me') ? currentSes.h : who;
-            const u = window.CT.dbLocal('u').find(x => x.h === targetHandle); if(!u) return;
-            window.CT.activeProfHandle = u.h;
-            
-            await window.App.getUserScores(u.h);
-            
-            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
-            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
-            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
-            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
-            const bestCPM = total ? Math.max(...hi) : 0;
-            document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
-            window.CT.profPage = 0; window.UI.renderProfileHistory();
-            const isMe = (currentSes && u.h === currentSes.h);
-            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
-            window.UI.show('profile-screen');
-        } catch (error) { console.error(error); }
-    },
-    
-    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
-    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
-    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
-    
     openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); window.UI.toggleSettings(); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
 
