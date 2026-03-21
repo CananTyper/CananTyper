@@ -230,7 +230,6 @@ window.UI = {
     generateLineChartSVG: (dataArray) => {
         if(!dataArray || dataArray.length < 2) return '';
         const max = Math.max(...dataArray, 10); 
-        const min = Math.min(...dataArray, max);
         const width = 1000;
         const height = 220; 
         const stepX = width / (dataArray.length - 1);
@@ -304,6 +303,7 @@ window.UI = {
         return tObj ? (tObj.c || 'General').trim() : 'General';
     },
 
+    // PREVIEW DE PISTAS (MODAL)
     showTrackPreview: (trackId) => {
         const track = window.CT.dbLocal('p').find(t => t.id.toString() === trackId.toString() || t.title.toString() === trackId.toString());
         if(!track) return;
@@ -409,18 +409,20 @@ window.UI = {
         const barContainer = document.getElementById('st-p-bar-container');
         if(barContainer) barContainer.innerHTML = window.UI.generateBarChartSVG(dist);
 
+        // Heatmap corregido (sin fondos rojos invasivos)
         const bk = userDoc.bad_keys || {};
-        const maxErr = Math.max(...Object.values(bk), 5); 
+        const maxErr = Math.max(...Object.values(bk), 5); // Requiere 5 errs minimo para alterar opacidad max
         document.querySelectorAll('#pane-stats-personal kbd[data-key]').forEach(el => {
-            el.style.removeProperty('background');
             el.style.removeProperty('border-color');
             el.style.removeProperty('color');
+            el.style.removeProperty('text-shadow');
 
             const key = el.getAttribute('data-key');
             const errs = bk[key] || 0;
             if(errs >= 5) {
                 el.style.setProperty('border-color', 'var(--error)', 'important');
                 el.style.setProperty('color', 'var(--error)', 'important');
+                el.style.setProperty('text-shadow', '0 0 5px var(--error)', 'important');
                 el.title = `Errores críticos: ${errs}`;
             } else if (errs > 0) {
                 el.title = `Errores leves: ${errs}`;
@@ -429,7 +431,7 @@ window.UI = {
             }
         });
 
-        // Top 20 List
+        // Top 20 List - Rellenado Inteligente
         const compScoresDesc = [...compScores].sort((a,b) => b.c - a.c);
         let top20Html = '';
         for(let i=0; i<20; i++) {
@@ -442,13 +444,13 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                 </li>`;
             } else {
-                top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elTop10 = document.getElementById('st-p-top10-races');
         if(elTop10) elTop10.innerHTML = top20Html;
 
-        // Bottom 20 List
+        // Bottom 20 List - Rellenado Inteligente
         let trackAvgs = {};
         compScores.forEach(s => { if(!trackAvgs[s.track]) trackAvgs[s.track] = { sum: 0, count: 0 }; trackAvgs[s.track].sum += s.c; trackAvgs[s.track].count++; });
         let trackList = Object.keys(trackAvgs).map(k => ({ t: k, avg: trackAvgs[k].sum / trackAvgs[k].count, count: trackAvgs[k].count }));
@@ -466,13 +468,13 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
                 </li>`;
             } else {
-                bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elBottom = document.getElementById('st-p-worst-tracks');
         if(elBottom) elBottom.innerHTML = bottom20Html;
 
-        // Words 20
+        // Words 20 (Corregido 'errores' en vez de 'err')
         const bw = userDoc.bad_words || {};
         let badWordsList = Object.keys(bw).map(k => ({ w: k, errs: bw[k] })).sort((a,b) => b.errs - a.errs).slice(0, 20);
         let wordsHtml = '';
@@ -483,10 +485,10 @@ window.UI = {
                 <li class="st-list-item">
                     <div class="st-list-rank">#${i+1}</div>
                     <div class="st-list-name">${bwItem.w}</div>
-                    <div class="st-list-val" style="font-size:0.75rem;">${bwItem.errs} err</div>
+                    <div class="st-list-val" style="font-size:0.75rem;">${bwItem.errs} errores</div>
                 </li>`;
             } else {
-                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elWords = document.getElementById('st-p-worst-words');
@@ -581,7 +583,7 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
                 </li>`;
             } else {
-                top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elTxts = document.getElementById('st-e-table-texts');
@@ -603,7 +605,7 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
                 </li>`;
             } else {
-                top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elCats = document.getElementById('st-e-table-cats');
@@ -625,7 +627,7 @@ window.UI = {
                     <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
                 </li>`;
             } else {
-                topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elAct = document.getElementById('st-e-table-players');
@@ -674,7 +676,7 @@ window.UI = {
                     <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                 </li>`;
             } else {
-                hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elHcTop = document.getElementById('st-hc-top10');
@@ -698,7 +700,7 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem;">${td.d} ☠️</div>
                 </li>`;
             } else {
-                worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elHcWorst = document.getElementById('st-hc-worst');
@@ -717,7 +719,7 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} VICS</div>
                 </li>`;
             } else {
-                legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elLeg = document.getElementById('st-hc-legends');
@@ -736,7 +738,7 @@ window.UI = {
                     <div class="st-list-val" style="font-size:0.75rem;">${v.d} ☠️</div>
                 </li>`;
             } else {
-                vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elVic = document.getElementById('st-hc-victims');
@@ -760,7 +762,7 @@ window.UI = {
                     <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
                 </li>`;
             } else {
-                safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
             }
         }
         const elSafe = document.getElementById('st-hc-safe');
@@ -893,6 +895,44 @@ window.UI = {
         }).join('');
     },
 
+    async showProfile(who) {
+        try {
+            const currentSes = window.CT.ses(); 
+            const targetHandle = (who === 'me') ? currentSes.h : who;
+            
+            let u = window.CT.dbLocal('u').find(x => x.h === targetHandle); 
+            if(!u) {
+                // Failsafe: Búsqueda directa en DB si la caché falló o es un usuario viejo.
+                const doc = await window.db.collection('users').doc(targetHandle).get();
+                if(doc.exists) u = doc.data();
+                else return; // Usuario eliminado
+            }
+            
+            window.CT.activeProfHandle = u.h;
+            
+            await window.App.getUserScores(u.h);
+            
+            document.getElementById('prof-name').innerText = u.n; document.getElementById('prof-img').src = u.a || window.CT.defAvatar; document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
+            const hi = u.hi || []; const total = hi.length; document.getElementById('st-total').innerText = total;
+            const avgCPM = total ? Math.round(hi.reduce((a,b)=>a+b, 0)/total) : 0;
+            const last10hi = hi.slice(-10); const avg10CPM = last10hi.length ? Math.round(last10hi.reduce((a,b)=>a+b, 0)/last10hi.length) : 0;
+            const bestCPM = total ? Math.max(...hi) : 0;
+            document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
+            window.CT.profPage = 0; window.UI.renderProfileHistory();
+            const isMe = (currentSes && u.h === currentSes.h);
+            document.getElementById('btn-open-edit').classList.toggle('hidden', !isMe); document.getElementById('edit-dropdown').classList.add('hidden');
+            window.UI.show('profile-screen');
+        } catch (error) { console.error(error); }
+    },
+
+    closeProfile: () => {
+        window.UI.show('home-screen'); // Vuelve al inicio en lugar de solo ocultar (mantenimiento de estado DOM correcto)
+    },
+    
+    toggleEditMenu: () => { document.getElementById('edit-dropdown').classList.toggle('hidden'); },
+    toggleSettings: () => { document.getElementById('settings-dropdown').classList.toggle('hidden'); const dot = document.getElementById('update-dot'); if (dot && dot.classList.contains('dot-yellow')) dot.classList.add('hidden'); },
+    toggleTrainMenu: () => { document.getElementById('train-dropdown').classList.toggle('hidden'); },
+    
     openThemeBuilder: () => { document.getElementById('theme-modal').classList.remove('hidden'); window.UI.toggleSettings(); },
     closeThemeModal: () => { document.getElementById('theme-modal').classList.add('hidden'); },
 
@@ -916,10 +956,6 @@ window.UI = {
         document.getElementById('prof-prev').disabled = window.CT.profPage === 0; document.getElementById('prof-next').disabled = (start + 10) >= userScores.length; document.getElementById('prof-page-num').innerText = `Página ${window.CT.profPage + 1}`;
     },
     changeProfPage(delta) { const scores = window.CT.data.userScores[window.CT.activeProfHandle] || []; const userScores = scores.filter(s => !s.hc); const nextStart = (window.CT.profPage + delta) * 10; if(nextStart >= 0 && nextStart < userScores.length) { window.CT.profPage += delta; window.UI.renderProfileHistory(); } },
-
-    closeProfile: () => {
-        document.getElementById('profile-screen').classList.add('hidden');
-    },
 
     checkAnnouncements: () => {
         const anns = window.CT.dbLocal('a').filter(x => x.active);
