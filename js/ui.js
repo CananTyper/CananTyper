@@ -9,14 +9,19 @@ window.UI = {
     activeStatsTab: 'personal',
     formatValue: (cpm) => { return (window.CT.currentUnit === 'wpm') ? Math.round(cpm / window.CT.charPerWord) : cpm; },
     
-    formatTrackName: (t) => { return t; },
+    // Formateadores Seguros
+    formatTrackName: (t) => { 
+        if(!t) return 'Desconocido';
+        return isNaN(t) ? t : '#' + t; 
+    },
     formatTrackNameFull: (t) => { 
         if(!t) return 'Desconocido';
         const cat = window.UI.getTrackCat(t);
+        const name = isNaN(t) ? t : 'Texto ' + t;
         if (cat && cat !== 'General' && cat !== '-') {
-            return t + ' | ' + cat.replace('[TRN] ', '');
+            return name + ' | ' + cat.replace('[TRN] ', '');
         }
-        return t + ' | ' + cat; 
+        return name + ' | ' + cat; 
     },
 
     initSortable: (containerId, type, pageContext = 0) => {
@@ -229,7 +234,6 @@ window.UI = {
     generateLineChartSVG: (dataArray) => {
         if(!dataArray || dataArray.length < 2) return '';
         const max = Math.max(...dataArray, 10); 
-        const min = Math.min(...dataArray, max);
         const width = 1000;
         const height = 220; 
         const stepX = width / (dataArray.length - 1);
@@ -445,7 +449,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                     </li>`;
                 } else {
-                    top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                    top20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elTop10 = document.getElementById('st-p-top10-races');
@@ -468,7 +472,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(Math.round(tr.avg))}</div>
                     </li>`;
                 } else {
-                    bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                    bottom20Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elBottom = document.getElementById('st-p-worst-tracks');
@@ -487,7 +491,7 @@ window.UI = {
                         <div class="st-list-val" style="font-size:0.75rem; width:80px;">${bwItem.errs} errores</div>
                     </li>`;
                 } else {
-                    wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val" style="width:80px;">-</div></li>`;
+                    wordsHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val" style="width:80px;">-</div></li>`;
                 }
             }
             const elWords = document.getElementById('st-p-worst-words');
@@ -583,7 +587,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(trMax.c)}</div>
                     </li>`;
                 } else {
-                    top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                    top10THtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elTxts = document.getElementById('st-e-table-texts');
@@ -604,7 +608,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(catMax.c)}</div>
                     </li>`;
                 } else {
-                    top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                    top10CHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elCats = document.getElementById('st-e-table-cats');
@@ -625,7 +629,7 @@ window.UI = {
                         <div class="st-list-val" style="color:#fff;">${pAct[h]}</div>
                     </li>`;
                 } else {
-                    topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                    topActHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elAct = document.getElementById('st-e-table-players');
@@ -675,7 +679,7 @@ window.UI = {
                         <div class="st-list-val val-blurrable">${window.UI.formatValue(s.c)}</div>
                     </li>`;
                 } else {
-                    hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
+                    hcTop10Html += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-meta">-</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elHcTop = document.getElementById('st-hc-top10');
@@ -698,7 +702,7 @@ window.UI = {
                         <div class="st-list-val" style="font-size:0.75rem;">${td.d} ☠️</div>
                     </li>`;
                 } else {
-                    worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                    worstHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elHcWorst = document.getElementById('st-hc-worst');
@@ -716,7 +720,7 @@ window.UI = {
                         <div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} VICS</div>
                     </li>`;
                 } else {
-                    legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                    legHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elLeg = document.getElementById('st-hc-legends');
@@ -734,7 +738,7 @@ window.UI = {
                         <div class="st-list-val" style="font-size:0.75rem;">${v.d} ☠️</div>
                     </li>`;
                 } else {
-                    vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                    vicHtml += `<li class="st-list-item" style="opacity:0.3;"><div class="st-list-rank">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elVic = document.getElementById('st-hc-victims');
@@ -757,7 +761,7 @@ window.UI = {
                         <div class="st-list-val" style="color:var(--success); font-size:0.75rem;">RATIO: ${st.s}</div>
                     </li>`;
                 } else {
-                    safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">- Vacío -</div><div class="st-list-val">-</div></li>`;
+                    safeHtml += `<li class="st-list-item" style="opacity:0.3; border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--success);">#${i+1}</div><div class="st-list-name">Vacío</div><div class="st-list-val">-</div></li>`;
                 }
             }
             const elSafe = document.getElementById('st-hc-safe');
