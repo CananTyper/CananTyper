@@ -25,7 +25,7 @@ Object.assign(window.UI, {
             document.getElementById('prof-member-since').innerText = u.createdAt || 'Archivo Clasificado';
 
             // BIOGRAFÍA Y DATOS OPCIONALES
-            document.getElementById('prof-bio').innerText = u.bio ? `"${u.bio}"` : '"Este piloto aún no ha escrito su historia."';
+            document.getElementById('prof-bio').innerText = u.bio ? `${u.bio}` : 'Este piloto aún no ha escrito su historia.';
             
             const cEl = document.getElementById('prof-country');
             if(u.country) { cEl.innerText = `🌍 ${u.country}`; cEl.style.display = 'inline-block'; } else { cEl.style.display = 'none'; }
@@ -39,10 +39,15 @@ Object.assign(window.UI, {
             // VISIBILIDAD SECCIONES HARDWARE
             document.getElementById('prof-section-hw').style.display = (!u.layout && !u.switches) ? 'none' : 'block';
 
+            // LÓGICA DEL NUEVO TAG DE DISCORD
             const dcEl = document.getElementById('prof-soc-dc');
-            if(u.discord) { dcEl.href = `https://discord.com/users/${u.discord}`; dcEl.innerText = u.discord; dcEl.classList.remove('hidden'); } 
-            else { dcEl.classList.add('hidden'); }
-            document.getElementById('prof-section-social').style.display = (!u.discord) ? 'none' : 'block';
+            if(u.discord) { 
+                dcEl.href = `https://discord.com/users/${u.discord}`; 
+                document.getElementById('prof-dc-name').innerText = u.discord; 
+                dcEl.classList.remove('hidden'); 
+            } else { 
+                dcEl.classList.add('hidden'); 
+            }
 
             // ESTADÍSTICAS NUMÉRICAS
             const hi = u.hi || []; const total = hi.length; 
