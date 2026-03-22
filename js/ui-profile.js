@@ -51,16 +51,32 @@ Object.assign(window.UI, {
             const currentSes = window.CT.ses(); if (!currentSes) return;
             const targetHandle = (who === 'me') ? currentSes.h : who;
 
-           // --- EL INTERCEPTOR: CUENTA OFICIAL (SYSTEM CORE) ---
+            // --- EL INTERCEPTOR: CUENTA OFICIAL (SYSTEM CORE) ---
             if (targetHandle === '@canantyper') {
                 document.getElementById('profile-normal-layout').classList.add('hidden');
                 document.getElementById('profile-official-layout').classList.remove('hidden');
                 
-                // CONSTRUIR EL PODIO CON EL TOP GLOBAL
+                // 1. STATS GLOBALES DEL SERVIDOR
+                const allUsers = window.CT.dbLocal('u') || [];
+                let totalGlobalRaces = 0;
+                let totalHcDeaths = 0;
+                allUsers.forEach(us => {
+                    totalGlobalRaces += (us.hi || []).length;
+                    totalHcDeaths += (us.hc_deaths || 0);
+                });
+
+                const offUsersEl = document.getElementById('off-users');
+                const offRacesEl = document.getElementById('off-races');
+                const offHcEl = document.getElementById('off-hc-deaths');
+                
+                if (offUsersEl) offUsersEl.innerText = allUsers.length;
+                if (offRacesEl) offRacesEl.innerText = window.UI.formatValue(totalGlobalRaces);
+                if (offHcEl) offHcEl.innerText = window.UI.formatValue(totalHcDeaths);
+
+                // 2. PODIO GLOBAL TOP 3
                 const topScores = window.CT.data.s_top || [];
                 const normRankList = topScores.filter(s=>!s.hc).sort((a,b)=>b.c - a.c);
                 
-                // Filtramos para obtener a los 3 mejores USUARIOS únicos (no 3 scores del mismo usuario)
                 let uniqueTopUsers = [];
                 let seenHandles = new Set();
                 for(let s of normRankList) {
@@ -72,65 +88,41 @@ Object.assign(window.UI, {
                 }
 
                 const podCont = document.getElementById('official-podium-container');
-                if (uniqueTopUsers.length >= 3) {
-                    const u1 = uniqueTopUsers[0];
-                    const u2 = uniqueTopUsers[1];
-                    const u3 = uniqueTopUsers[2];
-                    
-                    // Función para obtener el avatar del usuario si no está en el score
-                    const getAv = (handle) => {
-                        let user = window.CT.dbLocal('u').find(x => x.h === handle);
-                        return user && user.a ? user.a : window.CT.defAvatar;
-                    };
+                if (podCont) {
+                    if (uniqueTopUsers.length >= 3) {
+                        const u1 = uniqueTopUsers[0];
+                        const u2 = uniqueTopUsers[1];
+                        const u3 = uniqueTopUsers[2];
+                        
+                        const getAv = (handle) => {
+                            let user = window.CT.dbLocal('u').find(x => x.h === handle);
+                            return user && user.a ? user.a : window.CT.defAvatar;
+                        };
 
-                    podCont.innerHTML = `
-                        <div class="podium-spot p2" onclick="window.UI.showProfile('${u2.h}')" style="cursor:pointer;" title="Ver perfil de ${u2.n || u2.h}">
-                            <img src="${getAv(u2.h)}" class="podium-avatar">
-                            <div class="podium-name">🥈 ${u2.n || u2.h}</div>
-                            <div class="podium-cpm">${window.UI.formatValue(u2.c)} CPM</div>
-                        </div>
-                        <div class="podium-spot p1" onclick="window.UI.showProfile('${u1.h}')" style="cursor:pointer;" title="Ver perfil de ${u1.n || u1.h}">
-                            <div style="position:absolute; top:-60px; font-size:1.8rem; filter:drop-shadow(0 0 5px #ffd700);">👑</div>
-                            <img src="${getAv(u1.h)}" class="podium-avatar">
-                            <div class="podium-name">${u1.n || u1.h}</div>
-                            <div class="podium-cpm" style="color:#ffd700; font-weight:bold;">${window.UI.formatValue(u1.c)} CPM</div>
-                        </div>
-                        <div class="podium-spot p3" onclick="window.UI.showProfile('${u3.h}')" style="cursor:pointer;" title="Ver perfil de ${u3.n || u3.h}">
-                            <img src="${getAv(u3.h)}" class="podium-avatar">
-                            <div class="podium-name">🥉 ${u3.n || u3.h}</div>
-                            <div class="podium-cpm">${window.UI.formatValue(u3.c)} CPM</div>
-                        </div>
-                    `;
-                } else {
-                    podCont.innerHTML = `<div style="color:var(--text-muted); font-style:italic; padding: 30px;">Esperando datos de la élite... (Se requieren al menos 3 pilotos)</div>`;
+                        podCont.innerHTML = `
+                            <div class="podium-spot p2" onclick="window.UI.showProfile('${u2.h}')" style="cursor:pointer;" title="Ver perfil de ${u2.n || u2.h}">
+                                <img src="${getAv(u2.h)}" class="podium-avatar">
+                                <div class="podium-name">🥈 ${u2.n || u2.h}</div>
+                                <div class="podium-cpm">${window.UI.formatValue(u2.c)} CPM</div>
+                            </div>
+                            <div class="podium-spot p1" onclick="window.UI.showProfile('${u1.h}')" style="cursor:pointer;" title="Ver perfil de ${u1.n || u1.h}">
+                                <div style="position:absolute; top:-60px; font-size:1.8rem; filter:drop-shadow(0 0 5px #ffd700);">👑</div>
+                                <img src="${getAv(u1.h)}" class="podium-avatar">
+                                <div class="podium-name">${u1.n || u1.h}</div>
+                                <div class="podium-cpm" style="color:#ffd700; font-weight:bold;">${window.UI.formatValue(u1.c)} CPM</div>
+                            </div>
+                            <div class="podium-spot p3" onclick="window.UI.showProfile('${u3.h}')" style="cursor:pointer;" title="Ver perfil de ${u3.n || u3.h}">
+                                <img src="${getAv(u3.h)}" class="podium-avatar">
+                                <div class="podium-name">🥉 ${u3.n || u3.h}</div>
+                                <div class="podium-cpm">${window.UI.formatValue(u3.c)} CPM</div>
+                            </div>
+                        `;
+                    } else {
+                        podCont.innerHTML = `<div style="color:var(--text-muted); font-style:italic; padding: 30px;">Esperando datos de la élite... (Se requieren al menos 3 pilotos)</div>`;
+                    }
                 }
 
                 // Limpieza de UI superior
-                document.getElementById('user-search-input').value = '';
-                document.getElementById('user-search-results').classList.add('hidden');
-                document.getElementById('btn-edit-profile').classList.add('hidden');
-                
-                window.CT.activeProfHandle = '@canantyper';
-                window.UI.show('profile-screen');
-                return; // Cortamos la ejecución normal aquí
-            }
-            // ----------------------------------------------------
-                
-                // Calculamos estadísticas globales leyendo la RAM local (Cero costo Firebase)
-                const allUsers = window.CT.dbLocal('u') || [];
-                let totalGlobalRaces = 0;
-                let totalHcDeaths = 0;
-                allUsers.forEach(us => {
-                    totalGlobalRaces += (us.hi || []).length;
-                    totalHcDeaths += (us.hc_deaths || 0);
-                });
-
-                // Inyectamos datos
-                document.getElementById('off-users').innerText = allUsers.length;
-                document.getElementById('off-races').innerText = window.UI.formatValue(totalGlobalRaces);
-                document.getElementById('off-hc-deaths').innerText = window.UI.formatValue(totalHcDeaths);
-                
-                // Limpieza de UI
                 document.getElementById('user-search-input').value = '';
                 document.getElementById('user-search-results').classList.add('hidden');
                 document.getElementById('btn-edit-profile').classList.add('hidden');
@@ -192,6 +184,7 @@ Object.assign(window.UI, {
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
 
+            // CALCULAR TEXTO FAVORITO CON FILTRO ANTI-BUGS
             let tCounts = {}; let favTrackVal = "-"; let maxT = 0;
             scores.filter(s => !s.hc).forEach(s => { 
                 tCounts[s.track] = (tCounts[s.track] || 0) + 1; 
@@ -202,6 +195,7 @@ Object.assign(window.UI, {
             let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
+            // SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
             if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
             if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
@@ -212,6 +206,7 @@ Object.assign(window.UI, {
             if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
+            // SISTEMA DE RANKING (BASADO EN ÚLTIMAS 10)
             const allUsers = window.CT.dbLocal('u');
             
             let userAverages = allUsers.map(user => {
@@ -233,6 +228,7 @@ Object.assign(window.UI, {
             let finalRank = Math.min(nRank, hRank);
             let isHcRank = hRank < nRank;
 
+            // PODIOS Y MARCOS
             const avCont = document.getElementById('prof-avatar-container');
             avCont.className = 'avatar-lrg prestige-border-none'; // Reset
             
