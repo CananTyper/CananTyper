@@ -28,21 +28,76 @@ Object.assign(window.UI, {
         if(window.CT.ses() && window.CT.ses().r === 'admin') window.UI.renderWidgetsMenu();
     },
 
+    syncLayoutData: () => {
+        let layout = window.CT.data.statsLayout; if(!layout) return false;
+        let changed = false;
+        const defaults = {
+            personal: ['w-p-summary', 'w-p-recent', 'w-p-record', 'w-p-specialty', 'w-p-graph', 'w-p-dist', 'w-p-donut', 'w-p-trend', 'w-p-cons', 'w-p-heat', 'w-p-top', 'w-p-worst', 'w-p-words'],
+            elite: ['w-e-vol', 'w-e-dom', 'w-e-eff', 'w-e-rec', 'w-e-graph', 'w-e-donut', 'w-e-tier', 'w-e-modes', 'w-e-texts', 'w-e-cats', 'w-e-players'],
+            hc: ['w-h-rec', 'w-h-surv', 'w-h-death', 'w-h-rate', 'w-h-zones', 'w-h-top', 'w-h-worst', 'w-h-legends', 'w-h-victims', 'w-h-safe']
+        };
+        ['personal', 'elite', 'hc'].forEach(tab => {
+            if(!layout[tab]) { layout[tab] = []; changed = true; }
+            defaults[tab].forEach(id => {
+                if(!layout[tab].find(w => w.id === id)) {
+                    layout[tab].push({ id: id, v: true, s: (id.includes('graph') || id.includes('heat') || id.includes('tier') || id.includes('zones') ? 8 : (id.includes('top') || id.includes('worst') ? 6 : 4)), order: 999 });
+                    changed = true;
+                }
+            });
+        });
+        if(changed && window.CT.ses() && window.CT.ses().r === 'admin') window.db.collection('config').doc('stats_layout').set(layout);
+        return layout;
+    },
+
+    initStatsSortable: (tab) => {
+        if (typeof Sortable === 'undefined') return;
+        const container = document.getElementById(`grid-stats-${tab}`);
+        if (!container) return;
+        if (container._sortable) container._sortable.destroy();
+        container._sortable = Sortable.create(container, {
+            handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
+            onStart: () => { container._isDragging = true; },
+            onEnd: () => { container._isDragging = false; window.UI.saveWidgetOrder(tab); }
+        });
+    },
+
+    saveWidgetOrder: (tab) => {
+        const grid = document.getElementById(`grid-stats-${tab}`); if(!grid) return;
+        const domIds = Array.from(grid.children).map(el => el.getAttribute('data-id'));
+        let layout = window.CT.data.statsLayout; if(!layout || !layout[tab]) return;
+        layout[tab].forEach(w => { const idx = domIds.indexOf(w.id); w.order = idx !== -1 ? idx : 999; });
+        window.db.collection('config').doc('stats_layout').set(layout).catch(e => console.error(e));
+    },
+
     cycleWidgetSize: (btn) => {
         const widget = btn.closest('.st-widget');
-        if (widget) window.App.cycleWidgetSize(window.UI.activeStatsTab, widget.getAttribute('data-id'));
+        if (!widget) return;
+        const widgetId = widget.getAttribute('data-id');
+        let layout = window.CT.data.statsLayout; const tab = window.UI.activeStatsTab;
+        if (!layout || !layout[tab]) return;
+        let w = layout[tab].find(x => x.id === widgetId);
+        if (w) {
+            if (w.s === 3) w.s = 4; else if (w.s === 4) w.s = 6; else if (w.s === 6) w.s = 8; else if (w.s === 8) w.s = 12; else w.s = 3;
+            window.db.collection('config').doc('stats_layout').set(layout);
+        }
+    },
+
+    toggleWidgetVisibility: (tab, widgetId) => {
+        let layout = window.CT.data.statsLayout; if (!layout || !layout[tab]) return;
+        let w = layout[tab].find(x => x.id === widgetId);
+        if (w) { w.v = !w.v; window.db.collection('config').doc('stats_layout').set(layout); }
     },
 
     applyStatsLayout: () => {
-        const layout = window.CT.data.statsLayout; if (!layout) return;
+        const layout = window.UI.syncLayoutData() || window.CT.data.statsLayout; if (!layout) return;
         const isAdmin = window.CT.ses() && window.CT.ses().r === 'admin';
         ['personal', 'elite', 'hc'].forEach(tab => {
             const grid = document.getElementById(`grid-stats-${tab}`); if (!grid) return;
+            if (grid._isDragging) return; // Evita parpadeos mientras arrastras
             const arr = [...(layout[tab] || [])].sort((a,b) => (a.order || 0) - (b.order || 0));
             arr.forEach((w) => {
                 const wEl = grid.querySelector(`[data-id="${w.id}"]`);
                 if(wEl) {
-                    // FIX ARRASTRE: Mover el elemento físicamente en el DOM
                     grid.appendChild(wEl); 
                     wEl.classList.toggle('hidden', !w.v);
                     wEl.className = wEl.className.replace(/st-col-\d+/g, '').trim(); 
@@ -50,20 +105,18 @@ Object.assign(window.UI, {
                     wEl.querySelectorAll('.admin-only').forEach(h => h.classList.toggle('hidden', !isAdmin));
                 }
             });
-            if (isAdmin) window.UI.initSortable(`grid-stats-${tab}`, `widgets-${tab}`, 0);
+            if (isAdmin) window.UI.initStatsSortable(tab);
         });
     },
 
-    toggleWidgetsMenu: () => { document.getElementById('widgets-menu').classList.toggle('hidden'); window.UI.renderWidgetsMenu(); },
-    
     renderWidgetsMenu: () => {
+        window.UI.syncLayoutData();
         const layout = window.CT.data.statsLayout; if (!layout) return;
         const tab = window.UI.activeStatsTab; let html = '';
         [...(layout[tab] || [])].sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(w => {
-            // FIX TÍTULOS: Leer desde el drag-handle directamente y limpiar el menú
             const el = document.querySelector(`[data-id="${w.id}"] .st-widget-header .drag-handle`);
             const title = el ? el.innerText.replace('≡ ', '').trim() : w.id;
-            html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a1a1a; align-items:center;"><span style="color:#ccc; font-size:0.75rem; font-weight:bold;">${title}</span><label class="st-switch"><input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.App.toggleWidgetVisibility('${tab}', '${w.id}')"><span class="st-slider"></span></label></div>`;
+            html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a1a1a; align-items:center;"><span style="color:#ccc; font-size:0.75rem; font-weight:bold;">${title}</span><label class="st-switch"><input type="checkbox" ${w.v ? 'checked' : ''} onchange="window.UI.toggleWidgetVisibility('${tab}', '${w.id}')"><span class="st-slider"></span></label></div>`;
         });
         document.getElementById('widgets-menu-list').innerHTML = html;
     },
@@ -80,11 +133,12 @@ Object.assign(window.UI, {
         return `<svg class="st-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;"><defs><linearGradient id="grad-p" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:color-mix(in srgb, var(--p) 30%, transparent);stop-opacity:1" /><stop offset="100%" style="stop-color:transparent;stop-opacity:0" /></linearGradient></defs><path class="st-chart-area" d="${pathD}" style="fill:url(#grad-p);"></path><polyline class="st-chart-line" points="${points}" style="stroke:var(--p);"></polyline>${circles}</svg>`;
     },
 
-    generateBarChartSVG: (dataObj) => {
+    generateBarChartSVG: (dataObj, colorOverride = null) => {
         const labels = Object.keys(dataObj); if (labels.length === 0) return '';
         const maxVal = Math.max(...Object.values(dataObj), 1);
+        const col = colorOverride ? `var(--${colorOverride})` : 'var(--p)';
         let html = `<div style="display:flex; width:100%; height:100%; justify-content:space-between; align-items:flex-end; padding-bottom:20px; gap:10px;">`;
-        labels.forEach(l => { html += `<div class="st-bar-group"><span class="st-bar-val">${dataObj[l]}</span><div class="st-bar" style="height:${(dataObj[l] / maxVal) * 100}%;"></div><span class="st-bar-label">${l}</span></div>`; });
+        labels.forEach(l => { html += `<div class="st-bar-group"><span class="st-bar-val">${dataObj[l]}</span><div class="st-bar" style="height:${(dataObj[l] / maxVal) * 100}%; background:${col}; box-shadow:0 0 10px color-mix(in srgb, ${col} 30%, transparent);"></div><span class="st-bar-label">${l}</span></div>`; });
         return html + `</div>`;
     },
 
@@ -92,13 +146,17 @@ Object.assign(window.UI, {
         const p = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
         return `<svg viewBox="0 0 36 36" class="st-donut"><path class="st-donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><path class="st-donut-fill" style="stroke:${colorVar};" stroke-dasharray="${p}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><text x="18" y="21" class="st-donut-text" style="fill:${colorVar};">${Math.round(p)}%</text></svg>`;
     },
-
     renderPersonalStats: () => {
         try {
             const u = window.CT.ses(); if(!u) return;
             const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
             let compScores = (window.CT.data.userScores[u.h] || []).filter(s => !s.hc && window.UI.isCompetitiveTrack(s.track)).sort((a,b) => a.id - b.id);
             
+            const mainTitle = document.getElementById('t_hd_stats');
+            const subTitle = document.getElementById('t_hd_stats_sub');
+            if(mainTitle) mainTitle.innerText = `Estadísticas de ${userDoc.n}`;
+            if(subTitle) subTitle.innerText = `ID de Piloto: ${userDoc.h} | Rendimiento Táctico`;
+
             const elTotal = document.getElementById('st-p-total-races'); if(elTotal) elTotal.innerText = compScores.length;
             const avgGen = compScores.length ? Math.round(compScores.reduce((a,b)=>a+b.c, 0) / compScores.length) : 0;
             const elAvgGen = document.getElementById('st-p-best-avg'); if(elAvgGen) elAvgGen.innerText = window.UI.formatValue(avgGen);
@@ -124,6 +182,11 @@ Object.assign(window.UI, {
             }
 
             const elDonut = document.getElementById('st-p-donut-acc'); if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(compScores.length > 0 ? (bestCatCount / compScores.length) * 100 : 0, 'var(--p)');
+            
+            // NEW WIDGET: Constancia
+            const constancia = compScores.length ? (compScores.filter(s => s.c >= avgGen).length / compScores.length) * 100 : 0;
+            const elCons = document.getElementById('st-p-donut-cons'); if(elCons) elCons.innerHTML = window.UI.generateDonutSVG(constancia, 'var(--p)');
+
             const last15Scores = [...compScores].slice(-15).map(s => window.UI.formatValue(s.c));
             const svgContainer = document.getElementById('st-p-svg-container');
             if(svgContainer) svgContainer.innerHTML = last15Scores.length > 0 ? window.UI.generateLineChartSVG(last15Scores) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">FALTAN DATOS DE TELEMETRÍA</div>';
@@ -163,42 +226,17 @@ Object.assign(window.UI, {
         } catch(e) { console.error("Error renderPersonalStats:", e); }
     },
 
-    renderGlobalStats: () => {
-        try {
-            const users = window.CT.dbLocal('u');
-            const elUsers = document.getElementById('st-g-users-val'); if(elUsers) elUsers.innerText = users.length; 
-            
-            let totalRaces = 0; let totalSum = 0; let globalMax = 0;
-            users.forEach(u => {
-                totalRaces += (u.hi || []).length;
-                totalSum += (u.hi || []).reduce((a,b)=>a+b, 0);
-                let uMax = Math.max(...(u.hi || [0]), 0);
-                if(uMax > globalMax) globalMax = uMax;
-            });
-            
-            const elRaces = document.getElementById('st-g-races-val'); if(elRaces) elRaces.innerText = totalRaces;
-            const elAvg = document.getElementById('st-g-avg'); if(elAvg) elAvg.innerText = window.UI.formatValue(totalRaces ? Math.round(totalSum/totalRaces) : 0);
-            const elRecord = document.getElementById('st-g-record'); if(elRecord) elRecord.innerText = window.UI.formatValue(globalMax);
-            
-            let textCounts = {}; (window.CT.data.s_recent || []).forEach(s => { textCounts[s.track] = (textCounts[s.track] || 0) + 1; });
-            const topTexts = Object.keys(textCounts).map(k => ({ t: k, count: textCounts[k] })).sort((a,b) => b.count - a.count);
-            const elTopTexts = document.getElementById('st-g-top-texts'); 
-            if(elTopTexts) elTopTexts.innerHTML = window.UI._genList(topTexts, 10, false, (tr, r) => `<tr><td><b style="color:var(--p)">#${r}</b></td><td><div class="track-link" onclick="window.UI.showTrackPreview('${tr.t}')">${window.UI.formatTrackNameFull(tr.t)}</div></td><td>${tr.count}</td></tr>`);
-            
-            const phrases = window.CT.dbLocal('p'); let catCounts = {}; 
-            (window.CT.data.s_recent || []).forEach(s => { const trackObj = phrases.find(p => p.title.toString() === s.track.toString()); const cat = trackObj ? (trackObj.c || 'General') : 'General'; catCounts[cat] = (catCounts[cat] || 0) + 1; });
-            let topCats = Object.keys(catCounts).map(k => ({ c: k, count: catCounts[k] })).sort((a,b) => b.count - a.count);
-            const elTopCats = document.getElementById('st-g-top-cats'); 
-            if(elTopCats) elTopCats.innerHTML = window.UI._genList(topCats, 10, false, (tc, r) => `<tr><td><b style="color:var(--p)">#${r}</b></td><td>${tc.c}</td><td>${tc.count}</td></tr>`);
-        } catch(e) { console.error("Error renderGlobalStats:", e); }
-    },
-
     renderEliteStats: () => {
         try {
             const users = window.CT.dbLocal('u'); if (users.length === 0) return;
             const topS = (window.CT.data.s_top || []).filter(s => window.UI.isCompetitiveTrack(s.track));
             const recentS = (window.CT.data.s_recent || []).filter(s => window.UI.isCompetitiveTrack(s.track) && !s.hc).sort((a,b) => a.id - b.id);
             
+            const mainTitle = document.getElementById('t_hd_stats');
+            const subTitle = document.getElementById('t_hd_stats_sub');
+            if(mainTitle) mainTitle.innerText = `Ranking Global`;
+            if(subTitle) subTitle.innerText = `Los mejores pilotos del servidor`;
+
             let mostRacesUser = users.reduce((p, c) => ((c.hi||[]).length > (p.hi||[]).length ? c : p), users[0]);
             const elMostVal = document.getElementById('st-e-most-races-val'); if(elMostVal) elMostVal.innerText = (mostRacesUser.hi||[]).length;
             const elMostUsr = document.getElementById('st-e-most-races-user'); if(elMostUsr) elMostUsr.innerText = mostRacesUser.n || "-";
@@ -223,7 +261,14 @@ Object.assign(window.UI, {
             const elTop1Val = document.getElementById('st-e-top1-val'); if(elTop1Val) elTop1Val.innerText = mTop1h ? top1c[mTop1h] : 0;
             const elDonutE = document.getElementById('st-e-donut-monopoly'); if(elDonutE) elDonutE.innerHTML = window.UI.generateDonutSVG(Object.values(top1c).reduce((a,b)=>a+b,0) > 0 ? (top1c[mTop1h] / Object.values(top1c).reduce((a,b)=>a+b,0)) * 100 : 0, 'var(--p)');
             const elDonutUser = document.getElementById('st-e-donut-user'); if(elDonutUser) elDonutUser.innerText = mTop1Name.substring(0, 15);
-            
+            const elTop1Usr = document.getElementById('st-e-top1-user'); if(elTop1Usr) elTop1Usr.innerText = mTop1Name;
+
+            // NEW WIDGET: META ACTUAL (Normal vs Hardcore in last 100)
+            const allRecent = window.CT.data.s_recent || [];
+            const hcCount = allRecent.filter(s => s.hc).length;
+            const normalPct = allRecent.length ? ((allRecent.length - hcCount) / allRecent.length) * 100 : 0;
+            const elModes = document.getElementById('st-e-donut-modes'); if(elModes) elModes.innerHTML = window.UI.generateDonutSVG(normalPct, 'var(--p)');
+
             const globalLast20 = [...recentS].slice(-20).map(s => window.UI.formatValue(s.c));
             const eSvgContainer = document.getElementById('st-e-svg-container');
             if(eSvgContainer) eSvgContainer.innerHTML = globalLast20.length > 0 ? window.UI.generateLineChartSVG(globalLast20) : '<div style="color:#333; text-align:center; margin-top:80px; font-family:monospace;">ESPERANDO DATOS GLOBALES</div>';
@@ -268,6 +313,11 @@ Object.assign(window.UI, {
             const users = window.CT.dbLocal('u');
             const globalHcScores = (window.CT.data.s_top || []).concat(window.CT.data.s_recent || []).filter(s => s.hc === true);
             
+            const mainTitle = document.getElementById('t_hd_stats');
+            const subTitle = document.getElementById('t_hd_stats_sub');
+            if(mainTitle) mainTitle.innerText = `Hardcore 💀`;
+            if(subTitle) subTitle.innerText = `Cementerio y Supervivientes`;
+
             let globalDeaths = 0; let globalSurvivals = 0; let globalRecord = 0;
             users.forEach(us => {
                 globalDeaths += (us.hc_deaths || 0); globalSurvivals += (us.hc_survivals || 0);
@@ -284,28 +334,41 @@ Object.assign(window.UI, {
             const elRate = document.getElementById('st-hc-rate'); if(elRate) elRate.innerText = Math.round(survRate) + '%';
             const elDonut = document.getElementById('st-hc-donut-rate'); if(elDonut) elDonut.innerHTML = window.UI.generateDonutSVG(survRate, 'var(--error)');
 
+            // NEW WIDGET: ZONAS LETALES (Por longitud de texto)
+            const phrases = window.CT.dbLocal('p');
+            let trackDeaths = {}; users.forEach(us => { let td = us.hc_track_deaths || {}; for(let k in td) trackDeaths[k] = (trackDeaths[k] || 0) + td[k]; });
+            let zones = { 'Cortas (<30)': 0, 'Medias (30-60)': 0, 'Largas (>60)': 0 };
+            for(let trackTitle in trackDeaths) {
+                const trObj = phrases.find(p => p.title.toString() === trackTitle.toString());
+                if(trObj) {
+                    const wc = trObj.text.split(' ').length;
+                    if(wc < 30) zones['Cortas (<30)'] += trackDeaths[trackTitle];
+                    else if(wc <= 60) zones['Medias (30-60)'] += trackDeaths[trackTitle];
+                    else zones['Largas (>60)'] += trackDeaths[trackTitle];
+                }
+            }
+            const elZones = document.getElementById('st-hc-bar-zones'); if(elZones) elZones.innerHTML = window.UI.generateBarChartSVG(zones, 'error');
+
             const top10 = [...globalHcScores].sort((a,b) => b.c - a.c);
             const elHcTop = document.getElementById('st-hc-top10'); 
-            if(elHcTop) elHcTop.innerHTML = window.UI._genList(top10, 10, true, (s, r) => `<li class="st-list-item"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div><div class="st-list-meta player-link" onclick="window.UI.showProfile('${s.h}')">${s.n}</div><div class="st-list-val val-blurrable" style="color:var(--error);">${window.UI.formatValue(s.c)}</div></li>`);
+            if(elHcTop) elHcTop.innerHTML = window.UI._genList(top10, 10, true, (s, r) => `<li class="st-list-item"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name track-link" style="color:var(--error);" onclick="window.UI.showTrackPreview('${s.track}')">${window.UI.formatTrackNameFull(s.track)}</div><div class="st-list-meta player-link" style="color:var(--error);" onclick="window.UI.showProfile('${s.h}')">${s.n}</div><div class="st-list-val val-blurrable" style="color:var(--error);">${window.UI.formatValue(s.c)}</div></li>`);
             
-            let trackDeaths = {}; users.forEach(us => { let td = us.hc_track_deaths || {}; for(let k in td) trackDeaths[k] = (trackDeaths[k] || 0) + td[k]; });
             let deathList = Object.keys(trackDeaths).map(k => ({ t: k, d: trackDeaths[k] })).sort((a,b) => b.d - a.d);
             const elHcWorst = document.getElementById('st-hc-worst'); 
-            if(elHcWorst) elHcWorst.innerHTML = window.UI._genList(deathList, 10, false, (td, r) => `<li class="st-list-item"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackNameFull(td.t)}</div><div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${td.d} ☠️</div></li>`);
+            if(elHcWorst) elHcWorst.innerHTML = window.UI._genList(deathList, 10, false, (td, r) => `<li class="st-list-item"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name track-link" style="color:var(--error);" onclick="window.UI.showTrackPreview('${td.t}')">${window.UI.formatTrackNameFull(td.t)}</div><div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${td.d} ☠️</div></li>`);
 
-            // VICS reemplazado por ❤️
             let legends = users.filter(u => (u.hc_survivals || 0) > 0).sort((a,b) => b.hc_survivals - a.hc_survivals);
             const elLeg = document.getElementById('st-hc-legends'); 
-            if(elLeg) elLeg.innerHTML = window.UI._genList(legends, 10, false, (lg, r) => `<li class="st-list-item" style="border-bottom-color: color-mix(in srgb, var(--error) 20%, transparent);"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${lg.h}')">${lg.n}</div><div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} ❤️</div></li>`);
+            if(elLeg) elLeg.innerHTML = window.UI._genList(legends, 10, false, (lg, r) => `<li class="st-list-item" style="border-bottom-color: color-mix(in srgb, var(--error) 20%, transparent);"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name player-link" style="justify-content:flex-start; color:var(--error);" onclick="window.UI.showProfile('${lg.h}')">${lg.n}</div><div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${lg.hc_survivals} ❤️</div></li>`);
 
             let victims = users.map(us => ({ n: us.n, h: us.h, d: us.hc_deaths || 0 })).filter(us => us.d > 0).sort((a,b) => b.d - a.d);
             const elVic = document.getElementById('st-hc-victims'); 
-            if(elVic) elVic.innerHTML = window.UI._genList(victims, 10, false, (v, r) => `<li class="st-list-item"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name player-link" style="justify-content:flex-start;" onclick="window.UI.showProfile('${v.h}')">${v.n}</div><div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${v.d} ☠️</div></li>`);
+            if(elVic) elVic.innerHTML = window.UI._genList(victims, 10, false, (v, r) => `<li class="st-list-item"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name player-link" style="justify-content:flex-start; color:var(--error);" onclick="window.UI.showProfile('${v.h}')">${v.n}</div><div class="st-list-val" style="font-size:0.75rem; color:var(--error);">${v.d} ☠️</div></li>`);
 
             let hcSurvivals = {}; globalHcScores.forEach(s => { hcSurvivals[s.track] = (hcSurvivals[s.track] || 0) + 1; });
             let safeTracks = Object.keys(hcSurvivals).map(k => ({ t: k, s: hcSurvivals[k] - (trackDeaths[k] || 0) })).sort((a,b) => b.s - a.s);
             const elSafe = document.getElementById('st-hc-safe'); 
-            if(elSafe) elSafe.innerHTML = window.UI._genList(safeTracks, 10, false, (st, r) => `<li class="st-list-item" style="border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name track-link" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackNameFull(st.t)}</div><div class="st-list-val" style="color:var(--error); font-size:0.75rem;">RATIO: ${st.s}</div></li>`);
+            if(elSafe) elSafe.innerHTML = window.UI._genList(safeTracks, 10, false, (st, r) => `<li class="st-list-item" style="border-bottom-color:#1a1a1a;"><div class="st-list-rank" style="color:var(--error);">#${r}</div><div class="st-list-name track-link" style="color:var(--error);" onclick="window.UI.showTrackPreview('${st.t}')">${window.UI.formatTrackNameFull(st.t)}</div><div class="st-list-val" style="color:var(--error); font-size:0.75rem;">RATIO: ${st.s}</div></li>`);
 
             if(window.UI.applyStatsLayout) window.UI.applyStatsLayout();
         } catch(e) { console.error("Error renderHardcoreStats:", e); }
