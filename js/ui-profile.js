@@ -203,7 +203,7 @@ Object.assign(window.UI, {
         html += `<div class="medal-slot ${hasVelocista ? 'unlocked' : 'locked'}" title="${hasVelocista ? 'Promedio Histórico >= 600 CPM' : 'Alcanza 600 CPM de promedio'}"><span class="m-icon">⚡</span><span class="m-name">Velocista</span></div>`;
         
         const hasElite = bestCPM >= 1000;
-        html += `<div class="medal-slot ${hasElite ? 'unlocked' : 'locked'}" title="${hasElite ? '1000+ CPM Absolutos' : 'Supera los 1000 CPM en una carrera'}"><span class="m-icon">🏎️</span><span class="m-name">Élite</span></div>`;
+        html += `<div class="medal-slot ${hasElite ? 'unlocked' : 'locked'}" title="${hasElite ? '1000+ CPM' : 'Supera los 1000 CPM en una carrera'}"><span class="m-icon">🏎️</span><span class="m-name">Élite</span></div>`;
         
         const hasSurv = (u.hc_survivals || 0) >= 100;
         html += `<div class="medal-slot ${hasSurv ? 'unlocked' : 'locked'}" title="${hasSurv ? '100+ Victorias Hardcore' : 'Sobrevive 100 veces en Hardcore'}"><span class="m-icon">🛡️</span><span class="m-name">Superviviente</span></div>`;
