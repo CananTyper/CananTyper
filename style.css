@@ -430,3 +430,44 @@ input:checked + .st-slider:before { transform: translateX(14px); background-colo
     text-decoration-color: var(--error) !important;
     text-shadow: 0 0 10px color-mix(in srgb, var(--error) 50%, transparent) !important;
 }
+
+/* =========================================================================
+   PERFIL PRO: LAYOUT, BUSCADOR, ETIQUETAS Y PRESTIGIO
+   ========================================================================= */
+.user-search-bar input { background: #0a0a0a; padding: 12px 20px; border-radius: 30px; font-size: 0.85rem; border: 1px solid var(--border); transition: all 0.3s; width: 100%; color: var(--text-main); }
+.user-search-bar input:focus { border-color: var(--p); box-shadow: 0 0 15px color-mix(in srgb, var(--p) 20%, transparent); outline: none; background: #000; }
+#user-search-results button { padding: 12px 15px; display: flex; align-items: center; gap: 10px; }
+#user-search-results button:hover { background: color-mix(in srgb, var(--p) 15%, transparent); color: var(--text-main); border-left: 3px solid var(--p); }
+
+.prof-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); width: 100%; }
+.prof-section-title { color: var(--p); font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 15px 0; text-align: left; }
+
+.setup-tag { background: #000; border: 1px solid #333; padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; font-weight: bold; transition: all 0.2s; }
+.setup-tag:hover { color: var(--p); border-color: var(--p); box-shadow: 0 0 10px color-mix(in srgb, var(--p) 20%, transparent); }
+
+.social-btn { background: transparent; border: 1px solid color-mix(in srgb, var(--p) 40%, transparent); color: var(--p); padding: 8px 18px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; text-decoration: none; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+.social-btn:hover { background: var(--p); color: #000; box-shadow: 0 0 15px color-mix(in srgb, var(--p) 50%, transparent); }
+
+.prof-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.prof-box .st-list-item { border-color: #222; }
+
+.medal-item { font-size: 1.8rem; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8)); cursor: help; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+.medal-item:hover { transform: scale(1.3) translateY(-2px); z-index: 10; }
+
+/* BORDES DE PRESTIGIO PARA AVATAR */
+.prestige-border-none { border-color: var(--p); }
+
+.prestige-border-top1 { 
+    border-color: #ffd700 !important; 
+    box-shadow: 0 0 30px rgba(255,215,0,0.5), inset 0 0 20px rgba(255,215,0,0.3) !important; 
+    animation: pulseGold 2.5s infinite alternate ease-in-out; 
+}
+
+.prestige-border-hardcore { 
+    border-color: var(--error) !important; 
+    box-shadow: 0 0 30px rgba(244,67,54,0.5), inset 0 0 20px rgba(244,67,54,0.3) !important; 
+    animation: pulseRed 2.5s infinite alternate ease-in-out; 
+}
+
+@keyframes pulseGold { 0% { box-shadow: 0 0 15px rgba(255,215,0,0.3), inset 0 0 10px rgba(255,215,0,0.2); } 100% { box-shadow: 0 0 45px rgba(255,215,0,0.8), inset 0 0 25px rgba(255,215,0,0.6); border-width: 5px; } }
+@keyframes pulseRed { 0% { box-shadow: 0 0 15px rgba(244,67,54,0.3), inset 0 0 10px rgba(244,67,54,0.2); } 100% { box-shadow: 0 0 45px rgba(244,67,54,0.8), inset 0 0 25px rgba(244,67,54,0.6); border-width: 5px; } }
