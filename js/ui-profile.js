@@ -15,16 +15,12 @@ Object.assign(window.UI, {
             window.CT.activeProfHandle = u.h;
             const scores = await window.App.getUserScores(u.h);
             
-            // DATOS BÁSICOS
             document.getElementById('prof-name').innerText = u.n; 
             document.getElementById('prof-handle').innerText = u.h; 
             document.getElementById('prof-img').src = u.a || window.CT.defAvatar; 
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
-            // FECHA DE INGRESO
             document.getElementById('prof-member-since').innerText = u.createdAt || 'Indefinido';
-
-            // BIOGRAFÍA Y DATOS OPCIONALES
             document.getElementById('prof-bio').innerText = u.bio ? `${u.bio}` : 'Este piloto aún no ha escrito su historia.';
             
             const cEl = document.getElementById('prof-country');
@@ -46,7 +42,6 @@ Object.assign(window.UI, {
                 dcEl.classList.add('hidden'); 
             }
 
-            // ESTADÍSTICAS NUMÉRICAS
             const hi = u.hi || []; const total = hi.length; 
             document.getElementById('st-total').innerText = total;
             
@@ -59,19 +54,20 @@ Object.assign(window.UI, {
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
 
-            // CALCULAR TEXTO FAVORITO Y PARSEAR ID A TÍTULO
+            // CÁLCULO TEXTO FAVORITO (Filtro Anti-Bug Texto "1" y "General")
             let tCounts = {}; let favTrackVal = "-"; let maxT = 0;
             scores.filter(s => !s.hc).forEach(s => { 
                 tCounts[s.track] = (tCounts[s.track] || 0) + 1; 
                 if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackVal = s.track; } 
             });
             
-            let realTrack = window.CT.dbLocal('p').find(t => t.id.toString() === favTrackVal.toString() || t.title === favTrackVal);
+            let allMatches = window.CT.dbLocal('p').filter(t => t.id.toString() === favTrackVal.toString() || t.title === favTrackVal);
+            let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
-            // SISTEMA DE MEDALLAS DIFICULTAD PRO
+            // MEDALLAS DE VISTA PREVIA
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Pionero (Registros anteriores al sistema)">⏳</span>`;
+            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
             if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
             if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Élite (Promedio Histórico >= 600 CPM)">⚡</span>`;
             if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Dios de la Velocidad (1000+ CPM)">👑</span>`;
@@ -80,18 +76,19 @@ Object.assign(window.UI, {
             if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
-            // SISTEMA DE RANKING (BASADO EN EL PROMEDIO DE LAS ÚLTIMAS 10)
+            // SISTEMA DE RANKING (AHORA BASADO EN EL PROMEDIO DE LAS ÚLTIMAS 10)
             const allUsers = window.CT.dbLocal('u');
             
             let userAverages = allUsers.map(user => {
                 const hist = user.hi || [];
                 const last10 = hist.slice(-10);
-                return { h: user.h, avg: last10.length ? last10.reduce((a,b)=>a+b,0)/last10.length : 0 };
+                return { h: user.h, avg: last10.length >= 5 ? last10.reduce((a,b)=>a+b,0)/last10.length : 0 };
             }).filter(user => user.avg > 0).sort((a,b) => b.avg - a.avg);
 
             let nRank = userAverages.findIndex(user => user.h === u.h) + 1;
             if (nRank === 0) nRank = 999;
 
+            // Hardcore sigue usando el récord absoluto porque es muerte súbita
             let userHcRecords = allUsers.map(user => {
                 return { h: user.h, max: user.hi_hc && user.hi_hc.length ? Math.max(...user.hi_hc) : 0 };
             }).filter(user => user.max > 0).sort((a,b) => b.max - a.max);
@@ -99,7 +96,10 @@ Object.assign(window.UI, {
             let hRank = userHcRecords.findIndex(user => user.h === u.h) + 1;
             if (hRank === 0) hRank = 999;
 
-            // PODIO METÁLICO Y MARCO SUPREMO (DUAL)
+            let finalRank = Math.min(nRank, hRank);
+            let isHcRank = hRank < nRank;
+
+            // MARCOS Y PODIOS
             const avCont = document.getElementById('prof-avatar-container');
             avCont.className = 'avatar-lrg prestige-border-none'; // Reset
             
@@ -110,15 +110,20 @@ Object.assign(window.UI, {
                 let badgeHTML = '';
                 let borderClass = '';
 
+                // Si es Top 1 en AMBOS (Dios del Teclado)
                 if (nRank === 1 && hRank === 1) {
-                    badgeHTML = `<div class="rank-badge rank-dual">👑 #1 | 💀 #1</div>`;
+                    badgeHTML = `<div class="rank-badge rank-dual">👑 #1 <span style="color:#fff;">|</span> 💀 #1</div>`;
                     borderClass = 'prestige-border-dual';
-                } else if (hRank < nRank && hRank <= 10) {
+                } 
+                else if (isHcRank && hRank <= 10) {
                     badgeHTML = `<div class="rank-badge rank-hc">💀 #${hRank}</div>`;
                     if (hRank === 1) borderClass = 'prestige-border-hardcore';
+                    else if (hRank === 2) borderClass = 'prestige-border-top2';
+                    else if (hRank === 3) borderClass = 'prestige-border-top3';
                     else borderClass = 'prestige-border-top10';
-                } else if (nRank <= 10) {
-                    badgeHTML = `<div class="rank-badge rank-normal">👑 #${nRank}</div>`;
+                } 
+                else if (nRank <= 10) {
+                    badgeHTML = `<div class="rank-badge ${nRank <= 3 ? 'rank-top'+nRank : 'rank-top10'}">${nRank === 1 ? '👑' : (nRank===2 ? '🥈' : (nRank===3 ? '🥉' : '🏅'))} #${nRank}</div>`;
                     if (nRank === 1) borderClass = 'prestige-border-top1';
                     else if (nRank === 2) borderClass = 'prestige-border-top2';
                     else if (nRank === 3) borderClass = 'prestige-border-top3';
@@ -138,6 +143,49 @@ Object.assign(window.UI, {
         } catch (error) { console.error("Error en showProfile:", error); }
     },
 
+    // FUNCIÓN PARA MOSTRAR TODAS LAS MEDALLAS (NUEVO MODAL)
+    showAllMedals: () => {
+        const u = window.CT.dbLocal('u').find(x => x.h === window.CT.activeProfHandle);
+        if(!u) return;
+        
+        const total = (u.hi || []).length;
+        const avgCPM = total ? Math.round((u.hi || []).reduce((a,b)=>a+b, 0)/total) : 0;
+        const bestCPM = total ? Math.max(...(u.hi || [])) : 0;
+        
+        let html = `<div class="medal-showcase-grid">`;
+        
+        // 1. Anomalía Cero
+        const hasAnomalia = !u.createdAt;
+        html += `<div class="medal-slot ${hasAnomalia ? 'unlocked' : 'locked'}" title="${hasAnomalia ? 'Pionero (Registros anteriores al sistema)' : '???'}"><span class="m-icon">💠</span><span class="m-name">Anomalía Cero</span></div>`;
+        
+        // 2. Veterano
+        const hasVeterano = total >= 100;
+        html += `<div class="medal-slot ${hasVeterano ? 'unlocked' : 'locked'}" title="${hasVeterano ? '100+ Carreras Totales' : 'Completa 100 carreras'}"><span class="m-icon">🎖️</span><span class="m-name">Veterano</span></div>`;
+        
+        // 3. Élite
+        const hasElite = avgCPM >= 600;
+        html += `<div class="medal-slot ${hasElite ? 'unlocked' : 'locked'}" title="${hasElite ? 'Promedio Histórico >= 600 CPM' : 'Alcanza 600 CPM de promedio'}"><span class="m-icon">⚡</span><span class="m-name">Élite</span></div>`;
+        
+        // 4. Dios de la Velocidad
+        const hasDios = bestCPM >= 1000;
+        html += `<div class="medal-slot ${hasDios ? 'unlocked' : 'locked'}" title="${hasDios ? '1000+ CPM Absolutos' : 'Supera los 1000 CPM en una carrera'}"><span class="m-icon">👑</span><span class="m-name">Dios Velocidad</span></div>`;
+        
+        // 5. Superviviente
+        const hasSurv = (u.hc_survivals || 0) >= 100;
+        html += `<div class="medal-slot ${hasSurv ? 'unlocked' : 'locked'}" title="${hasSurv ? '100+ Victorias Hardcore' : 'Sobrevive 100 veces en Hardcore'}"><span class="m-icon">🛡️</span><span class="m-name">Superviviente</span></div>`;
+        
+        // 6. Kamikaze
+        const hasKami = (u.hc_deaths || 0) >= 100;
+        html += `<div class="medal-slot ${hasKami ? 'unlocked' : 'locked'}" title="${hasKami ? '100+ Muertes en Hardcore' : 'Muere 100 veces en Hardcore'}"><span class="m-icon">💀</span><span class="m-name">Kamikaze</span></div>`;
+        
+        html += `</div>`;
+        
+        document.getElementById('all-medals-content').innerHTML = html;
+        document.getElementById('medals-modal').classList.remove('hidden');
+    },
+
+    closeMedalsModal: () => { document.getElementById('medals-modal').classList.add('hidden'); },
+
     copyDiscord: () => {
         const nameEl = document.getElementById('prof-dc-name');
         if(nameEl && nameEl.innerText !== 'Usuario' && nameEl.innerText !== '¡Copiado!') {
@@ -145,9 +193,7 @@ Object.assign(window.UI, {
             navigator.clipboard.writeText(originalText).then(() => {
                 nameEl.innerText = "¡Copiado!";
                 setTimeout(() => { nameEl.innerText = originalText; }, 2000);
-            }).catch(err => {
-                console.error('Error al copiar al portapapeles: ', err);
-            });
+            }).catch(err => { console.error('Error al copiar al portapapeles: ', err); });
         }
     },
 
