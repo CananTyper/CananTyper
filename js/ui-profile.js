@@ -3,9 +3,7 @@
    ================================================================ */
 
 Object.assign(window.UI, {
-    // ==================================================================
-    // FILTROS ANTI-BUGS GLOBALES (Sobreescriben las funciones por defecto)
-    // ==================================================================
+    // FILTROS ANTI-BUGS GLOBALES
     formatTrackNameFull: (idOrTitle) => {
         if(!idOrTitle || idOrTitle === "-") return "-";
         const phrases = window.CT.dbLocal('p') || [];
@@ -47,13 +45,46 @@ Object.assign(window.UI, {
     },
     closeTrackPreview: () => { document.getElementById('track-preview-modal').classList.add('hidden'); },
 
-    // ==================================================================
-    // LÓGICA DEL PERFIL
-    // ==================================================================
+    // LÓGICA DEL PERFIL MAESTRO
     showProfile: async (who) => {
         try {
             const currentSes = window.CT.ses(); if (!currentSes) return;
             const targetHandle = (who === 'me') ? currentSes.h : who;
+
+            // --- EL INTERCEPTOR: CUENTA OFICIAL (SYSTEM CORE) ---
+            if (targetHandle === '@canantyper') {
+                document.getElementById('profile-normal-layout').classList.add('hidden');
+                document.getElementById('profile-official-layout').classList.remove('hidden');
+                
+                // Calculamos estadísticas globales leyendo la RAM local (Cero costo Firebase)
+                const allUsers = window.CT.dbLocal('u') || [];
+                let totalGlobalRaces = 0;
+                let totalHcDeaths = 0;
+                allUsers.forEach(us => {
+                    totalGlobalRaces += (us.hi || []).length;
+                    totalHcDeaths += (us.hc_deaths || 0);
+                });
+
+                // Inyectamos datos
+                document.getElementById('off-users').innerText = allUsers.length;
+                document.getElementById('off-races').innerText = window.UI.formatValue(totalGlobalRaces);
+                document.getElementById('off-hc-deaths').innerText = window.UI.formatValue(totalHcDeaths);
+                
+                // Limpieza de UI
+                document.getElementById('user-search-input').value = '';
+                document.getElementById('user-search-results').classList.add('hidden');
+                document.getElementById('btn-edit-profile').classList.add('hidden');
+                
+                window.CT.activeProfHandle = '@canantyper';
+                window.UI.show('profile-screen');
+                return; // Cortamos la ejecución normal aquí
+            }
+            // ----------------------------------------------------
+
+            // SI NO ES LA CUENTA OFICIAL, SIGUE EL FLUJO NORMAL...
+            document.getElementById('profile-official-layout').classList.add('hidden');
+            document.getElementById('profile-normal-layout').classList.remove('hidden');
+
             let u = window.CT.dbLocal('u').find(x => x.h === targetHandle); 
             if(!u) {
                 const doc = await window.db.collection('users').doc(targetHandle).get();
@@ -101,26 +132,26 @@ Object.assign(window.UI, {
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
 
-            // CALCULAR TEXTO FAVORITO CON FILTRO ANTI-BUGS
             let tCounts = {}; let favTrackVal = "-"; let maxT = 0;
             scores.filter(s => !s.hc).forEach(s => { 
                 tCounts[s.track] = (tCounts[s.track] || 0) + 1; 
                 if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackVal = s.track; } 
             });
-            document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(favTrackVal);
             
-            // SISTEMA DE MEDALLAS DIFICULTAD PRO
+            let allMatches = window.CT.dbLocal('p').filter(t => t.id.toString() === favTrackVal.toString() || t.title === favTrackVal);
+            let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
+            document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
+            
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Veterano (Registro anterior al sistema)">🎖️</span>`;
-            if(total >= 100) medalsHTML += `<span class="medal-item" title="Dedos de Acero (100+ Carreras)">🦾</span>`;
-            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio General +600 CPM)">⚡</span>`;
+            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
+            if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
+            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio Histórico >= 600 CPM)">⚡</span>`;
             if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Élite (1000+ CPM)">🏎️</span>`;
             if((u.hc_survivals || 0) >= 100) medalsHTML += `<span class="medal-item" title="Superviviente (100+ Victorias Hardcore)">🛡️</span>`;
             if((u.hc_deaths || 0) >= 100) medalsHTML += `<span class="medal-item" title="Kamikaze (100+ Muertes en Hardcore)">💀</span>`;
             if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
-            // SISTEMA DE RANKING (BASADO EN ÚLTIMAS 10)
             const allUsers = window.CT.dbLocal('u');
             
             let userAverages = allUsers.map(user => {
@@ -142,7 +173,6 @@ Object.assign(window.UI, {
             let finalRank = Math.min(nRank, hRank);
             let isHcRank = hRank < nRank;
 
-            // PODIOS Y MARCOS
             const avCont = document.getElementById('prof-avatar-container');
             avCont.className = 'avatar-lrg prestige-border-none'; // Reset
             
@@ -194,16 +224,16 @@ Object.assign(window.UI, {
         let html = `<div class="medal-showcase-grid">`;
         
         const hasAnomalia = !u.createdAt;
-        html += `<div class="medal-slot ${hasAnomalia ? 'unlocked' : 'locked'}" title="${hasAnomalia ? 'Registros anteriores al sistema' : '???'}"><span class="m-icon">🎖️</span><span class="m-name">Veterano</span></div>`;
+        html += `<div class="medal-slot ${hasAnomalia ? 'unlocked' : 'locked'}" title="${hasAnomalia ? 'Registros anteriores al sistema' : '???'}"><span class="m-icon">💠</span><span class="m-name">Anomalía Cero</span></div>`;
         
         const hasVeterano = total >= 100;
-        html += `<div class="medal-slot ${hasVeterano ? 'unlocked' : 'locked'}" title="${hasVeterano ? '100+ Carreras Totales' : 'Completa 100 carreras'}"><span class="m-icon">🦾</span><span class="m-name">Dedos de Acero</span></div>`;
+        html += `<div class="medal-slot ${hasVeterano ? 'unlocked' : 'locked'}" title="${hasVeterano ? '100+ Carreras Totales' : 'Completa 100 carreras'}"><span class="m-icon">🎖️</span><span class="m-name">Veterano</span></div>`;
         
         const hasVelocista = avgCPM >= 600;
         html += `<div class="medal-slot ${hasVelocista ? 'unlocked' : 'locked'}" title="${hasVelocista ? 'Promedio Histórico >= 600 CPM' : 'Alcanza 600 CPM de promedio'}"><span class="m-icon">⚡</span><span class="m-name">Velocista</span></div>`;
         
         const hasElite = bestCPM >= 1000;
-        html += `<div class="medal-slot ${hasElite ? 'unlocked' : 'locked'}" title="${hasElite ? '1000+ CPM' : 'Supera los 1000 CPM en una carrera'}"><span class="m-icon">🏎️</span><span class="m-name">Élite</span></div>`;
+        html += `<div class="medal-slot ${hasElite ? 'unlocked' : 'locked'}" title="${hasElite ? '1000+ CPM Absolutos' : 'Supera los 1000 CPM en una carrera'}"><span class="m-icon">🏎️</span><span class="m-name">Élite</span></div>`;
         
         const hasSurv = (u.hc_survivals || 0) >= 100;
         html += `<div class="medal-slot ${hasSurv ? 'unlocked' : 'locked'}" title="${hasSurv ? '100+ Victorias Hardcore' : 'Sobrevive 100 veces en Hardcore'}"><span class="m-icon">🛡️</span><span class="m-name">Superviviente</span></div>`;
