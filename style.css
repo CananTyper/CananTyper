@@ -558,3 +558,34 @@ input:checked + .st-slider:before { transform: translateX(14px); background-colo
 
 @keyframes pulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,0.1); } 100% { box-shadow: 0 0 30px rgba(192,192,192,0.6), inset 0 0 20px rgba(192,192,192,0.4); border-width: 4px; } }
 @keyframes pulseBronze { 0% { box-shadow: 0 0 10px rgba(205,127,50,0.1); } 100% { box-shadow: 0 0 30px rgba(205,127,50,0.6), inset 0 0 20px rgba(205,127,50,0.4); border-width: 4px; } }
+
+/* =========================================================================
+   PERFIL CORRECCIONES: PODIOS METÁLICOS Y DISCORD BOTÓN
+   ========================================================================= */
+.profile-identity .avatar-lrg { margin-bottom: 25px !important; } /* Más espacio para la insignia */
+
+.rank-badge { 
+    position: absolute; 
+    bottom: -18px; /* Más abajo para evitar el borde */
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: #0a0a0a; 
+    padding: 3px 14px; 
+    border-radius: 12px; 
+    font-weight: 900; 
+    font-size: 0.95rem; 
+    border: 2px solid; 
+    z-index: 20; /* Siempre por encima del resplandor */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.9);
+    font-family: monospace;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+/* Colores de Podio Metálicos */
+.rank-top1 { border-color: #ffd700; color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.8); }
+.rank-top2 { border-color: #c0c0c0; color: #c0c0c0; text-shadow: 0 0 10px rgba(192,192,192,0.8); }
+.rank-top3 { border-color: #cd7f32; color: #cd7f32; text-shadow: 0 0 10px rgba(205,127,50,0.8); }
+
+/* Discord como botón (sin estilo por defecto del navegador) */
+button.discord-tag { border: none; cursor: pointer; outline: none; font-family: inherit; }
