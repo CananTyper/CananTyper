@@ -51,10 +51,70 @@ Object.assign(window.UI, {
             const currentSes = window.CT.ses(); if (!currentSes) return;
             const targetHandle = (who === 'me') ? currentSes.h : who;
 
-            // --- EL INTERCEPTOR: CUENTA OFICIAL (SYSTEM CORE) ---
+           // --- EL INTERCEPTOR: CUENTA OFICIAL (SYSTEM CORE) ---
             if (targetHandle === '@canantyper') {
                 document.getElementById('profile-normal-layout').classList.add('hidden');
                 document.getElementById('profile-official-layout').classList.remove('hidden');
+                
+                // CONSTRUIR EL PODIO CON EL TOP GLOBAL
+                const topScores = window.CT.data.s_top || [];
+                const normRankList = topScores.filter(s=>!s.hc).sort((a,b)=>b.c - a.c);
+                
+                // Filtramos para obtener a los 3 mejores USUARIOS únicos (no 3 scores del mismo usuario)
+                let uniqueTopUsers = [];
+                let seenHandles = new Set();
+                for(let s of normRankList) {
+                    if(!seenHandles.has(s.h)) {
+                        uniqueTopUsers.push(s);
+                        seenHandles.add(s.h);
+                        if(uniqueTopUsers.length === 3) break;
+                    }
+                }
+
+                const podCont = document.getElementById('official-podium-container');
+                if (uniqueTopUsers.length >= 3) {
+                    const u1 = uniqueTopUsers[0];
+                    const u2 = uniqueTopUsers[1];
+                    const u3 = uniqueTopUsers[2];
+                    
+                    // Función para obtener el avatar del usuario si no está en el score
+                    const getAv = (handle) => {
+                        let user = window.CT.dbLocal('u').find(x => x.h === handle);
+                        return user && user.a ? user.a : window.CT.defAvatar;
+                    };
+
+                    podCont.innerHTML = `
+                        <div class="podium-spot p2" onclick="window.UI.showProfile('${u2.h}')" style="cursor:pointer;" title="Ver perfil de ${u2.n || u2.h}">
+                            <img src="${getAv(u2.h)}" class="podium-avatar">
+                            <div class="podium-name">🥈 ${u2.n || u2.h}</div>
+                            <div class="podium-cpm">${window.UI.formatValue(u2.c)} CPM</div>
+                        </div>
+                        <div class="podium-spot p1" onclick="window.UI.showProfile('${u1.h}')" style="cursor:pointer;" title="Ver perfil de ${u1.n || u1.h}">
+                            <div style="position:absolute; top:-60px; font-size:1.8rem; filter:drop-shadow(0 0 5px #ffd700);">👑</div>
+                            <img src="${getAv(u1.h)}" class="podium-avatar">
+                            <div class="podium-name">${u1.n || u1.h}</div>
+                            <div class="podium-cpm" style="color:#ffd700; font-weight:bold;">${window.UI.formatValue(u1.c)} CPM</div>
+                        </div>
+                        <div class="podium-spot p3" onclick="window.UI.showProfile('${u3.h}')" style="cursor:pointer;" title="Ver perfil de ${u3.n || u3.h}">
+                            <img src="${getAv(u3.h)}" class="podium-avatar">
+                            <div class="podium-name">🥉 ${u3.n || u3.h}</div>
+                            <div class="podium-cpm">${window.UI.formatValue(u3.c)} CPM</div>
+                        </div>
+                    `;
+                } else {
+                    podCont.innerHTML = `<div style="color:var(--text-muted); font-style:italic; padding: 30px;">Esperando datos de la élite... (Se requieren al menos 3 pilotos)</div>`;
+                }
+
+                // Limpieza de UI superior
+                document.getElementById('user-search-input').value = '';
+                document.getElementById('user-search-results').classList.add('hidden');
+                document.getElementById('btn-edit-profile').classList.add('hidden');
+                
+                window.CT.activeProfHandle = '@canantyper';
+                window.UI.show('profile-screen');
+                return; // Cortamos la ejecución normal aquí
+            }
+            // ----------------------------------------------------
                 
                 // Calculamos estadísticas globales leyendo la RAM local (Cero costo Firebase)
                 const allUsers = window.CT.dbLocal('u') || [];
