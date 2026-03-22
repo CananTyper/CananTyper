@@ -111,9 +111,9 @@ Object.assign(window.UI, {
             
             // SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
-            if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
-            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio Histórico >= 600 CPM)">⚡</span>`;
+            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Pionero (Registro anterior al sistema)">⌛</span>`;
+            if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras)">🎖️</span>`;
+            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio General +600 CPM)">⚡</span>`;
             if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Élite (1000+ CPM)">🏎️</span>`;
             if((u.hc_survivals || 0) >= 100) medalsHTML += `<span class="medal-item" title="Superviviente (100+ Victorias Hardcore)">🛡️</span>`;
             if((u.hc_deaths || 0) >= 100) medalsHTML += `<span class="medal-item" title="Kamikaze (100+ Muertes en Hardcore)">💀</span>`;
