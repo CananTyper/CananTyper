@@ -22,7 +22,7 @@ Object.assign(window.UI, {
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
             // FECHA DE INGRESO
-            document.getElementById('prof-member-since').innerText = u.createdAt || 'Archivo Clasificado';
+            document.getElementById('prof-member-since').innerText = u.createdAt || 'Indefinido';
 
             // BIOGRAFÍA Y DATOS OPCIONALES
             document.getElementById('prof-bio').innerText = u.bio ? `${u.bio}` : 'Este piloto aún no ha escrito su historia.';
@@ -36,10 +36,8 @@ Object.assign(window.UI, {
             const sEl = document.getElementById('prof-hw-switch');
             if(u.switches) { sEl.innerText = `🕹️ ${u.switches}`; sEl.style.display = 'inline-block'; } else { sEl.style.display = 'none'; }
 
-            // VISIBILIDAD SECCIONES HARDWARE
             document.getElementById('prof-section-hw').style.display = (!u.layout && !u.switches) ? 'none' : 'block';
 
-            // LÓGICA DEL NUEVO TAG DE DISCORD INTERACTIVO
             const dcEl = document.getElementById('prof-soc-dc');
             if(u.discord) { 
                 document.getElementById('prof-dc-name').innerText = u.discord; 
@@ -61,65 +59,78 @@ Object.assign(window.UI, {
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
 
-            // CALCULAR PISTA FAVORITA
-            let tCounts = {}; let favTrackTitle = "-"; let maxT = 0;
-            scores.filter(s => !s.hc).forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackTitle = s.track; } });
-            document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(favTrackTitle);
+            // CALCULAR TEXTO FAVORITO Y PARSEAR ID A TÍTULO
+            let tCounts = {}; let favTrackVal = "-"; let maxT = 0;
+            scores.filter(s => !s.hc).forEach(s => { 
+                tCounts[s.track] = (tCounts[s.track] || 0) + 1; 
+                if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackVal = s.track; } 
+            });
+            
+            let realTrack = window.CT.dbLocal('p').find(t => t.id.toString() === favTrackVal.toString() || t.title === favTrackVal);
+            document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
             // SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
+            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Pionero (Registros anteriores al sistema)">⏳</span>`;
             if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
-            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Élite (Promedio Histórico >= 600 CPM)">👑</span>`;
-            if(u.hc_survivals >= 100) medalsHTML += `<span class="medal-item" title="Superviviente (100+ Carreras Hardcore Completadas)">🛡️</span>`;
+            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Élite (Promedio Histórico >= 600 CPM)">⚡</span>`;
+            if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Dios de la Velocidad (1000+ CPM)">👑</span>`;
+            if(u.hc_survivals >= 100) medalsHTML += `<span class="medal-item" title="Superviviente (100+ Victorias Hardcore)">🛡️</span>`;
             if(u.hc_deaths >= 100) medalsHTML += `<span class="medal-item" title="Kamikaze (100+ Muertes en Hardcore)">💀</span>`;
             if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
-            // SISTEMA DE PODIO METÁLICO (TOP 1 AL 10)
+            // SISTEMA DE RANKING (BASADO EN EL PROMEDIO DE LAS ÚLTIMAS 10)
+            const allUsers = window.CT.dbLocal('u');
+            
+            let userAverages = allUsers.map(user => {
+                const hist = user.hi || [];
+                const last10 = hist.slice(-10);
+                return { h: user.h, avg: last10.length ? last10.reduce((a,b)=>a+b,0)/last10.length : 0 };
+            }).filter(user => user.avg > 0).sort((a,b) => b.avg - a.avg);
+
+            let nRank = userAverages.findIndex(user => user.h === u.h) + 1;
+            if (nRank === 0) nRank = 999;
+
+            let userHcRecords = allUsers.map(user => {
+                return { h: user.h, max: user.hi_hc && user.hi_hc.length ? Math.max(...user.hi_hc) : 0 };
+            }).filter(user => user.max > 0).sort((a,b) => b.max - a.max);
+
+            let hRank = userHcRecords.findIndex(user => user.h === u.h) + 1;
+            if (hRank === 0) hRank = 999;
+
+            // PODIO METÁLICO Y MARCO SUPREMO (DUAL)
             const avCont = document.getElementById('prof-avatar-container');
             avCont.className = 'avatar-lrg prestige-border-none'; // Reset
             
-            const topScores = window.CT.data.s_top || [];
-            
-            const normRankList = topScores.filter(s=>!s.hc).sort((a,b)=>b.c - a.c);
-            let nRank = normRankList.findIndex(s => s.h === u.h) + 1;
-            if(nRank === 0) nRank = 999;
-
-            const hcRankList = topScores.filter(s=>s.hc).sort((a,b)=>b.c - a.c);
-            let hRank = hcRankList.findIndex(s => s.h === u.h) + 1;
-            if(hRank === 0) hRank = 999;
-
-            let finalRank = Math.min(nRank, hRank);
-            let isHcRank = hRank < nRank;
-
             let existingBadge = avCont.querySelector('.rank-badge');
             if(existingBadge) existingBadge.remove();
 
-            if(finalRank <= 10) {
-                let rankClass = 'rank-normal';
-                
-                if (isHcRank) {
-                    rankClass = 'rank-hc'; // Hardcore siempre en sangre
-                } else {
-                    if (finalRank === 1) rankClass = 'rank-top1'; // Oro
-                    else if (finalRank === 2) rankClass = 'rank-top2'; // Plata
-                    else if (finalRank === 3) rankClass = 'rank-top3'; // Bronce
+            if (nRank <= 10 || hRank <= 10) {
+                let badgeHTML = '';
+                let borderClass = '';
+
+                if (nRank === 1 && hRank === 1) {
+                    badgeHTML = `<div class="rank-badge rank-dual">👑 #1 | 💀 #1</div>`;
+                    borderClass = 'prestige-border-dual';
+                } else if (hRank < nRank && hRank <= 10) {
+                    badgeHTML = `<div class="rank-badge rank-hc">💀 #${hRank}</div>`;
+                    if (hRank === 1) borderClass = 'prestige-border-hardcore';
+                    else borderClass = 'prestige-border-top10';
+                } else if (nRank <= 10) {
+                    badgeHTML = `<div class="rank-badge rank-normal">👑 #${nRank}</div>`;
+                    if (nRank === 1) borderClass = 'prestige-border-top1';
+                    else if (nRank === 2) borderClass = 'prestige-border-top2';
+                    else if (nRank === 3) borderClass = 'prestige-border-top3';
+                    else borderClass = 'prestige-border-top10';
                 }
 
-                const badgeHTML = `<div class="rank-badge ${rankClass}">#${finalRank}</div>`;
-                avCont.insertAdjacentHTML('beforeend', badgeHTML);
-
-                // Bordes de Prestige
-                if(finalRank === 1) avCont.classList.add(isHcRank ? 'prestige-border-hardcore' : 'prestige-border-top1');
-                else if(finalRank === 2 && !isHcRank) avCont.classList.add('prestige-border-top2');
-                else if(finalRank === 3 && !isHcRank) avCont.classList.add('prestige-border-top3');
-                else avCont.classList.add('prestige-border-top10');
+                if (badgeHTML) avCont.insertAdjacentHTML('beforeend', badgeHTML);
+                if (borderClass) avCont.classList.add(borderClass);
             }
 
             window.CT.profPage = 0; window.UI.renderProfileHistory();
             
-            // LIMPIAR BUSCADOR Y MOSTRAR
             document.getElementById('user-search-input').value = '';
             document.getElementById('user-search-results').classList.add('hidden');
             document.getElementById('btn-edit-profile').classList.toggle('hidden', !(currentSes && u.h === currentSes.h)); 
@@ -127,7 +138,6 @@ Object.assign(window.UI, {
         } catch (error) { console.error("Error en showProfile:", error); }
     },
 
-    // FUNCIONALIDAD DE COPIAR DISCORD AL PORTAPAPELES
     copyDiscord: () => {
         const nameEl = document.getElementById('prof-dc-name');
         if(nameEl && nameEl.innerText !== 'Usuario' && nameEl.innerText !== '¡Copiado!') {
