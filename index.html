@@ -272,14 +272,14 @@
                     </div>
 
                     <div class="prof-section">
-                        <h4 class="prof-section-title">BIOGRAFÍA</h4>
+                        <h4 class="prof-section-title" style="text-align:center;">BIOGRAFÍA</h4>
                         <div class="bio-box">
                             <span id="prof-bio" style="position: relative; z-index: 2; font-style: italic;">"Este piloto aún no ha escrito su historia."</span>
                         </div>
                     </div>
 
                     <div class="prof-section" id="prof-section-hw">
-                        <h4 class="prof-section-title">HARDWARE & SETUP</h4>
+                        <h4 class="prof-section-title" style="text-align:center;">HARDWARE & SETUP</h4>
                         <div class="setup-tags" style="display:flex; flex-wrap:wrap; gap:8px; justify-content: center;">
                             <span class="setup-tag" id="prof-hw-layout" title="Distribución de teclado" style="display:none;">⌨️ QWERTY</span>
                             <span class="setup-tag" id="prof-hw-switch" title="Modelo / Switches" style="display:none;">🕹️ -</span>
@@ -298,14 +298,14 @@
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; flex-shrink: 0;">
                         <div class="prof-box">
-                            <h4 class="prof-section-title">HOJA DE SERVICIO</h4>
+                            <h4 class="prof-section-title" style="text-align:center;">EXPEDIENTE</h4>
                             <ul class="st-list" style="margin-top:10px;">
                                 <li class="st-list-item" style="padding: 10px 5px;"><div class="st-list-name" style="color:#888;">Registrado desde</div><div class="st-list-val" id="prof-member-since" style="width:auto; color:var(--text-main); font-family: 'Segoe UI'; font-weight: bold;">--/--/----</div></li>
                                 <li class="st-list-item" style="padding: 10px 5px; border-bottom: none;"><div class="st-list-name" style="color:#888;">Texto favorito</div><div class="st-list-val" id="prof-fav-track" style="width:auto; color:var(--p); font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 180px;">-</div></li>
                             </ul>
                         </div>
                         <div class="prof-box">
-                            <h4 class="prof-section-title">VITRINA DE LOGROS</h4>
+                            <h4 class="prof-section-title clickable" style="text-align:center; cursor:pointer;" onclick="window.UI.showAllMedals()">MEDALLAS 🔍</h4>
                             <div id="prof-medals" class="medals-container custom-scroll" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:15px; max-height: 80px; align-items: center; justify-content: center;">
                                 <span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Buscando medallas...</span>
                             </div>
@@ -426,6 +426,17 @@
                 <div id="tp-content" class="custom-scroll" style="color: var(--text-main); font-size:1.1rem; line-height:1.6; max-height: 40vh; overflow-y:auto; margin-bottom:20px; padding:15px; background:var(--bg); border:1px solid var(--border); border-radius:10px;">
                 </div>
                 <button id="tp-btn-play" class="btn-primary btn-large" style="width:100%;">JUGAR ESTA PISTA</button>
+            </div>
+        </div>
+
+        <div id="medals-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="crop-box" style="width: 550px; max-width: 90vw; text-align: left;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="color:var(--p); margin: 0 0 5px 0;">Medallas y Logros</h3>
+                    <button onclick="window.UI.closeMedalsModal()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem; font-weight:bold;">×</button>
+                </div>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 10px 0;">Historial completo de hazañas del piloto.</p>
+                <div id="all-medals-content" class="custom-scroll" style="max-height: 60vh; padding-right: 10px;"></div>
             </div>
         </div>
 
