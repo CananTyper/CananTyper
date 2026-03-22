@@ -24,13 +24,7 @@ window.App = {
         const visibleDomIds = Array.from(grid.children).filter(el => !el.classList.contains('hidden')).map(el => el.getAttribute('data-id'));
         let layout = window.CT.data.statsLayout[tab];
         layout.forEach(w => { const domIdx = visibleDomIds.indexOf(w.id); w.order = domIdx !== -1 ? domIdx : 999; });
-        window.App.saveStatsLayout();
-    },
-
-    toggleWidgetVisibility: (tab, widgetId) => {
-        let layout = window.CT.data.statsLayout; if (!layout || !layout[tab]) return;
-        let w = layout[tab].find(x => x.id === widgetId);
-        if (w) { w.v = !w.v; window.App.saveStatsLayout(); }
+        window.db.collection('config').doc('stats_layout').set(window.CT.data.statsLayout);
     },
 
     cycleWidgetSize: (tab, widgetId) => {
@@ -38,18 +32,14 @@ window.App = {
         let w = layout[tab].find(x => x.id === widgetId);
         if (w) {
             if (w.s === 3) w.s = 4; else if (w.s === 4) w.s = 6; else if (w.s === 6) w.s = 8; else if (w.s === 8) w.s = 12; else w.s = 3;
-            window.App.saveStatsLayout();
+            window.db.collection('config').doc('stats_layout').set(layout);
         }
-    },
-
-    saveStatsLayout: () => {
-        window.db.collection('config').doc('stats_layout').set(window.CT.data.statsLayout).catch(err => console.error(err));
     },
 
     loadDashboardData: async () => {
         try {
             const topReqFb = await window.db.collection('scores').orderBy('c', 'desc').limit(50).get();
-            window.CT.data.s_top = topReqFb.docs.map(d => d.data()).filter(x => !x.hc);
+            window.CT.data.s_top = topReqFb.docs.map(d => d.data());
         } catch(err) { window.CT.data.s_top = []; }
         
         try {
@@ -64,7 +54,7 @@ window.App = {
         if(!window.CT.data.userScores) window.CT.data.userScores = {};
         if(window.CT.data.userScores[handle]) return window.CT.data.userScores[handle];
         try {
-            const req = await window.db.collection('scores').where('h', '==', handle).limit(100).get();
+            const req = await window.db.collection('scores').where('h', '==', handle).limit(150).get();
             let scores = req.docs.map(d => d.data());
             scores.sort((a,b) => b.id - a.id);
             window.CT.data.userScores[handle] = scores;
@@ -189,28 +179,12 @@ window.App = {
         let themeObj;
         if (themeName === 'galactic') { themeObj = { p: '#b388ff', bg: '#090a0f', surface: '#161824' }; }
         else if (themeName === 'hacker') { themeObj = { p: '#00ff00', bg: '#050505', surface: '#0a0a0a' }; }
+        else if (themeName === 'wpm') { themeObj = { p: '#ff3c00', bg: '#000000', surface: '#141414' }; }
         else { themeObj = { p: '#a6ff00', bg: '#000000', surface: '#141414' }; } 
         
         localStorage.setItem('ct_custom_theme', JSON.stringify(themeObj));
         const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ theme: themeObj }); }
         window.UI.applySavedTheme(); window.UI.closeThemeModal();
-    },
-
-    resetTheme: () => {
-        localStorage.removeItem('ct_custom_theme');
-        const u = window.CT.ses(); if(u) { window.db.collection('users').doc(u.h).update({ theme: firebase.firestore.FieldValue.delete() }); }
-        window.UI.applySavedTheme(); window.UI.closeThemeModal();
-    },
-
-    listenShortcutInput: (e, id) => { e.preventDefault(); document.getElementById(id).value = e.key; },
-
-    handleUpdateClick: () => { const btn = document.getElementById('btn-update-status'); if (btn.innerText.includes("APLICAR")) { if(window.ipcRenderer) window.ipcRenderer.send('apply-update'); } },
-    toggleFullscreen: () => { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.warn(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } window.UI.toggleSettings(); },
-    
-    downloadSetup: () => {
-        const directUrl = 'https://github.com/CananTyper/CananTyper/releases/latest/download/CananTyper_Setup.exe';
-        const link = document.createElement('a'); link.href = directUrl; link.download = 'CananTyper_Setup.exe';
-        document.body.appendChild(link); link.click(); document.body.removeChild(link); window.UI.toggleSettings();
     },
 
     clearCache: () => {
@@ -221,9 +195,46 @@ window.App = {
             location.reload();
         }
     },
-
-    editDisplayName: () => { const u = window.CT.ses(); if(!u) return; const newName = prompt("Nuevo nombre:", u.n); if(newName && newName.trim() !== '') { if(newName.trim().length > 15) return alert("El nombre no puede exceder los 15 caracteres."); window.db.collection('users').doc(u.h).update({ n: newName }); window.db.collection('scores').where('h', '==', u.h).get().then(q => { const batch = window.db.batch(); q.forEach(doc => { batch.update(doc.ref, { n: newName }); }); batch.commit(); }); } },
     
+    // NUEVA FUNCIÓN MAESTRA DE PERFIL
+    saveProfileEdits: async () => {
+        const u = window.CT.ses(); if(!u) return;
+        const newName = document.getElementById('ep-name').value.trim();
+        const newBio = document.getElementById('ep-bio').value.trim();
+        const newCountry = document.getElementById('ep-country').value.trim();
+        const newLayout = document.getElementById('ep-layout').value;
+        const newSwitches = document.getElementById('ep-switches').value.trim();
+        const newDiscord = document.getElementById('ep-discord').value.trim();
+
+        if(!newName) return alert("El nombre no puede estar vacío.");
+        if(newName.length > 15) return alert("El nombre no puede exceder los 15 caracteres.");
+
+        const btn = document.querySelector('#edit-profile-modal .btn-primary');
+        const oldText = btn.innerText; btn.innerText = "GUARDANDO..."; btn.disabled = true;
+
+        try {
+            await window.db.collection('users').doc(u.h).update({ 
+                n: newName, bio: newBio, country: newCountry, layout: newLayout, switches: newSwitches, discord: newDiscord 
+            });
+            
+            // Actualizar nombre en los scores existentes para que impacte en los rankings
+            if (u.n !== newName) {
+                const q = await window.db.collection('scores').where('h', '==', u.h).get();
+                const batch = window.db.batch();
+                q.forEach(doc => { batch.update(doc.ref, { n: newName }); });
+                await batch.commit();
+            }
+
+            window.UI.closeEditProfileModal();
+            window.UI.showProfile('me'); // Recargar para ver los cambios
+        } catch(e) {
+            console.error(e);
+            alert("Hubo un error al guardar el perfil.");
+        } finally {
+            btn.innerText = oldText; btn.disabled = false;
+        }
+    },
+
     login: async () => { 
         const hInp = document.getElementById('login-user').value.toLowerCase(); 
         const p = document.getElementById('login-pass').value; 
@@ -232,17 +243,12 @@ window.App = {
         if(!hInp || !p) return alert("Por favor, ingresa usuario y contraseña.");
 
         const btn = document.getElementById('t_btn_login');
-        const originalText = btn.innerText;
-        btn.innerText = "CONECTANDO...";
-        btn.disabled = true;
+        const originalText = btn.innerText; btn.innerText = "CONECTANDO..."; btn.disabled = true;
 
         const cachedUser = window.CT.data.u.find(u => u.h === handle);
         if (cachedUser && cachedUser.p === p) {
             localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
-            window.UI.initLobby();
-            btn.innerText = originalText;
-            btn.disabled = false;
-            return; 
+            window.UI.initLobby(); btn.innerText = originalText; btn.disabled = false; return; 
         }
 
         const attemptLogin = async (retries = 3) => {
@@ -252,35 +258,38 @@ window.App = {
                     if(docRef.exists && docRef.data().p === p) { 
                         localStorage.setItem('ct_ses', JSON.stringify({h: handle})); 
                         if(!window.CT.data.u.find(u => u.h === handle)) window.CT.data.u.push(docRef.data()); 
-                        window.UI.initLobby(); 
-                        return true;
-                    } else { 
-                        alert("Usuario o contraseña incorrectos"); 
-                        return true; 
-                    } 
-                } catch(e) { 
-                    if (i === retries - 1) throw e; 
-                    await new Promise(r => setTimeout(r, 1000)); 
-                }
+                        window.UI.initLobby(); return true;
+                    } else { alert("Usuario o contraseña incorrectos"); return true; } 
+                } catch(e) { if (i === retries - 1) throw e; await new Promise(r => setTimeout(r, 1000)); }
             }
             return false;
         };
 
-        try {
-            const success = await attemptLogin();
-            if(!success) throw new Error("Timeout");
-        } catch(e) {
-            console.error("Error en DB:", e); 
-            btn.innerText = "REINTENTAR";
-            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
-            return;
-        }
-
-        btn.innerText = originalText;
-        btn.disabled = false;
+        try { const success = await attemptLogin(); if(!success) throw new Error("Timeout"); } 
+        catch(e) { btn.innerText = "REINTENTAR"; setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000); return; }
+        btn.innerText = originalText; btn.disabled = false;
     },
 
-    register: async () => { const n = document.getElementById('reg-display').value; const hRaw = document.getElementById('reg-user').value.toLowerCase(); const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; const p = document.getElementById('reg-pass').value; if(!n || !hRaw || !p) return alert("Completa todos los campos"); if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); try { const docRef = await window.db.collection('users').doc(handle).get(); if(docRef.exists) return alert("Ese usuario ya está en uso"); const role = (handle === '@angel') ? 'admin' : 'usuario'; const newUser = { h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [] }; await window.db.collection('users').doc(handle).set(newUser); window.UI.toggleAuth(true); alert("Cuenta creada con éxito."); } catch(e) { alert("Error al conectar con la Nube"); } },
+    register: async () => { 
+        const n = document.getElementById('reg-display').value; 
+        const hRaw = document.getElementById('reg-user').value.toLowerCase(); 
+        const handle = hRaw.startsWith('@') ? hRaw : '@' + hRaw; 
+        const p = document.getElementById('reg-pass').value; 
+        if(!n || !hRaw || !p) return alert("Completa todos los campos"); 
+        if(n.length > 15 || hRaw.length > 15) return alert("El nombre y usuario no pueden exceder los 15 caracteres."); 
+        try { 
+            const docRef = await window.db.collection('users').doc(handle).get(); 
+            if(docRef.exists) return alert("Ese usuario ya está en uso"); 
+            const role = (handle === '@angel') ? 'admin' : 'usuario'; 
+            // NUEVOS CAMPOS EN EL REGISTRO
+            const newUser = { 
+                h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [],
+                createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: ''
+            }; 
+            await window.db.collection('users').doc(handle).set(newUser); 
+            window.UI.toggleAuth(true); alert("Cuenta creada con éxito."); 
+        } catch(e) { alert("Error al conectar con la Nube"); } 
+    },
     
     logout: () => { localStorage.removeItem('ct_ses'); location.reload(); },
 
