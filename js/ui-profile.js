@@ -1,5 +1,5 @@
 /* ================================================================
-    CANANTYPER - UI PROFILE (PERFIL Y AJUSTES GLOBALES)
+    CANANTYPER - UI PROFILE (PERFIL, AJUSTES GLOBALES Y BUSCADOR)
    ================================================================ */
 
 Object.assign(window.UI, {
@@ -13,12 +13,38 @@ Object.assign(window.UI, {
                 if(doc.exists) u = doc.data(); else return;
             }
             window.CT.activeProfHandle = u.h;
-            await window.App.getUserScores(u.h);
+            const scores = await window.App.getUserScores(u.h);
             
+            // DATOS BÁSICOS
             document.getElementById('prof-name').innerText = u.n; 
+            document.getElementById('prof-handle').innerText = u.h; 
             document.getElementById('prof-img').src = u.a || window.CT.defAvatar; 
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
+            // FECHA DE INGRESO
+            document.getElementById('prof-member-since').innerText = u.createdAt || 'Archivo Clasificado';
+
+            // BIOGRAFÍA Y DATOS OPCIONALES
+            document.getElementById('prof-bio').innerText = u.bio ? `"${u.bio}"` : '"Este piloto aún no ha escrito su historia."';
+            
+            const cEl = document.getElementById('prof-country');
+            if(u.country) { cEl.innerText = `🌍 ${u.country}`; cEl.style.display = 'inline-block'; } else { cEl.style.display = 'none'; }
+            
+            const lEl = document.getElementById('prof-hw-layout');
+            if(u.layout) { lEl.innerText = `⌨️ ${u.layout}`; lEl.style.display = 'inline-block'; } else { lEl.style.display = 'none'; }
+
+            const sEl = document.getElementById('prof-hw-switch');
+            if(u.switches) { sEl.innerText = `🕹️ ${u.switches}`; sEl.style.display = 'inline-block'; } else { sEl.style.display = 'none'; }
+
+            // VISIBILIDAD SECCIONES HARDWARE
+            document.getElementById('prof-section-hw').style.display = (!u.layout && !u.switches) ? 'none' : 'block';
+
+            const dcEl = document.getElementById('prof-soc-dc');
+            if(u.discord) { dcEl.href = `https://discord.com/users/${u.discord}`; dcEl.innerText = u.discord; dcEl.classList.remove('hidden'); } 
+            else { dcEl.classList.add('hidden'); }
+            document.getElementById('prof-section-social').style.display = (!u.discord) ? 'none' : 'block';
+
+            // ESTADÍSTICAS NUMÉRICAS
             const hi = u.hi || []; const total = hi.length; 
             document.getElementById('st-total').innerText = total;
             
@@ -30,12 +56,70 @@ Object.assign(window.UI, {
             document.getElementById('st-avg').innerText = window.UI.formatValue(avgCPM); 
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
+
+            // CALCULAR PISTA FAVORITA
+            let tCounts = {}; let favTrackTitle = "-"; let maxT = 0;
+            scores.filter(s => !s.hc).forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackTitle = s.track; } });
+            document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(favTrackTitle);
             
+            // SISTEMA DE MEDALLAS
+            let medalsHTML = '';
+            if(total >= 50) medalsHTML += `<span class="medal-item" title="Veterano (50+ Carreras)">🎖️</span>`;
+            if(avgCPM >= 400) medalsHTML += `<span class="medal-item" title="Élite (Promedio Sobresaliente)">👑</span>`;
+            if(u.hc_survivals > 0) medalsHTML += `<span class="medal-item" title="Superviviente Hardcore">❤️</span>`;
+            if(u.hc_deaths >= 10) medalsHTML += `<span class="medal-item" title="Kamikaze (10+ Muertes en Hardcore)">💀</span>`;
+            if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
+            document.getElementById('prof-medals').innerHTML = medalsHTML;
+
+            // BORDES DE PRESTIGIO (Top 1)
+            const avCont = document.getElementById('prof-avatar-container');
+            avCont.className = 'avatar-lrg prestige-border-none'; // Reset
+            
+            const topScores = window.CT.data.s_top || [];
+            let isTop1Normal = topScores.filter(s=>!s.hc).length > 0 && topScores.filter(s=>!s.hc)[0].h === u.h;
+            let isTop1Hc = topScores.filter(s=>s.hc).length > 0 && topScores.filter(s=>s.hc)[0].h === u.h;
+
+            if(isTop1Normal) avCont.classList.add('prestige-border-top1');
+            else if(isTop1Hc) avCont.classList.add('prestige-border-hardcore');
+
             window.CT.profPage = 0; window.UI.renderProfileHistory();
-            document.getElementById('btn-open-edit').classList.toggle('hidden', !(currentSes && u.h === currentSes.h)); 
-            document.getElementById('edit-dropdown').classList.add('hidden');
+            
+            // LIMPIAR BUSCADOR Y MOSTRAR
+            document.getElementById('user-search-input').value = '';
+            document.getElementById('user-search-results').classList.add('hidden');
+            document.getElementById('btn-edit-profile').classList.toggle('hidden', !(currentSes && u.h === currentSes.h)); 
             window.UI.show('profile-screen');
         } catch (error) { console.error("Error en showProfile:", error); }
+    },
+
+    openEditProfileModal: () => {
+        const u = window.CT.ses(); if(!u) return;
+        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        document.getElementById('ep-name').value = userDoc.n || '';
+        document.getElementById('ep-bio').value = userDoc.bio || '';
+        document.getElementById('ep-country').value = userDoc.country || '';
+        document.getElementById('ep-layout').value = userDoc.layout || '';
+        document.getElementById('ep-switches').value = userDoc.switches || '';
+        document.getElementById('ep-discord').value = userDoc.discord || '';
+        document.getElementById('edit-profile-modal').classList.remove('hidden');
+    },
+
+    closeEditProfileModal: () => { document.getElementById('edit-profile-modal').classList.add('hidden'); },
+
+    filterUserSearch: () => {
+        const query = document.getElementById('user-search-input').value.toLowerCase().trim();
+        const resultsBox = document.getElementById('user-search-results');
+        if(query.length < 2) { resultsBox.classList.add('hidden'); return; }
+        
+        const users = window.CT.dbLocal('u');
+        const matches = users.filter(u => u.h.toLowerCase().includes(query) || (u.n && u.n.toLowerCase().includes(query))).slice(0, 5);
+        
+        if(matches.length === 0) {
+            resultsBox.innerHTML = `<div style="padding: 10px; color: var(--text-muted); font-size: 0.85rem; text-align: center;">Piloto no encontrado.</div>`;
+        } else {
+            resultsBox.innerHTML = matches.map(m => `<button style="width: 100%; background: transparent; border: none; text-align: left; cursor: pointer; border-bottom: 1px solid var(--border);" onclick="window.UI.showProfile('${m.h}')"><div class="avatar-xs" style="display:inline-block; vertical-align:middle; margin-right:8px;"><img src="${m.a || window.CT.defAvatar}"></div><span style="color:var(--text-main); font-weight:bold;">${m.n}</span> <span style="color:var(--p); font-size:0.8rem;">${m.h}</span></button>`).join('');
+        }
+        resultsBox.classList.remove('hidden');
     },
 
     closeProfile: () => { window.UI.show('home-screen'); },
