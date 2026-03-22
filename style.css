@@ -401,3 +401,32 @@ input:checked + .st-slider:before { transform: translateX(14px); background-colo
 /* CORRECCIONES ESTÉTICAS: GRILLA Y HOVER ROJO */
 .st-grid { align-items: stretch !important; }
 .st-widget-error .track-link:hover { color: var(--error) !important; text-decoration-color: var(--error) !important; text-shadow: 0 0 8px color-mix(in srgb, var(--error) 40%, transparent) !important; }
+
+/* =========================================================================
+   ESTÉTICA PRO: HIGHLIGHTS Y HARDCORE SANGRIENTO
+   ========================================================================= */
+.st-grid { align-items: stretch !important; }
+
+/* Highlight Elegante y Prestigioso para RECORD */
+.st-card-highlight { 
+    background: linear-gradient(180deg, color-mix(in srgb, var(--p) 15%, transparent) 0%, #0a0a0a 100%) !important;
+    border-top: 3px solid var(--p) !important;
+    border-left: 1px solid color-mix(in srgb, var(--p) 30%, transparent) !important;
+    border-right: 1px solid color-mix(in srgb, var(--p) 30%, transparent) !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: 0 -10px 30px -10px color-mix(in srgb, var(--p) 40%, transparent), inset 0 10px 20px -10px color-mix(in srgb, var(--p) 20%, transparent) !important;
+    transform: translateY(-2px);
+}
+.st-card-highlight .st-val { 
+    color: var(--p) !important; 
+    text-shadow: 0 0 15px color-mix(in srgb, var(--p) 60%, transparent) !important; 
+    font-size: 3rem !important; 
+}
+.st-card-highlight .st-widget-header { background: transparent !important; border-bottom: none !important; }
+
+/* Hardcore: Hover Rojo Estricto y Erradicación de Verde */
+#pane-stats-hc .player-link:hover, #pane-stats-hc .track-link:hover {
+    color: var(--error) !important;
+    text-decoration-color: var(--error) !important;
+    text-shadow: 0 0 10px color-mix(in srgb, var(--error) 50%, transparent) !important;
+}
