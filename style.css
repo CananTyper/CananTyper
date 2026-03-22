@@ -589,3 +589,52 @@ input:checked + .st-slider:before { transform: translateX(14px); background-colo
 
 /* Discord como botón (sin estilo por defecto del navegador) */
 button.discord-tag { border: none; cursor: pointer; outline: none; font-family: inherit; }
+
+/* =========================================================================
+   PERFIL CORRECCIONES: PODIOS METÁLICOS, DUAL Y Z-INDEX
+   ========================================================================= */
+.avatar-lrg { overflow: visible !important; position: relative; margin-bottom: 25px !important; }
+.avatar-lrg img { border-radius: 50%; width: 100%; height: 100%; object-fit: cover; }
+
+.rank-badge { 
+    position: absolute; 
+    bottom: -16px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: #0a0a0a; 
+    padding: 4px 12px; 
+    border-radius: 12px; 
+    font-weight: 900; 
+    font-size: 0.9rem; 
+    border: 2px solid; 
+    z-index: 30 !important; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.9);
+    font-family: monospace;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.rank-normal { border-color: #ffd700; color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
+.rank-hc { border-color: var(--error); color: var(--error); text-shadow: 0 0 8px rgba(244,67,54,0.6); }
+.rank-dual { border-color: #ff9800; color: #ff9800; text-shadow: 0 0 8px rgba(255,152,0,0.6); }
+
+/* Colores de Podio Metálicos */
+.prestige-border-top2 { border-color: #c0c0c0 !important; box-shadow: 0 0 20px rgba(192,192,192,0.3), inset 0 0 15px rgba(192,192,192,0.2) !important; animation: pulseSilver 3s infinite alternate ease-in-out; }
+.prestige-border-top3 { border-color: #cd7f32 !important; box-shadow: 0 0 20px rgba(205,127,50,0.3), inset 0 0 15px rgba(205,127,50,0.2) !important; animation: pulseBronze 3s infinite alternate ease-in-out; }
+.prestige-border-top10 { border-color: color-mix(in srgb, var(--p) 50%, transparent) !important; box-shadow: 0 0 15px color-mix(in srgb, var(--p) 20%, transparent) !important; }
+
+/* El Marco Supremo (Normal + Hardcore) */
+.prestige-border-dual {
+    border-color: #ff9800 !important;
+    box-shadow: -15px 0 35px rgba(255,215,0,0.7), 15px 0 35px rgba(244,67,54,0.7), inset 0 0 20px rgba(255,152,0,0.4) !important;
+    animation: pulseDual 2.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulseSilver { 0% { box-shadow: 0 0 10px rgba(192,192,192,0.1); } 100% { box-shadow: 0 0 30px rgba(192,192,192,0.6), inset 0 0 20px rgba(192,192,192,0.4); border-width: 4px; } }
+@keyframes pulseBronze { 0% { box-shadow: 0 0 10px rgba(205,127,50,0.1); } 100% { box-shadow: 0 0 30px rgba(205,127,50,0.6), inset 0 0 20px rgba(205,127,50,0.4); border-width: 4px; } }
+@keyframes pulseDual {
+    0% { box-shadow: -10px 0 15px rgba(255,215,0,0.4), 10px 0 15px rgba(244,67,54,0.4), inset 0 0 10px rgba(255,152,0,0.2); }
+    100% { box-shadow: -30px 0 50px rgba(255,215,0,0.9), 30px 0 50px rgba(244,67,54,0.9), inset 0 0 30px rgba(255,152,0,0.6); border-width: 5px; }
+}
+
+button.discord-tag { border: none; cursor: pointer; outline: none; font-family: inherit; }
