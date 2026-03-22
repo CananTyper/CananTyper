@@ -111,7 +111,7 @@ Object.assign(window.UI, {
             
             // SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Veterano (Registro anterior al sistema)">🎖️🦾</span>`;
+            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Veterano (Registro anterior al sistema)">🎖️</span>`;
             if(total >= 100) medalsHTML += `<span class="medal-item" title="Dedos de Acero (100+ Carreras)">🦾</span>`;
             if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio General +600 CPM)">⚡</span>`;
             if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Élite (1000+ CPM)">🏎️</span>`;
