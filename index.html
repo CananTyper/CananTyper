@@ -237,18 +237,144 @@
         </section>
 
         <section id="profile-screen" class="screen hidden">
-            <header class="top-nav" style="justify-content: flex-end; margin-bottom: 10px; border: none;"><button onclick="window.UI.showLobby()" class="btn-outline">Volver</button></header>
-            <div class="profile-top-area">
-                <div class="profile-identity"><div class="avatar-md"><img id="prof-img" src="" alt=""></div>
-                <input type="file" id="img-input" accept="image/*" hidden onchange="if(this.files && this.files[0]){const r=new FileReader();r.onload=e=>window.UI.openCropModal(e.target.result);r.readAsDataURL(this.files[0]);}this.value='';">
-                <div class="identity-info" style="align-items: center;"><div class="name-edit-group"><h2 id="prof-name"></h2><div class="edit-menu-wrapper"><span id="btn-open-edit" class="edit-text hidden" onclick="window.UI.toggleEditMenu()">Editar</span><div id="edit-dropdown" class="edit-dropdown hidden"><button id="t_prof_edit_n" onclick="window.App.editDisplayName()">Nombre</button><button id="t_prof_edit_i" onclick="document.getElementById('img-input').click()">Imagen</button></div></div></div><span id="prof-role" class="role-badge"></span></div></div>
-                <div class="profile-stats"><div class="stat-card"><small id="t_prof_races">CARRERAS</small><b id="st-total">0</b></div><div class="stat-card"><small id="lbl-st-avg">PROM.</small><b id="st-avg" class="val-blurrable">0</b></div><div class="stat-card"><small id="lbl-st-last">ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div><div class="stat-card stat-highlight"><small id="lbl-st-best">RÉCORD</small><b id="st-best" class="val-blurrable">0</b></div></div>
-            </div>
-            <div class="profile-history-area">
-                <div class="custom-scroll history-list-wrapper"><table class="data-table"><thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead><tbody id="prof-history-list"></tbody></table></div>
-                <div class="pagination-bar"><button id="prof-prev" class="btn-outline" onclick="window.UI.changeProfPage(-1)">←</button><span id="prof-page-num" class="page-indicator">Página 1</span><button id="prof-next" class="btn-outline" onclick="window.UI.changeProfPage(1)">→</button></div>
+            <header class="top-nav" style="justify-content: space-between; margin-bottom: 15px; border: none; padding-bottom: 0;">
+                <div class="user-search-bar" style="position:relative; width: 350px;">
+                    <input type="text" id="user-search-input" placeholder="🔍 Buscar piloto (Ej. @angel)..." oninput="window.UI.filterUserSearch()" autocomplete="off">
+                    <div id="user-search-results" class="edit-dropdown hidden" style="top: 100%; left: 0; width: 100%; max-height: 200px; overflow-y: auto; padding: 5px;"></div>
+                </div>
+                <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER AL LOBBY</button>
+            </header>
+
+            <div class="profile-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px; flex-grow: 1; min-height: 0;">
+                
+                <div class="profile-left-col custom-scroll" style="background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border); padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;">
+                    <div class="profile-identity" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                        
+                        <div class="avatar-lrg prestige-border-none" id="prof-avatar-container" style="margin: 0 auto 15px;">
+                            <img id="prof-img" src="" alt="">
+                        </div>
+                        <input type="file" id="img-input" accept="image/*" hidden onchange="if(this.files && this.files[0]){const r=new FileReader();r.onload=e=>window.UI.openCropModal(e.target.result);r.readAsDataURL(this.files[0]);}this.value='';">
+                        
+                        <div class="name-edit-group" style="justify-content: center; width: 100%;">
+                            <h2 id="prof-name" style="margin:0; font-size: 2.2rem; color: var(--text-main); line-height: 1.1;">-</h2>
+                        </div>
+                        <span id="prof-handle" style="color: var(--p); font-size: 1rem; font-weight: bold; margin-bottom: 10px; font-family: monospace;">@-</span>
+                        
+                        <div style="display:flex; justify-content:center; gap: 10px; flex-wrap: wrap;">
+                            <span id="prof-role" class="role-badge">PILOTO</span>
+                            <span id="prof-country" class="role-badge" style="border-color:#555; color:#aaa; background: transparent; display:none;">🌍 -</span>
+                        </div>
+
+                        <button id="btn-edit-profile" class="btn-outline hidden" style="margin-top: 20px; width: 100%; border-color: var(--p); color: var(--p);" onclick="window.UI.openEditProfileModal()">✏️ Editar Perfil Público</button>
+                    </div>
+
+                    <div class="prof-section">
+                        <h4 class="prof-section-title">BIOGRAFÍA</h4>
+                        <p id="prof-bio" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; font-style: italic; text-align: center; margin: 0; padding: 10px; background: var(--bg); border-radius: 8px; border: 1px dashed #333;">"Este piloto aún no ha escrito su historia."</p>
+                    </div>
+
+                    <div class="prof-section" id="prof-section-hw">
+                        <h4 class="prof-section-title">HARDWARE & SETUP</h4>
+                        <div class="setup-tags" style="display:flex; flex-wrap:wrap; gap:8px; justify-content: center;">
+                            <span class="setup-tag" id="prof-hw-layout" title="Distribución de teclado" style="display:none;">⌨️ QWERTY</span>
+                            <span class="setup-tag" id="prof-hw-switch" title="Modelo / Switches" style="display:none;">🕹️ -</span>
+                        </div>
+                    </div>
+
+                    <div class="prof-section" id="prof-section-social">
+                        <h4 class="prof-section-title">REDES Y CONTACTO</h4>
+                        <div class="social-links" style="display:flex; gap:10px; justify-content: center;">
+                            <a id="prof-soc-dc" href="#" target="_blank" class="social-btn hidden">Discord</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-right-col" style="display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+                    
+                    <div class="profile-stats" style="flex-shrink: 0;">
+                        <div class="stat-card"><small>CARRERAS</small><b id="st-total">0</b></div>
+                        <div class="stat-card"><small>PROM. GENERAL</small><b id="st-avg" class="val-blurrable">0</b></div>
+                        <div class="stat-card"><small>ÚLT. 10</small><b id="st-last-10" class="val-blurrable">0</b></div>
+                        <div class="stat-card st-card-highlight"><small>RÉCORD ABSOLUTO</small><b id="st-best" class="val-blurrable">0</b></div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; flex-shrink: 0;">
+                        <div class="prof-box">
+                            <h4 class="prof-section-title">HOJA DE SERVICIO</h4>
+                            <ul class="st-list" style="margin-top:10px;">
+                                <li class="st-list-item" style="padding: 10px 5px;"><div class="st-list-name" style="color:#888;">Piloto desde</div><div class="st-list-val" id="prof-member-since" style="width:auto; color:var(--text-main); font-family: 'Segoe UI'; font-weight: bold;">--/--/----</div></li>
+                                <li class="st-list-item" style="padding: 10px 5px; border-bottom: none;"><div class="st-list-name" style="color:#888;">Pista Favorita</div><div class="st-list-val" id="prof-fav-track" style="width:auto; color:var(--p); font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 180px;">-</div></li>
+                            </ul>
+                        </div>
+                        <div class="prof-box">
+                            <h4 class="prof-section-title">VITRINA DE LOGROS</h4>
+                            <div id="prof-medals" class="medals-container custom-scroll" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:15px; max-height: 80px; align-items: center; justify-content: center;">
+                                <span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Buscando medallas...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-history-area" style="margin-top:0;">
+                        <div class="custom-scroll history-list-wrapper">
+                            <table class="data-table">
+                                <thead><tr><th id="th-unit-hist">Velocidad</th><th>Texto</th><th>Fecha</th></tr></thead>
+                                <tbody id="prof-history-list"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-bar">
+                            <button id="prof-prev" class="btn-outline" onclick="window.UI.changeProfPage(-1)">←</button>
+                            <span id="prof-page-num" class="page-indicator">Página 1</span>
+                            <button id="prof-next" class="btn-outline" onclick="window.UI.changeProfPage(1)">→</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
+
+        <div id="edit-profile-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="crop-box" style="width: 500px; max-width: 90vw; text-align: left;">
+                <h3 style="color:var(--p); margin: 0 0 5px 0;">Editar Perfil Público</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 20px 0;">Personaliza cómo te ve el resto de la comunidad.</p>
+                
+                <div class="admin-form custom-scroll" style="max-height: 60vh; padding-right: 10px;">
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-bottom: -5px;">Nombre a mostrar (Max 15 caracteres)</label>
+                    <input type="text" id="ep-name" maxlength="15" placeholder="Tu nombre">
+                    
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom: -5px;">Biografía (Max 150 caracteres)</label>
+                    <textarea id="ep-bio" maxlength="150" rows="3" placeholder="Escribe algo sobre ti..." style="resize:none;"></textarea>
+                    
+                    <div style="display:flex; gap:15px; margin-top:10px;">
+                        <div style="flex:1; display:flex; flex-direction:column; gap: 5px;">
+                            <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold;">País (Opcional)</label>
+                            <input type="text" id="ep-country" maxlength="20" placeholder="Ej. Argentina">
+                        </div>
+                        <div style="flex:1; display:flex; flex-direction:column; gap: 5px;">
+                            <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold;">Layout</label>
+                            <select id="ep-layout" class="admin-select" style="width:100%; padding: 13px;">
+                                <option value="">No especificar</option>
+                                <option value="QWERTY">QWERTY</option>
+                                <option value="Dvorak">Dvorak</option>
+                                <option value="Colemak">Colemak</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom: -5px;">Teclado / Switches (Opcional)</label>
+                    <input type="text" id="ep-switches" maxlength="30" placeholder="Ej. Redragon Kumara / Outemu Red">
+
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom: -5px;">Discord (Usuario)</label>
+                    <input type="text" id="ep-discord" maxlength="30" placeholder="Ej. tu_usuario_discord">
+                </div>
+
+                <div style="display:flex; gap:15px; margin-top:20px;">
+                    <button onclick="window.App.saveProfileEdits()" class="btn-primary" style="flex:1;">GUARDAR CAMBIOS</button>
+                    <button onclick="window.UI.closeEditProfileModal()" class="btn-outline" style="flex:1;">Cancelar</button>
+                </div>
+                <button onclick="document.getElementById('img-input').click()" class="btn-outline" style="width:100%; margin-top:15px;">🖼️ Cambiar Foto de Perfil</button>
+            </div>
+        </div>
 
         <section id="track-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button></header>
