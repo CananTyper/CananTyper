@@ -245,7 +245,7 @@
                 </div>
             </header>
 
-            <div class="profile-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px; flex-grow: 1; min-height: 0;">
+            <div id="profile-normal-layout" class="profile-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px; flex-grow: 1; min-height: 0;">
                 
                 <div class="profile-left-col custom-scroll" style="background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border); padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;">
                     <div class="profile-identity" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
@@ -327,6 +327,36 @@
                     </div>
                 </div>
 
+            </div>
+
+            <div id="profile-official-layout" class="profile-layout hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px; flex-grow: 1; min-height: 0;">
+                 <div class="profile-left-col custom-scroll" style="background: #050505; border: 1px solid #00e5ff; box-shadow: 0 0 20px rgba(0,229,255,0.05); border-radius: 15px; padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <div class="avatar-lrg" style="margin: 0 auto 20px; border: 3px solid #00e5ff; box-shadow: 0 0 20px rgba(0,229,255,0.4);"><img src="https://ui-avatars.com/api/?name=CT&background=000&color=00e5ff&bold=true&size=256" id="off-img"></div>
+                      <h2 style="color:#00e5ff; margin:0; font-size:2.5rem; letter-spacing: 2px;">CananTyper</h2>
+                      <span style="color:var(--text-muted); font-family:monospace; margin-bottom: 15px; display:block;">@canantyper</span>
+                      <div style="margin-bottom:20px;"><span class="role-badge" style="background:#00e5ff; color:#000; border:none; padding: 6px 15px; font-weight:bold; letter-spacing: 2px;">SYSTEM CORE</span></div>
+                      <p style="color:#aaa; font-style:italic; margin-top:10px; font-size:0.95rem; max-width: 80%;">"Gestor central de telemetría y base de datos del servidor."</p>
+                 </div>
+
+                 <div class="profile-right-col" style="display:flex; flex-direction:column; gap:20px;">
+                      <div class="profile-stats">
+                           <div class="stat-card" style="border-color:#00e5ff; background: rgba(0,229,255,0.05);"><small style="color:#00e5ff;">PILOTOS ACTIVOS</small><b id="off-users" style="color:#00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5);">0</b></div>
+                           <div class="stat-card" style="border-color:#00e5ff; background: rgba(0,229,255,0.05);"><small style="color:#00e5ff;">CARRERAS GLOBALES</small><b id="off-races" style="color:#00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5);">0</b></div>
+                           <div class="stat-card" style="border-color:var(--error); background: rgba(244,67,54,0.05);"><small style="color:var(--error);">CEMENTERIO HC</small><b id="off-hc-deaths" style="color:var(--error); text-shadow: 0 0 10px rgba(244,67,54,0.5);">0</b></div>
+                      </div>
+                      
+                      <div class="prof-box custom-scroll" style="border-color:#00e5ff; flex-grow:1; background: #080808; overflow-y:auto;">
+                           <h4 class="prof-section-title" style="color:#00e5ff; border-bottom: 1px solid rgba(0,229,255,0.2); padding-bottom: 10px;">NOTAS DEL PARCHE (v1.1.15)</h4>
+                           <ul style="color:#ccc; font-size:1rem; line-height:1.8; padding-left:20px; font-family: monospace;">
+                               <li style="margin-bottom:8px;"><b style="color:#00e5ff;">[NUEVO]</b> Perfiles de Piloto integrados con Biografía y Setup.</li>
+                               <li style="margin-bottom:8px;"><b style="color:#00e5ff;">[NUEVO]</b> Sistema de Podio Metálico (Oro, Plata, Bronce).</li>
+                               <li style="margin-bottom:8px;"><b style="color:#00e5ff;">[NUEVO]</b> Marco Supremo "Dual" para los dueños absolutos del top.</li>
+                               <li style="margin-bottom:8px;"><b style="color:#00e5ff;">[SISTEMA]</b> Buscador de usuarios optimizado (Zero-cost RAM index).</li>
+                               <li style="margin-bottom:8px;"><b style="color:var(--error);">[HARDCORE]</b> Purga visual completa. Elimindas las señales de "éxito".</li>
+                               <li style="margin-bottom:8px;"><b style="color:#ffd700;">[LOGROS]</b> Nueva vitrina interactiva con medallas desbloqueables.</li>
+                           </ul>
+                      </div>
+                 </div>
             </div>
         </section>
 
