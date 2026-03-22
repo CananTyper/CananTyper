@@ -15,12 +15,16 @@ Object.assign(window.UI, {
             window.CT.activeProfHandle = u.h;
             const scores = await window.App.getUserScores(u.h);
             
+            // DATOS BÁSICOS
             document.getElementById('prof-name').innerText = u.n; 
             document.getElementById('prof-handle').innerText = u.h; 
             document.getElementById('prof-img').src = u.a || window.CT.defAvatar; 
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
+            // FECHA DE INGRESO
             document.getElementById('prof-member-since').innerText = u.createdAt || 'Archivo Clasificado';
+
+            // BIOGRAFÍA Y DATOS OPCIONALES
             document.getElementById('prof-bio').innerText = u.bio ? `${u.bio}` : 'Este piloto aún no ha escrito su historia.';
             
             const cEl = document.getElementById('prof-country');
@@ -32,15 +36,19 @@ Object.assign(window.UI, {
             const sEl = document.getElementById('prof-hw-switch');
             if(u.switches) { sEl.innerText = `🕹️ ${u.switches}`; sEl.style.display = 'inline-block'; } else { sEl.style.display = 'none'; }
 
+            // VISIBILIDAD SECCIONES HARDWARE
             document.getElementById('prof-section-hw').style.display = (!u.layout && !u.switches) ? 'none' : 'block';
 
-            // Discord ahora es interactivo en la misma página
+            // LÓGICA DEL NUEVO TAG DE DISCORD INTERACTIVO
             const dcEl = document.getElementById('prof-soc-dc');
             if(u.discord) { 
                 document.getElementById('prof-dc-name').innerText = u.discord; 
                 dcEl.classList.remove('hidden'); 
-            } else { dcEl.classList.add('hidden'); }
+            } else { 
+                dcEl.classList.add('hidden'); 
+            }
 
+            // ESTADÍSTICAS NUMÉRICAS
             const hi = u.hi || []; const total = hi.length; 
             document.getElementById('st-total').innerText = total;
             
@@ -53,10 +61,12 @@ Object.assign(window.UI, {
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
 
+            // CALCULAR PISTA FAVORITA
             let tCounts = {}; let favTrackTitle = "-"; let maxT = 0;
             scores.filter(s => !s.hc).forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackTitle = s.track; } });
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(favTrackTitle);
             
+            // SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
             if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
             if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
@@ -71,6 +81,7 @@ Object.assign(window.UI, {
             avCont.className = 'avatar-lrg prestige-border-none'; // Reset
             
             const topScores = window.CT.data.s_top || [];
+            
             const normRankList = topScores.filter(s=>!s.hc).sort((a,b)=>b.c - a.c);
             let nRank = normRankList.findIndex(s => s.h === u.h) + 1;
             if(nRank === 0) nRank = 999;
@@ -108,6 +119,7 @@ Object.assign(window.UI, {
 
             window.CT.profPage = 0; window.UI.renderProfileHistory();
             
+            // LIMPIAR BUSCADOR Y MOSTRAR
             document.getElementById('user-search-input').value = '';
             document.getElementById('user-search-results').classList.add('hidden');
             document.getElementById('btn-edit-profile').classList.toggle('hidden', !(currentSes && u.h === currentSes.h)); 
