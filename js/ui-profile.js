@@ -111,8 +111,8 @@ Object.assign(window.UI, {
             
             // SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Pionero (Registro anterior al sistema)">⌛</span>`;
-            if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras)">🎖️</span>`;
+            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Veterano (Registro anterior al sistema)">🎖️🦾</span>`;
+            if(total >= 100) medalsHTML += `<span class="medal-item" title="Dedos de Acero (100+ Carreras)">🦾</span>`;
             if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio General +600 CPM)">⚡</span>`;
             if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Élite (1000+ CPM)">🏎️</span>`;
             if((u.hc_survivals || 0) >= 100) medalsHTML += `<span class="medal-item" title="Superviviente (100+ Victorias Hardcore)">🛡️</span>`;
@@ -194,10 +194,10 @@ Object.assign(window.UI, {
         let html = `<div class="medal-showcase-grid">`;
         
         const hasAnomalia = !u.createdAt;
-        html += `<div class="medal-slot ${hasAnomalia ? 'unlocked' : 'locked'}" title="${hasAnomalia ? 'Registros anteriores al sistema' : '???'}"><span class="m-icon">💠</span><span class="m-name">Anomalía Cero</span></div>`;
+        html += `<div class="medal-slot ${hasAnomalia ? 'unlocked' : 'locked'}" title="${hasAnomalia ? 'Registros anteriores al sistema' : '???'}"><span class="m-icon">🎖️</span><span class="m-name">Veterano</span></div>`;
         
         const hasVeterano = total >= 100;
-        html += `<div class="medal-slot ${hasVeterano ? 'unlocked' : 'locked'}" title="${hasVeterano ? '100+ Carreras Totales' : 'Completa 100 carreras'}"><span class="m-icon">🎖️</span><span class="m-name">Veterano</span></div>`;
+        html += `<div class="medal-slot ${hasVeterano ? 'unlocked' : 'locked'}" title="${hasVeterano ? '100+ Carreras Totales' : 'Completa 100 carreras'}"><span class="m-icon">🦾</span><span class="m-name">Dedos de Acero</span></div>`;
         
         const hasVelocista = avgCPM >= 600;
         html += `<div class="medal-slot ${hasVelocista ? 'unlocked' : 'locked'}" title="${hasVelocista ? 'Promedio Histórico >= 600 CPM' : 'Alcanza 600 CPM de promedio'}"><span class="m-icon">⚡</span><span class="m-name">Velocista</span></div>`;
