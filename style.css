@@ -701,3 +701,27 @@ button.discord-tag { border: none; cursor: pointer; outline: none; font-family: 
 .medal-slot .m-name { color: var(--p); font-size: 0.85rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
 
 .prof-section-title.clickable:hover { color: #fff; text-shadow: 0 0 10px var(--p); }
+
+/* =========================================================================
+   PERFIL DEL SERVIDOR (SYSTEM CORE) - PODIO Y EVENTOS
+   ========================================================================= */
+.official-podium { display: flex; justify-content: center; align-items: flex-end; gap: 15px; height: 160px; margin-top: 30px; }
+.podium-spot { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.02); border-top-left-radius: 12px; border-top-right-radius: 12px; width: 30%; border: 1px solid var(--border); border-bottom: none; position: relative; padding-top: 15px; transition: all 0.3s; }
+.podium-spot:hover { background: rgba(255,255,255,0.05); transform: translateY(-5px); }
+.podium-spot.p1 { height: 100%; border-color: #ffd700; background: linear-gradient(to top, rgba(255,215,0,0.05), transparent); box-shadow: 0 -10px 20px rgba(255,215,0,0.05); z-index: 2; }
+.podium-spot.p2 { height: 80%; border-color: #c0c0c0; background: linear-gradient(to top, rgba(192,192,192,0.05), transparent); }
+.podium-spot.p3 { height: 65%; border-color: #cd7f32; background: linear-gradient(to top, rgba(205,127,50,0.05), transparent); }
+
+.podium-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid; position: absolute; top: -25px; background: #000; object-fit: cover; }
+.p1 .podium-avatar { border-color: #ffd700; width: 60px; height: 60px; top: -30px; box-shadow: 0 0 15px rgba(255,215,0,0.4); }
+.p2 .podium-avatar { border-color: #c0c0c0; }
+.p3 .podium-avatar { border-color: #cd7f32; }
+
+.podium-name { color: var(--text-main); font-weight: bold; margin-top: 25px; font-size: 0.9rem; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p1 .podium-name { color: #ffd700; margin-top: 35px; font-size: 1rem; }
+.podium-cpm { color: var(--p); font-family: monospace; font-size: 1.1rem; margin-top: 5px; }
+
+/* Banner de Torneo/Evento */
+.event-banner { background: linear-gradient(135deg, rgba(179,136,255,0.05) 0%, transparent 100%); border: 1px solid #b388ff; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; }
+.event-banner::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #b388ff; box-shadow: 0 0 15px #b388ff; }
+.event-tag { background: rgba(179,136,255,0.2); color: #b388ff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; display: inline-block; margin-bottom: 8px; }
