@@ -24,7 +24,7 @@ Object.assign(window.UI, {
             document.getElementById('prof-bio').innerText = u.bio ? `${u.bio}` : 'Este piloto aún no ha escrito su historia.';
             
             const cEl = document.getElementById('prof-country');
-            if(u.country) { cEl.innerText = `🌍 ${u.country}`; cEl.style.display = 'inline-block'; } else { cEl.style.display = 'none'; }
+            if(u.country) { cEl.innerText = `${u.country}`; cEl.style.display = 'inline-block'; } else { cEl.style.display = 'none'; }
             
             const lEl = document.getElementById('prof-hw-layout');
             if(u.layout) { lEl.innerText = `⌨️ ${u.layout}`; lEl.style.display = 'inline-block'; } else { lEl.style.display = 'none'; }
@@ -34,9 +34,9 @@ Object.assign(window.UI, {
 
             document.getElementById('prof-section-hw').style.display = (!u.layout && !u.switches) ? 'none' : 'block';
 
+            // Discord ahora es interactivo en la misma página
             const dcEl = document.getElementById('prof-soc-dc');
             if(u.discord) { 
-                dcEl.href = `https://discord.com/users/${u.discord}`; 
                 document.getElementById('prof-dc-name').innerText = u.discord; 
                 dcEl.classList.remove('hidden'); 
             } else { dcEl.classList.add('hidden'); }
@@ -57,7 +57,6 @@ Object.assign(window.UI, {
             scores.filter(s => !s.hc).forEach(s => { tCounts[s.track] = (tCounts[s.track] || 0) + 1; if(tCounts[s.track] > maxT) { maxT = tCounts[s.track]; favTrackTitle = s.track; } });
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(favTrackTitle);
             
-            // NUEVO SISTEMA DE MEDALLAS DIFICULTAD PRO
             let medalsHTML = '';
             if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
             if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
@@ -67,12 +66,11 @@ Object.assign(window.UI, {
             if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
-            // SISTEMA DE PODIO (TOP 1 AL 10)
+            // SISTEMA DE PODIO METÁLICO (TOP 1 AL 10)
             const avCont = document.getElementById('prof-avatar-container');
             avCont.className = 'avatar-lrg prestige-border-none'; // Reset
             
             const topScores = window.CT.data.s_top || [];
-            
             const normRankList = topScores.filter(s=>!s.hc).sort((a,b)=>b.c - a.c);
             let nRank = normRankList.findIndex(s => s.h === u.h) + 1;
             if(nRank === 0) nRank = 999;
@@ -88,12 +86,23 @@ Object.assign(window.UI, {
             if(existingBadge) existingBadge.remove();
 
             if(finalRank <= 10) {
-                const badgeHTML = `<div class="rank-badge ${isHcRank ? 'rank-hc' : 'rank-normal'}">#${finalRank}</div>`;
+                let rankClass = 'rank-normal';
+                
+                if (isHcRank) {
+                    rankClass = 'rank-hc'; // Hardcore siempre en sangre
+                } else {
+                    if (finalRank === 1) rankClass = 'rank-top1'; // Oro
+                    else if (finalRank === 2) rankClass = 'rank-top2'; // Plata
+                    else if (finalRank === 3) rankClass = 'rank-top3'; // Bronce
+                }
+
+                const badgeHTML = `<div class="rank-badge ${rankClass}">#${finalRank}</div>`;
                 avCont.insertAdjacentHTML('beforeend', badgeHTML);
 
+                // Bordes de Prestige
                 if(finalRank === 1) avCont.classList.add(isHcRank ? 'prestige-border-hardcore' : 'prestige-border-top1');
-                else if(finalRank === 2) avCont.classList.add('prestige-border-top2');
-                else if(finalRank === 3) avCont.classList.add('prestige-border-top3');
+                else if(finalRank === 2 && !isHcRank) avCont.classList.add('prestige-border-top2');
+                else if(finalRank === 3 && !isHcRank) avCont.classList.add('prestige-border-top3');
                 else avCont.classList.add('prestige-border-top10');
             }
 
@@ -104,6 +113,20 @@ Object.assign(window.UI, {
             document.getElementById('btn-edit-profile').classList.toggle('hidden', !(currentSes && u.h === currentSes.h)); 
             window.UI.show('profile-screen');
         } catch (error) { console.error("Error en showProfile:", error); }
+    },
+
+    // FUNCIONALIDAD DE COPIAR DISCORD AL PORTAPAPELES
+    copyDiscord: () => {
+        const nameEl = document.getElementById('prof-dc-name');
+        if(nameEl && nameEl.innerText !== 'Usuario' && nameEl.innerText !== '¡Copiado!') {
+            const originalText = nameEl.innerText;
+            navigator.clipboard.writeText(originalText).then(() => {
+                nameEl.innerText = "¡Copiado!";
+                setTimeout(() => { nameEl.innerText = originalText; }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar al portapapeles: ', err);
+            });
+        }
     },
 
     openEditProfileModal: () => {
