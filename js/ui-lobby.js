@@ -8,7 +8,15 @@ Object.assign(window.UI, {
         const u = window.CT.ses(); if(!u) return window.UI.show('auth-screen');
         window.updateDiscordStatus("En el menú principal", `Piloto: ${u.n}`, false);
         document.getElementById('val-display-name').innerText = u.n; document.getElementById('val-username').innerText = u.h; document.getElementById('lobby-avatar').src = u.a || window.CT.defAvatar;
-        window.UI.updateUnitVisuals(window.CT.currentUnit); window.UI.renderGlobal(); window.UI.renderTrainDropdown(); window.UI.show('home-screen'); window.UI.checkAnnouncements(); 
+        
+        window.UI.updateUnitVisuals(window.CT.currentUnit); 
+        window.UI.renderGlobal(); 
+        window.UI.renderTrainDropdown(); 
+        window.UI.show('home-screen'); 
+        
+        // Disparadores de Anuncios
+        window.UI.checkAnnouncements(); 
+        window.UI.checkArenaAnnouncement(); // NUEVA LLAMADA AL POP-UP DE LA ARENA
     },
 
     showLobby: () => window.UI.initLobby(),
@@ -57,6 +65,54 @@ Object.assign(window.UI, {
         if (anns.length > 0) { const latest = anns[0]; const lastSeen = localStorage.getItem('ct_last_announcement'); if (latest.id.toString() !== lastSeen) window.UI.showAnnouncement(latest); }
     },
 
-    showAnnouncement: (data) => { if(!data.id) return; window.UI.currentAnnId = data.id.toString(); document.getElementById('motd-icon').innerText = data.icon || "🚀"; document.getElementById('motd-title').innerText = data.title || "Anuncio"; document.getElementById('motd-msg').innerHTML = data.msg || ""; document.getElementById('announcement-modal').classList.remove('hidden'); },
-    closeAnnouncement: () => { if(window.UI.currentAnnId) { localStorage.setItem('ct_last_announcement', window.UI.currentAnnId); } document.getElementById('announcement-modal').classList.add('hidden'); }
+    showAnnouncement: (data) => { 
+        if(!data.id) return; 
+        window.UI.currentAnnId = data.id.toString(); 
+        document.getElementById('motd-icon').innerText = data.icon || "🚀"; 
+        document.getElementById('motd-title').innerText = data.title || "Anuncio"; 
+        document.getElementById('motd-title').style.color = ''; // Limpiamos el color custom
+        document.getElementById('motd-msg').innerHTML = data.msg || ""; 
+        document.getElementById('announcement-modal').classList.remove('hidden'); 
+    },
+    
+    closeAnnouncement: () => { 
+        if(window.UI.currentAnnId) { localStorage.setItem('ct_last_announcement', window.UI.currentAnnId); } 
+        document.getElementById('announcement-modal').classList.add('hidden'); 
+        document.getElementById('motd-title').style.color = ''; // Limpieza de seguridad
+    },
+
+    // =========================================================
+    // NUEVO: CONTROLADOR DE ANUNCIOS DE LA ARENA (POP-UP)
+    // =========================================================
+    checkArenaAnnouncement: () => {
+        // Objeto de configuración (A futuro se descargará de Firebase desde CananStudio)
+        const arenaConfig = {
+            active: true,
+            version: "pre-season-1", // Al cambiar esta variable en CananStudio, el pop-up reaparecerá para todos
+            title: "🏆 ¡LA ARENA ESTÁ ABIERTA!",
+            msg: "El Torneo de Pre-Temporada ha comenzado en CananTyper.\n\nDemuestra tu velocidad en la pista oficial del evento. Los mejores tiempos quedarán inmortalizados en el Salón de la Fama y recibirán la exclusiva Medalla de Obsidiana.\n\n¿Tienes lo que se necesita para entrar al Top 10?",
+            showPopup: true // Control para silenciar el pop-up y dejar solo el botón en el menú
+        };
+
+        if (arenaConfig.active && arenaConfig.showPopup) {
+            // Verificamos si el usuario ya vio ESTA versión del anuncio en su computadora
+            const hasSeen = localStorage.getItem('ct_arena_seen_' + arenaConfig.version);
+            
+            if (!hasSeen) {
+                const modal = document.getElementById('announcement-modal');
+                document.getElementById('motd-icon').innerText = '🟣';
+                
+                const titleEl = document.getElementById('motd-title');
+                titleEl.innerText = arenaConfig.title;
+                titleEl.style.color = '#b388ff'; // Color neón del evento
+                
+                document.getElementById('motd-msg').innerText = arenaConfig.msg;
+                
+                modal.classList.remove('hidden');
+                
+                // Marcamos como leído para que no vuelva a molestar al recargar
+                localStorage.setItem('ct_arena_seen_' + arenaConfig.version, 'true');
+            }
+        }
+    }
 });
