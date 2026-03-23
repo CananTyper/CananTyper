@@ -48,6 +48,15 @@ window.Engine = class Engine {
             window.updateDiscordStatus(statusText, "Torneo en Curso");
 
             document.getElementById('arena-result-modal').classList.add('hidden');
+            
+            // NUEVO: Restauramos la visibilidad del HUD y el texto para nuevas carreras
+            const hudEl = document.querySelector('.arena-hud');
+            if(hudEl) hudEl.classList.remove('hidden');
+            const textEl = document.getElementById('arena-target-text');
+            if(textEl) textEl.classList.remove('hidden');
+            const progEl = document.querySelector('#arena-game-screen .progress-container');
+            if(progEl) progEl.classList.remove('hidden');
+
             document.getElementById('arena-game-input').classList.remove('hidden');
             document.getElementById('arena-in-game-controls').style.opacity = '1';
             document.getElementById('arena-target-text').innerHTML = this.w.map((w,idx) => `<span class="word ${idx===0?'active':''}">${w}</span>`).join(' '); 
@@ -253,6 +262,14 @@ window.Engine = class Engine {
             document.getElementById('arena-game-input').classList.add('hidden'); 
             document.getElementById('arena-in-game-controls').style.opacity = '0';
 
+            // NUEVO: Ocultamos el texto y el HUD para que el cartel de resultados no se rompa
+            const hudEl = document.querySelector('.arena-hud');
+            if(hudEl) hudEl.classList.add('hidden');
+            const textEl = document.getElementById('arena-target-text');
+            if(textEl) textEl.classList.add('hidden');
+            const progEl = document.querySelector('#arena-game-screen .progress-container');
+            if(progEl) progEl.classList.add('hidden');
+
             // Matemáticas de la Arena
             let rawAcc = this.totalKeystrokes > 0 ? ((this.totalKeystrokes - this.errorKeystrokes) / this.totalKeystrokes) * 100 : 100;
             let finalAcc = Math.max(0, Math.min(100, rawAcc));
@@ -272,10 +289,18 @@ window.Engine = class Engine {
                 for(let w in this.errWords) bw[w] = (bw[w] || 0) + this.errWords[w];
                 let sortedWords = Object.keys(bw).sort((a,b) => bw[b] - bw[a]); let prunedBw = {};
                 sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
-                window.db.collection('users').doc(userDoc.h).update({ bad_keys: bk, bad_words: prunedBw });
+                
+                // NUEVO: Guardado Silencioso de Estadísticas de Arena
+                let arena_pts = (userDoc.arena_pts || 0) + finalScore;
+                let arena_races = (userDoc.arena_races || 0) + 1;
 
-                // Aquí guardaremos el puntaje a futuro en la tabla 'arena_scores'
-                console.log(`[ARENA SCORE] -> ${userDoc.h} obtuvo ${finalScore} puntos.`);
+                window.db.collection('users').doc(userDoc.h).update({ 
+                    bad_keys: bk, 
+                    bad_words: prunedBw,
+                    arena_pts: arena_pts,
+                    arena_races: arena_races
+                });
+                console.log(`[ARENA SILENT SAVE] -> Puntos Totales: ${arena_pts} | Carreras Jugadas: ${arena_races}`);
             }
 
             document.getElementById('arena-result-modal').classList.remove('hidden');
