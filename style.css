@@ -725,3 +725,52 @@ button.discord-tag { border: none; cursor: pointer; outline: none; font-family: 
 .event-banner { background: linear-gradient(135deg, rgba(179,136,255,0.05) 0%, transparent 100%); border: 1px solid #b388ff; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; }
 .event-banner::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #b388ff; box-shadow: 0 0 15px #b388ff; }
 .event-tag { background: rgba(179,136,255,0.2); color: #b388ff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; display: inline-block; margin-bottom: 8px; }
+
+/* =========================================================================
+   CORRECCIÓN PODIO Y ESTILOS DE LA ARENA (FASE A)
+   ========================================================================= */
+.official-podium { margin-top: 45px !important; } /* Arreglo para que no pise el título */
+
+/* Estructura de la Arena */
+.arena-bg {
+    background: radial-gradient(circle at center, #1a0b2e 0%, #050505 100%);
+    position: relative;
+}
+.arena-bg::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(179,136,255,0.03) 2px, rgba(179,136,255,0.03) 4px);
+    pointer-events: none; z-index: 0;
+}
+
+.arena-container {
+    max-width: 1000px; width: 100%; margin: 0 auto;
+    position: relative; z-index: 1; display: flex; flex-direction: column; gap: 20px;
+}
+
+/* Panel Central de la Arena */
+.arena-hero {
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid #b388ff;
+    box-shadow: 0 0 30px rgba(179,136,255,0.15), inset 0 0 20px rgba(179,136,255,0.05);
+    border-radius: 15px; padding: 40px; text-align: center; backdrop-filter: blur(10px);
+}
+.arena-title { font-size: 3rem; color: #fff; text-shadow: 0 0 15px #b388ff, 0 0 30px #b388ff; margin: 0 0 10px 0; letter-spacing: 4px; font-weight: 900; text-transform: uppercase; }
+.arena-subtitle { color: #b388ff; font-size: 1.2rem; margin: 0 0 30px 0; letter-spacing: 2px; font-family: monospace; }
+
+/* Reloj de Cuenta Regresiva */
+.countdown-box { display: inline-flex; gap: 15px; margin-bottom: 30px; }
+.cd-item { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); padding: 15px 20px; border-radius: 10px; border: 1px solid rgba(179,136,255,0.3); min-width: 80px; }
+.cd-val { font-size: 2.5rem; color: #fff; font-family: monospace; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.5); line-height: 1; }
+.cd-lbl { color: #b388ff; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+/* Botón de Jugar en Arena */
+.btn-arena-play {
+    background: #b388ff; color: #000; font-size: 1.5rem; font-weight: 900; padding: 15px 50px; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(179,136,255,0.6); letter-spacing: 2px;
+}
+.btn-arena-play:hover { background: #c4a1ff; box-shadow: 0 0 40px rgba(179,136,255,0.8); transform: scale(1.05); }
+
+/* Recompensas y Lore */
+.arena-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.arena-panel { background: rgba(10, 10, 15, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: left; }
+.arena-panel-title { color: #b388ff; font-size: 1rem; border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 10px; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px; }
