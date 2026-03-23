@@ -1,5 +1,5 @@
 /* ================================================================
-    CANANTYPER - UI LOBBY (INICIO)
+    CANANTYPER - UI LOBBY (INICIO Y CONEXIÓN A E-SPORTS)
    ================================================================ */
 
 Object.assign(window.UI, {
@@ -14,9 +14,8 @@ Object.assign(window.UI, {
         window.UI.renderTrainDropdown(); 
         window.UI.show('home-screen'); 
         
-        // Disparadores de Anuncios
         window.UI.checkAnnouncements(); 
-        window.UI.checkArenaAnnouncement(); // NUEVA LLAMADA AL POP-UP DE LA ARENA
+        window.UI.initArenaListener(); // CONECTAMOS AL GESTOR DE TORNEOS
     },
 
     showLobby: () => window.UI.initLobby(),
@@ -70,7 +69,7 @@ Object.assign(window.UI, {
         window.UI.currentAnnId = data.id.toString(); 
         document.getElementById('motd-icon').innerText = data.icon || "🚀"; 
         document.getElementById('motd-title').innerText = data.title || "Anuncio"; 
-        document.getElementById('motd-title').style.color = ''; // Limpiamos el color custom
+        document.getElementById('motd-title').style.color = ''; 
         document.getElementById('motd-msg').innerHTML = data.msg || ""; 
         document.getElementById('announcement-modal').classList.remove('hidden'); 
     },
@@ -78,41 +77,183 @@ Object.assign(window.UI, {
     closeAnnouncement: () => { 
         if(window.UI.currentAnnId) { localStorage.setItem('ct_last_announcement', window.UI.currentAnnId); } 
         document.getElementById('announcement-modal').classList.add('hidden'); 
-        document.getElementById('motd-title').style.color = ''; // Limpieza de seguridad
+        document.getElementById('motd-title').style.color = ''; 
     },
 
     // =========================================================
-    // NUEVO: CONTROLADOR DE ANUNCIOS DE LA ARENA (POP-UP)
+    // NUEVO: SISTEMA NERVIOSO DE LA ARENA (E-SPORTS)
     // =========================================================
-    checkArenaAnnouncement: () => {
-        // Objeto de configuración (A futuro se descargará de Firebase desde CananStudio)
-        const arenaConfig = {
-            active: true,
-            version: "pre-season-1", // Al cambiar esta variable en CananStudio, el pop-up reaparecerá para todos
-            title: "🏆 ¡LA ARENA ESTÁ ABIERTA!",
-            msg: "El Torneo de Pre-Temporada ha comenzado en CananTyper.\n\nDemuestra tu velocidad en la pista oficial del evento. Los mejores tiempos quedarán inmortalizados en el Salón de la Fama y recibirán la exclusiva Medalla de Obsidiana.\n\n¿Tienes lo que se necesita para entrar al Top 10?",
-            showPopup: true // Control para silenciar el pop-up y dejar solo el botón en el menú
+    arenaTimerInterval: null,
+    arenaCurrentConfig: null,
+
+    initArenaListener: () => {
+        // Escuchamos los cambios que haces en vivo desde CananStudio
+        window.db.collection('config').doc('arena_event').onSnapshot(doc => {
+            if (doc.exists) {
+                window.UI.arenaCurrentConfig = doc.data();
+                window.UI.processArenaEvent();
+            }
+        });
+    },
+
+    processArenaEvent: () => {
+        const conf = window.UI.arenaCurrentConfig;
+        if (!conf) return;
+
+        const navBtn = document.querySelector('.btn-arena-nav');
+        
+        // 1. Apagado y Encendido
+        if (!conf.active) {
+            if(navBtn) navBtn.style.display = 'none';
+            // Si el jugador está en la sala de la arena mientras la cierras, lo echamos al lobby
+            if(!document.getElementById('arena-screen').classList.contains('hidden')) {
+                alert("El torneo ha finalizado y la Arena se ha cerrado.");
+                window.UI.show('home-screen');
+            }
+            return;
+        }
+
+        // Si está activo, mostramos el botón
+        if(navBtn) navBtn.style.display = 'inline-block';
+
+        // 2. Colores y Tema Visual del Torneo
+        let tColor = '#b388ff'; // Galáctico (Por defecto)
+        let tBg = 'rgba(179,136,255,0.1)';
+        
+        if (conf.theme === 'red') { tColor = '#ff4a4a'; tBg = 'rgba(255,74,74,0.1)'; }
+        else if (conf.theme === 'gold') { tColor = '#ffd700'; tBg = 'rgba(255,215,0,0.1)'; }
+
+        if(navBtn) {
+            navBtn.style.borderColor = tColor;
+            navBtn.style.color = tColor;
+            navBtn.style.boxShadow = `0 0 10px ${tBg}`;
+        }
+
+        // 3. Actualizar la Interfaz de la Sala de Arena
+        document.querySelector('#arena-screen .arena-title').innerText = conf.title || "Evento Oficial";
+        document.querySelector('#arena-screen .arena-title').style.color = tColor;
+        document.querySelector('#arena-screen .btn-arena-play').style.background = tColor;
+        document.querySelector('#arena-screen .btn-arena-play').style.color = '#000';
+        document.querySelector('#arena-screen .btn-arena-play').style.boxShadow = `0 0 20px ${tBg}`;
+
+        const exitBtn = document.querySelector('#arena-screen .btn-outline');
+        if(exitBtn) { exitBtn.style.borderColor = tColor; exitBtn.style.color = tColor; }
+        
+        const statusSpan = document.querySelector('#arena-screen span[style*="ESTADO: EN CURSO"]');
+        if(statusSpan) { statusSpan.style.color = tColor; statusSpan.style.background = tBg; }
+
+        // Mostrar u ocultar penalización visual en base a las reglas
+        const penalMsg = document.querySelector('#arena-screen p[style*="Penalización activa"]');
+        if (penalMsg) {
+            penalMsg.style.display = conf.scoring === 'points' ? 'block' : 'none';
+        }
+
+        // Actualizar UI del Gestor de Recompensas
+        if (conf.medal) {
+            document.querySelector('#arena-screen h5').innerText = "Medalla Oficial"; // Aquí podríamos mapear nombres de medallas si tuviéramos el catálogo
+            document.querySelector('#arena-screen .arena-panel:nth-child(2)').style.display = 'flex';
+        } else {
+            // Si elegiste "🚫 Ninguna", ocultamos el panel de recompensas
+            document.querySelector('#arena-screen .arena-panel:nth-child(2)').style.display = 'none';
+        }
+
+        // 4. El Cronómetro en Vivo
+        if (conf.endTime) {
+            window.UI.startArenaCountdown(conf.endTime);
+        } else {
+            document.querySelector('.countdown-box').style.display = 'none';
+        }
+
+        // 5. El Disparo del Pop-up Automático (Anuncio Obligatorio)
+        const hasSeen = localStorage.getItem('ct_arena_seen_' + conf.version);
+        if (!hasSeen) {
+            const modal = document.getElementById('announcement-modal');
+            document.getElementById('motd-icon').innerText = '🟣';
+            
+            const titleEl = document.getElementById('motd-title');
+            titleEl.innerText = conf.title;
+            titleEl.style.color = tColor; 
+            
+            document.getElementById('motd-msg').innerText = conf.msg;
+            
+            modal.classList.remove('hidden');
+            localStorage.setItem('ct_arena_seen_' + conf.version, 'true');
+        }
+
+        // 6. Carga del Leaderboard en Vivo
+        window.UI.loadArenaLeaderboard(conf.version, tColor);
+    },
+
+    startArenaCountdown: (endTimeStr) => {
+        const cdBox = document.querySelector('.countdown-box');
+        if(!cdBox) return;
+        cdBox.style.display = 'flex';
+        
+        if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
+
+        const endDate = new Date(endTimeStr).getTime();
+
+        const updateClock = () => {
+            const now = new Date().getTime();
+            const distance = endDate - now;
+
+            if (distance < 0) {
+                clearInterval(window.UI.arenaTimerInterval);
+                cdBox.innerHTML = `<span style="color:var(--error); font-weight:bold; font-size:1.2rem;">EL EVENTO HA CONCLUIDO</span>`;
+                const playBtn = document.querySelector('.btn-arena-play');
+                if (playBtn) playBtn.style.display = 'none'; // Bloquea que sigan entrando si el tiempo se agotó
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+            cdBox.innerHTML = `
+                <div class="cd-item"><span class="cd-val">${days < 10 ? '0'+days : days}</span><span class="cd-lbl">DÍAS</span></div>
+                <div class="cd-item"><span class="cd-val">${hours < 10 ? '0'+hours : hours}</span><span class="cd-lbl">HRS</span></div>
+                <div class="cd-item"><span class="cd-val">${minutes < 10 ? '0'+minutes : minutes}</span><span class="cd-lbl">MIN</span></div>
+            `;
+            
+            const playBtn = document.querySelector('.btn-arena-play');
+            if (playBtn) playBtn.style.display = 'block';
         };
 
-        if (arenaConfig.active && arenaConfig.showPopup) {
-            // Verificamos si el usuario ya vio ESTA versión del anuncio en su computadora
-            const hasSeen = localStorage.getItem('ct_arena_seen_' + arenaConfig.version);
+        updateClock(); // Llamada inicial
+        window.UI.arenaTimerInterval = setInterval(updateClock, 60000); // Se actualiza cada minuto para ahorrar CPU
+    },
+
+    loadArenaLeaderboard: async (version, tColor) => {
+        const tbody = document.querySelector('#arena-screen .data-table tbody');
+        if(!tbody) return;
+
+        try {
+            // Buscamos a los pilotos que están corriendo este evento específico
+            const snap = await window.db.collection('arena_scores').where('version', '==', version).orderBy('score', 'desc').limit(50).get();
             
-            if (!hasSeen) {
-                const modal = document.getElementById('announcement-modal');
-                document.getElementById('motd-icon').innerText = '🟣';
-                
-                const titleEl = document.getElementById('motd-title');
-                titleEl.innerText = arenaConfig.title;
-                titleEl.style.color = '#b388ff'; // Color neón del evento
-                
-                document.getElementById('motd-msg').innerText = arenaConfig.msg;
-                
-                modal.classList.remove('hidden');
-                
-                // Marcamos como leído para que no vuelva a molestar al recargar
-                localStorage.setItem('ct_arena_seen_' + arenaConfig.version, 'true');
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#555;">La arena está vacía. ¡Sé el primero en correr!</td></tr>';
+                return;
             }
+
+            let html = '';
+            snap.docs.forEach((doc, index) => {
+                const s = doc.data();
+                let rankVisual = `#${index + 1}`;
+                if (index === 0) rankVisual = `<b style="color:#ffd700;">#1</b>`;
+                if (index === 1) rankVisual = `<b style="color:#c0c0c0;">#2</b>`;
+                if (index === 2) rankVisual = `<b style="color:#cd7f32;">#3</b>`;
+
+                html += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:15px 10px;">${rankVisual}</td>
+                    <td style="padding:15px 10px; color:#fff;">${s.n} <span style="color:#666; font-size:0.75rem; font-family:monospace;">${s.h}</span></td>
+                    <td style="padding:15px 10px; color:${tColor}; font-weight:bold; font-family:monospace; font-size:1.1rem;">${s.score}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        } catch(e) {
+            console.error("Error cargando Leaderboard de Arena:", e);
         }
     }
 });
