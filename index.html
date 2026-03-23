@@ -140,7 +140,7 @@
             </div>
         </section>
 
-        <section id="arena-screen" class="screen hidden arena-bg" style="padding: 20px;">
+       <section id="arena-screen" class="screen hidden arena-bg" style="padding: 20px;">
             <header class="top-nav" style="border: none; position: relative; z-index: 2;">
                 <div style="display:flex; align-items:center; gap: 15px;">
                     <button onclick="window.UI.showLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← SALIR DE LA ARENA</button>
@@ -165,13 +165,13 @@
                         <p style="margin:5px 0 0 0; color:var(--error); font-weight:bold;">Penalización activa: Los errores restan puntaje final.</p>
                     </div>
 
-                    <button class="btn-arena-play">INICIAR CARRERA OFICIAL</button>
+                    <button class="btn-arena-play" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
                 </div>
 
                 <div class="arena-info-grid">
                     <div class="arena-panel">
                         <h4 class="arena-panel-title">📜 DIRECTIVAS DEL EVENTO</h4>
-                        <p style="color: #aaa; line-height: 1.6; font-size: 0.95rem;">Bienvenidos al primer torneo de calibración del sistema. <br><br>Para clasificar, debes completar la pista oficial del torneo. Puedes intentarlo todas las veces que quieras; <b>solo se guardará tu mejor tiempo (CPM)</b>. <br><br>Al finalizar la cuenta regresiva, el tablero se congelará y las recompensas serán inyectadas en los perfiles de los vencedores.</p>
+                        <p style="color: #aaa; line-height: 1.6; font-size: 0.95rem;">Bienvenidos al primer torneo de calibración del sistema. <br><br>Para clasificar, debes completar la pista oficial del torneo. Puedes intentarlo todas las veces que quieras; <b>solo se guardará tu mejor tiempo (PUNTOS)</b> calculados en base a tu velocidad y precisión. <br><br>Al finalizar la cuenta regresiva, el tablero se congelará y las recompensas serán inyectadas en los perfiles de los vencedores.</p>
                     </div>
                     
                     <div class="arena-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
@@ -187,7 +187,7 @@
                     <h4 class="arena-panel-title">📊 CLASIFICACIÓN EN VIVO</h4>
                     <table class="data-table" style="background: transparent;">
                         <thead>
-                            <tr><th width="15%">RANGO</th><th width="50%">PILOTO</th><th width="35%" style="color:#b388ff;">MEJOR CPM</th></tr>
+                            <tr><th width="15%">RANGO</th><th width="50%">PILOTO</th><th width="35%" style="color:#b388ff;">PUNTOS ARENA</th></tr>
                         </thead>
                         <tbody>
                             <tr><td><b style="color:#ffd700;">#1</b></td><td>@canantyper</td><td><b style="color:#fff;">950</b></td></tr>
@@ -201,6 +201,49 @@
             </div>
         </section>
 
+        <section id="arena-game-screen" class="screen hidden arena-bg" style="padding-top: 20px;">
+            <div class="game-container" style="max-width: 1200px; width: 100%; position: relative; z-index: 1;">
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span class="event-tag" style="font-size: 1rem; padding: 8px 20px; border: 1px solid var(--error); color: var(--error); background: rgba(244,67,54,0.1);">🔴 EVENTO COMPETITIVO</span>
+                </div>
+
+                <div class="arena-hud">
+                    <div class="arena-hud-box"><small>TIEMPO</small><span id="arena-timer">0.0s</span></div>
+                    <div class="arena-hud-box"><small>VEL. BRUTA</small><span id="arena-speed-display">0</span></div>
+                    <div class="arena-hud-box"><small>PRECISIÓN</small><span id="arena-acc-display">100%</span></div>
+                    <div class="arena-hud-box" id="arena-penalty-box"><small>MULTIPLICADOR</small><span id="arena-mult-display">x1.00</span></div>
+                </div>
+
+                <div class="progress-container" style="margin-bottom: 25px; border-color: rgba(179,136,255,0.2); background: rgba(0,0,0,0.5);">
+                    <div id="arena-race-progress" class="progress-bar arena-progress"></div>
+                </div>
+
+                <div id="arena-target-text" class="arena-text-display"></div>
+                <input type="text" id="arena-game-input" class="game-input-box arena-input" placeholder="Preparando motor..." autocomplete="off">
+                
+                <div id="arena-in-game-controls" class="game-controls" style="justify-content: center; opacity: 0;">
+                    <button onclick="window.App.quitArenaRace()" class="btn-outline" style="border-color: var(--error); color: var(--error); padding: 10px 30px;">RENDIRSE (0 PUNTOS)</button>
+                </div>
+
+                <div id="arena-result-modal" class="game-result hidden" style="border-color: #b388ff; box-shadow: 0 15px 50px rgba(179,136,255,0.15); background: rgba(10,10,15,0.95); backdrop-filter: blur(10px);">
+                    <h3 style="color: #b388ff; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">Resultados Homologados</h3>
+                    <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 20px;">
+                        <div><small style="color:#aaa; font-size:0.8rem; font-weight:bold;">VEL. BRUTA</small><div id="arena-final-cpm" style="font-size: 2.5rem; color: #fff; font-family: monospace; font-weight:bold;">0</div></div>
+                        <div style="color: #555; font-size: 2.5rem; line-height: 1.2;">×</div>
+                        <div><small style="color:#aaa; font-size:0.8rem; font-weight:bold;">PRECISIÓN</small><div id="arena-final-acc" style="font-size: 2.5rem; color: #fff; font-family: monospace; font-weight:bold;">0%</div></div>
+                    </div>
+                    <div style="border-top: 1px solid rgba(179,136,255,0.3); padding-top: 20px; margin-bottom: 30px;">
+                        <small style="color:#b388ff; font-weight: bold; letter-spacing: 3px;">PUNTAJE DE TORNEO</small>
+                        <h2 id="arena-final-score" style="font-size: 6rem; color: #b388ff; margin: 0; text-shadow: 0 0 30px rgba(179,136,255,0.6); font-family: monospace; line-height: 1;">0</h2>
+                    </div>
+                    <div class="result-actions" style="margin-top: 25px; justify-content: center;">
+                        <button onclick="window.UI.show('arena-screen')" class="btn-primary" style="background: #b388ff; color: #000; padding: 15px 40px; font-size: 1.1rem; box-shadow: 0 0 20px rgba(179,136,255,0.4);">Volver a la Sala</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
         <section id="info-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
