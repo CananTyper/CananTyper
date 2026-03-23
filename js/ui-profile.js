@@ -3,7 +3,6 @@
    ================================================================ */
 
 Object.assign(window.UI, {
-    // FILTROS ANTI-BUGS GLOBALES
     formatTrackNameFull: (idOrTitle) => {
         if(!idOrTitle || idOrTitle === "-") return "-";
         const phrases = window.CT.dbLocal('p') || [];
@@ -45,25 +44,54 @@ Object.assign(window.UI, {
     },
     closeTrackPreview: () => { document.getElementById('track-preview-modal').classList.add('hidden'); },
 
-    // LÓGICA DEL PERFIL MAESTRO
+    // --- NUEVO: MOTOR DE EVALUACIÓN DE MEDALLAS ---
+    getUserMedals: (user) => {
+        const catalog = window.App.medalsCatalog || [];
+        let earnedMedals = [];
+
+        // Estadísticas base para evaluación
+        const total = (user.hi || []).length;
+        const avgCPM = total ? Math.round((user.hi || []).reduce((a,b)=>a+b, 0)/total) : 0;
+        const bestCPM = total ? Math.max(...(user.hi || [])) : 0;
+        const hcSurvivals = user.hc_survivals || 0;
+        const arenaPts = user.arena_pts || 0;
+        const customMedals = user.custom_medals || [];
+
+        // Evaluamos cada medalla del catálogo oficial
+        catalog.forEach(m => {
+            let earned = false;
+            if (m.condition === 'manual' && customMedals.includes(m.id)) earned = true;
+            else if (m.condition === 'cpm_max' && bestCPM >= m.target) earned = true;
+            else if (m.condition === 'cpm_avg' && avgCPM >= m.target) earned = true;
+            else if (m.condition === 'races_total' && total >= m.target) earned = true;
+            else if (m.condition === 'hc_survivals' && hcSurvivals >= m.target) earned = true;
+            else if (m.condition === 'arena_pts' && arenaPts >= m.target) earned = true;
+
+            if (earned) earnedMedals.push(m);
+        });
+
+        // Medalla fantasma (Hardcodeada por ser Easter Egg antiguo)
+        if (!user.createdAt) {
+            earnedMedals.push({
+                id: 'anomalia_cero', icon: '💠', name: 'Anomalía Cero', desc: 'Registros anteriores al sistema'
+            });
+        }
+
+        return earnedMedals;
+    },
+
     showProfile: async (who) => {
         try {
             const currentSes = window.CT.ses(); if (!currentSes) return;
             const targetHandle = (who === 'me') ? currentSes.h : who;
 
-            // --- EL INTERCEPTOR: CUENTA OFICIAL (SYSTEM CORE) ---
             if (targetHandle === '@canantyper') {
                 document.getElementById('profile-normal-layout').classList.add('hidden');
                 document.getElementById('profile-official-layout').classList.remove('hidden');
                 
-                // 1. STATS GLOBALES DEL SERVIDOR
                 const allUsers = window.CT.dbLocal('u') || [];
-                let totalGlobalRaces = 0;
-                let totalHcDeaths = 0;
-                allUsers.forEach(us => {
-                    totalGlobalRaces += (us.hi || []).length;
-                    totalHcDeaths += (us.hc_deaths || 0);
-                });
+                let totalGlobalRaces = 0; let totalHcDeaths = 0;
+                allUsers.forEach(us => { totalGlobalRaces += (us.hi || []).length; totalHcDeaths += (us.hc_deaths || 0); });
 
                 const offUsersEl = document.getElementById('off-users');
                 const offRacesEl = document.getElementById('off-races');
@@ -73,16 +101,13 @@ Object.assign(window.UI, {
                 if (offRacesEl) offRacesEl.innerText = window.UI.formatValue(totalGlobalRaces);
                 if (offHcEl) offHcEl.innerText = window.UI.formatValue(totalHcDeaths);
 
-                // 2. PODIO GLOBAL TOP 3
                 const topScores = window.CT.data.s_top || [];
                 const normRankList = topScores.filter(s=>!s.hc).sort((a,b)=>b.c - a.c);
                 
-                let uniqueTopUsers = [];
-                let seenHandles = new Set();
+                let uniqueTopUsers = []; let seenHandles = new Set();
                 for(let s of normRankList) {
                     if(!seenHandles.has(s.h)) {
-                        uniqueTopUsers.push(s);
-                        seenHandles.add(s.h);
+                        uniqueTopUsers.push(s); seenHandles.add(s.h);
                         if(uniqueTopUsers.length === 3) break;
                     }
                 }
@@ -90,14 +115,8 @@ Object.assign(window.UI, {
                 const podCont = document.getElementById('official-podium-container');
                 if (podCont) {
                     if (uniqueTopUsers.length >= 3) {
-                        const u1 = uniqueTopUsers[0];
-                        const u2 = uniqueTopUsers[1];
-                        const u3 = uniqueTopUsers[2];
-                        
-                        const getAv = (handle) => {
-                            let user = window.CT.dbLocal('u').find(x => x.h === handle);
-                            return user && user.a ? user.a : window.CT.defAvatar;
-                        };
+                        const u1 = uniqueTopUsers[0]; const u2 = uniqueTopUsers[1]; const u3 = uniqueTopUsers[2];
+                        const getAv = (handle) => { let user = window.CT.dbLocal('u').find(x => x.h === handle); return user && user.a ? user.a : window.CT.defAvatar; };
 
                         podCont.innerHTML = `
                             <div class="podium-spot p2" onclick="window.UI.showProfile('${u2.h}')" style="cursor:pointer;" title="Ver perfil de ${u2.n || u2.h}">
@@ -122,18 +141,15 @@ Object.assign(window.UI, {
                     }
                 }
 
-                // Limpieza de UI superior
                 document.getElementById('user-search-input').value = '';
                 document.getElementById('user-search-results').classList.add('hidden');
                 document.getElementById('btn-edit-profile').classList.add('hidden');
                 
                 window.CT.activeProfHandle = '@canantyper';
                 window.UI.show('profile-screen');
-                return; // Cortamos la ejecución normal aquí
+                return;
             }
-            // ----------------------------------------------------
 
-            // SI NO ES LA CUENTA OFICIAL, SIGUE EL FLUJO NORMAL...
             document.getElementById('profile-official-layout').classList.add('hidden');
             document.getElementById('profile-normal-layout').classList.remove('hidden');
 
@@ -184,7 +200,6 @@ Object.assign(window.UI, {
             document.getElementById('st-last-10').innerText = window.UI.formatValue(avg10CPM); 
             document.getElementById('st-best').innerText = window.UI.formatValue(bestCPM);
 
-            // CALCULAR TEXTO FAVORITO CON FILTRO ANTI-BUGS
             let tCounts = {}; let favTrackVal = "-"; let maxT = 0;
             scores.filter(s => !s.hc).forEach(s => { 
                 tCounts[s.track] = (tCounts[s.track] || 0) + 1; 
@@ -195,15 +210,24 @@ Object.assign(window.UI, {
             let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
-            // SISTEMA DE MEDALLAS DIFICULTAD PRO
+            // --- NUEVO: SISTEMA DE MEDALLAS DINÁMICO ---
+            const earnedMedals = window.UI.getUserMedals(u);
+            const visibleIds = u.visible_medals || [];
+            
+            // Filtramos para mostrar solo las elegidas, o todas si no ha configurado nada y tiene menos de 6
+            let displayMedals = [];
+            if (visibleIds.length > 0) {
+                displayMedals = earnedMedals.filter(m => visibleIds.includes(m.id));
+            } else {
+                displayMedals = earnedMedals.slice(0, 6); // Mostrar las 6 primeras por defecto
+            }
+
             let medalsHTML = '';
-            if(!u.createdAt) medalsHTML += `<span class="medal-item" title="Anomalía Cero (Registros anteriores al sistema)">💠</span>`;
-            if(total >= 100) medalsHTML += `<span class="medal-item" title="Veterano (100+ Carreras Totales)">🎖️</span>`;
-            if(avgCPM >= 600) medalsHTML += `<span class="medal-item" title="Velocista (Promedio Histórico >= 600 CPM)">⚡</span>`;
-            if(bestCPM >= 1000) medalsHTML += `<span class="medal-item" title="Élite (1000+ CPM)">🏎️</span>`;
-            if((u.hc_survivals || 0) >= 100) medalsHTML += `<span class="medal-item" title="Superviviente (100+ Victorias Hardcore)">🛡️</span>`;
-            if((u.hc_deaths || 0) >= 100) medalsHTML += `<span class="medal-item" title="Kamikaze (100+ Muertes en Hardcore)">💀</span>`;
-            if(!medalsHTML) medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">Aún en entrenamiento...</span>`;
+            if (displayMedals.length > 0) {
+                medalsHTML = displayMedals.map(m => `<span class="medal-item" title="${m.name}: ${m.desc}">${m.icon}</span>`).join('');
+            } else {
+                medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">El medallero está vacío.</span>`;
+            }
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
             // SISTEMA DE RANKING (BASADO EN ÚLTIMAS 10)
@@ -230,7 +254,7 @@ Object.assign(window.UI, {
 
             // PODIOS Y MARCOS
             const avCont = document.getElementById('prof-avatar-container');
-            avCont.className = 'avatar-lrg prestige-border-none'; // Reset
+            avCont.className = 'avatar-lrg prestige-border-none'; 
             
             let existingBadge = avCont.querySelector('.rank-badge');
             if(existingBadge) existingBadge.remove();
@@ -273,29 +297,27 @@ Object.assign(window.UI, {
         const u = window.CT.dbLocal('u').find(x => x.h === window.CT.activeProfHandle);
         if(!u) return;
         
-        const total = (u.hi || []).length;
-        const avgCPM = total ? Math.round((u.hi || []).reduce((a,b)=>a+b, 0)/total) : 0;
-        const bestCPM = total ? Math.max(...(u.hi || [])) : 0;
+        const earnedMedals = window.UI.getUserMedals(u);
+        const catalog = window.App.medalsCatalog || [];
         
         let html = `<div class="medal-showcase-grid">`;
         
-        const hasAnomalia = !u.createdAt;
-        html += `<div class="medal-slot ${hasAnomalia ? 'unlocked' : 'locked'}" title="${hasAnomalia ? 'Registros anteriores al sistema' : '???'}"><span class="m-icon">💠</span><span class="m-name">Anomalía Cero</span></div>`;
+        // Renderizamos todo el catálogo, marcando cuáles están desbloqueadas
+        catalog.forEach(m => {
+            const hasIt = earnedMedals.some(earned => earned.id === m.id);
+            html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}">
+                        <span class="m-icon">${m.icon}</span>
+                        <span class="m-name">${m.name}</span>
+                     </div>`;
+        });
         
-        const hasVeterano = total >= 100;
-        html += `<div class="medal-slot ${hasVeterano ? 'unlocked' : 'locked'}" title="${hasVeterano ? '100+ Carreras Totales' : 'Completa 100 carreras'}"><span class="m-icon">🎖️</span><span class="m-name">Veterano</span></div>`;
-        
-        const hasVelocista = avgCPM >= 600;
-        html += `<div class="medal-slot ${hasVelocista ? 'unlocked' : 'locked'}" title="${hasVelocista ? 'Promedio Histórico >= 600 CPM' : 'Alcanza 600 CPM de promedio'}"><span class="m-icon">⚡</span><span class="m-name">Velocista</span></div>`;
-        
-        const hasElite = bestCPM >= 1000;
-        html += `<div class="medal-slot ${hasElite ? 'unlocked' : 'locked'}" title="${hasElite ? '1000+ CPM Absolutos' : 'Supera los 1000 CPM en una carrera'}"><span class="m-icon">🏎️</span><span class="m-name">Élite</span></div>`;
-        
-        const hasSurv = (u.hc_survivals || 0) >= 100;
-        html += `<div class="medal-slot ${hasSurv ? 'unlocked' : 'locked'}" title="${hasSurv ? '100+ Victorias Hardcore' : 'Sobrevive 100 veces en Hardcore'}"><span class="m-icon">🛡️</span><span class="m-name">Superviviente</span></div>`;
-        
-        const hasKami = (u.hc_deaths || 0) >= 100;
-        html += `<div class="medal-slot ${hasKami ? 'unlocked' : 'locked'}" title="${hasKami ? '100+ Muertes en Hardcore' : 'Muere 100 veces en Hardcore'}"><span class="m-icon">💀</span><span class="m-name">Kamikaze</span></div>`;
+        // Agregar la Anomalía Cero si la tiene (ya que no está en el catálogo oficial)
+        if (earnedMedals.some(m => m.id === 'anomalia_cero')) {
+            html += `<div class="medal-slot unlocked" title="Registros anteriores al sistema">
+                        <span class="m-icon">💠</span>
+                        <span class="m-name">Anomalía Cero</span>
+                     </div>`;
+        }
         
         html += `</div>`;
         
@@ -319,13 +341,43 @@ Object.assign(window.UI, {
     openEditProfileModal: () => {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        
         document.getElementById('ep-name').value = userDoc.n || '';
         document.getElementById('ep-bio').value = userDoc.bio || '';
         document.getElementById('ep-country').value = userDoc.country || '';
         document.getElementById('ep-layout').value = userDoc.layout || '';
         document.getElementById('ep-switches').value = userDoc.switches || '';
         document.getElementById('ep-discord').value = userDoc.discord || '';
+
+        // NUEVO: Panel de selección de medallas visibles
+        const earnedMedals = window.UI.getUserMedals(userDoc);
+        const visibleIds = userDoc.visible_medals || [];
+        const medalsGrid = document.getElementById('ep-medals-grid');
+        
+        if (medalsGrid) {
+            if (earnedMedals.length === 0) {
+                medalsGrid.innerHTML = '<span style="color:#777; font-size:0.8rem; font-style:italic; grid-column: 1/-1;">Aún no has ganado medallas para lucir.</span>';
+            } else {
+                medalsGrid.innerHTML = earnedMedals.map(m => {
+                    const isChecked = visibleIds.includes(m.id) ? 'checked' : '';
+                    return `
+                    <label style="display: flex; align-items: center; gap: 8px; color: var(--text-main); font-size: 0.85rem; cursor: pointer; background: var(--surface); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        <input type="checkbox" value="${m.id}" ${isChecked} onchange="window.UI.limitMedalSelection(this)"> 
+                        <span style="font-size:1.2rem;">${m.icon}</span> ${m.name}
+                    </label>`;
+                }).join('');
+            }
+        }
+
         document.getElementById('edit-profile-modal').classList.remove('hidden');
+    },
+
+    limitMedalSelection: (checkbox) => {
+        const checkedBoxes = document.querySelectorAll('#ep-medals-grid input[type="checkbox"]:checked');
+        if (checkedBoxes.length > 6) {
+            checkbox.checked = false;
+            alert("Solo puedes destacar un máximo de 6 medallas en tu perfil.");
+        }
     },
 
     closeEditProfileModal: () => { document.getElementById('edit-profile-modal').classList.add('hidden'); },
