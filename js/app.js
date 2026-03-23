@@ -118,6 +118,36 @@ window.App = {
         const track = window.CT.dbLocal('p').find(t => t.id.toString() === id.toString()); 
         if(track) { window.App.currentTrack = track; if(window.App.activeEngine) window.App.activeEngine.stop(); window.App.activeEngine = new window.Engine(track, 'normal'); } 
     },
+
+    // =====================================================================
+    // NUEVAS FUNCIONES DE LA ARENA (TORNEOS)
+    // =====================================================================
+    startArenaRace: () => {
+        window.App.currentRaceContext = { type: 'arena' };
+        
+        // Simulación: Buscamos un texto adecuado en la base de datos (Ej: el primero de "General")
+        // En el futuro, esto leerá la ID del texto oficial desde Firebase `events`
+        let tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]')); 
+        if(!tracks || tracks.length === 0) return alert("No hay textos disponibles para la Arena."); 
+        
+        // Elegimos uno consistente para el torneo
+        window.App.currentTrack = tracks[0]; 
+        
+        if(window.App.activeEngine) window.App.activeEngine.stop(); 
+        
+        // Instanciamos el motor en modo 'arena', lo que activa la UI estricta
+        window.App.activeEngine = new window.Engine(window.App.currentTrack, 'arena'); 
+    },
+
+    quitArenaRace: () => {
+        if(confirm("¿Seguro que deseas rendirte? Obtendrás 0 puntos en el Torneo.")) {
+            if(window.App.activeEngine) { window.App.activeEngine.stop(); window.App.activeEngine = null; } 
+            window.App.currentRaceContext = null;
+            // A futuro aquí enviaremos un "0" a Firebase para penalizar el ragequit
+            window.UI.show('arena-screen'); // Volvemos a la sala de espera del torneo
+        }
+    },
+    // =====================================================================
     
     retryRace: () => { if(window.App.activeEngine) { const m = window.App.activeEngine.mode; const g = window.App.activeEngine.ghostCPM; window.App.activeEngine.stop(); if(window.App.currentTrack) window.App.activeEngine = new window.Engine(window.App.currentTrack, m, g); } },
     
@@ -196,7 +226,6 @@ window.App = {
         }
     },
     
-    // NUEVA FUNCIÓN MAESTRA DE PERFIL
     saveProfileEdits: async () => {
         const u = window.CT.ses(); if(!u) return;
         const newName = document.getElementById('ep-name').value.trim();
@@ -217,7 +246,6 @@ window.App = {
                 n: newName, bio: newBio, country: newCountry, layout: newLayout, switches: newSwitches, discord: newDiscord 
             });
             
-            // Actualizar nombre en los scores existentes para que impacte en los rankings
             if (u.n !== newName) {
                 const q = await window.db.collection('scores').where('h', '==', u.h).get();
                 const batch = window.db.batch();
@@ -226,7 +254,7 @@ window.App = {
             }
 
             window.UI.closeEditProfileModal();
-            window.UI.showProfile('me'); // Recargar para ver los cambios
+            window.UI.showProfile('me'); 
         } catch(e) {
             console.error(e);
             alert("Hubo un error al guardar el perfil.");
@@ -281,7 +309,6 @@ window.App = {
             const docRef = await window.db.collection('users').doc(handle).get(); 
             if(docRef.exists) return alert("Ese usuario ya está en uso"); 
             const role = (handle === '@angel') ? 'admin' : 'usuario'; 
-            // NUEVOS CAMPOS EN EL REGISTRO
             const newUser = { 
                 h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [],
                 createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: ''
