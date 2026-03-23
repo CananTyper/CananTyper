@@ -201,6 +201,103 @@
             </div>
         </section>
 
+        <section id="info-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
+                <div>
+                    <h2 id="info-display-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Información</h2>
+                </div>
+                <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
+            </header>
+            <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
+        </section>
+
+        <section id="stats-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: none; margin-bottom: 10px; padding-bottom: 10px;">
+                <div style="flex: 1;">
+                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
+                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem; font-weight: bold;">Análisis de rendimiento</p>
+                </div>
+                
+                <div class="stats-nav-tabs" style="display: flex; gap: 15px; align-items: center; justify-content: center; flex: 2;">
+                    <button id="t-st-pe" class="st-nav-btn active" onclick="window.UI.switchStatsTab('personal')">Individuales</button>
+                    <button id="t-st-el" class="st-nav-btn st-nav-ranking" onclick="window.UI.switchStatsTab('elite')">👑 RANKING</button>
+                    <button id="t-st-hc" class="st-nav-btn st-nav-hc" onclick="window.UI.switchStatsTab('hc')">Hardcore 💀</button>
+                </div>
+
+                <div style="display:flex; gap:15px; align-items:center; justify-content: flex-end; flex: 1;">
+                    <button id="btn-stats-widgets" class="btn-outline admin-only hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color:#ffd700; color:#ffd700;">⚙️ Widgets</button>
+                    <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
+                </div>
+            </header>
+
+            <div id="widgets-menu" class="hidden" style="background:var(--surface-light); border:1px solid var(--border); padding:15px; border-radius:12px; margin-bottom:15px;">
+                <h3 style="margin:0 0 10px 0; color:var(--text-main); font-size:1rem;">Gestión de Widgets</h3>
+                <div id="widgets-menu-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;"></div>
+            </div>
+
+            <div id="st-transition-wrapper" class="st-dashboard custom-scroll" style="flex-grow:1; border-radius:12px; border:1px solid var(--border); overflow-x: hidden;">
+                <div id="pane-stats-personal" class="st-pane">
+                    <div id="grid-stats-personal" class="st-grid">
+                        <div class="st-widget st-col-3" data-id="w-p-summary"><div class="st-widget-header"><span class="drag-handle">≡ RESUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-total-races">0</div><div class="st-sub">CARRERAS TOTALES</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-p-recent"><div class="st-widget-header"><span class="drag-handle">≡ PROM. ÚLT 10</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-last10-avg">0</div><div class="st-sub">VELOCIDAD</div></div></div>
+                        <div class="st-widget st-card-highlight st-col-3" data-id="w-p-record"><div class="st-widget-header"><span class="drag-handle">≡ RECORD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-record-val">0</div><div class="st-sub">MÁXIMA ABSOLUTA</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-p-specialty"><div class="st-widget-header"><span class="drag-handle">≡ MEJOR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-best-cat" style="font-size:1.5rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div><div class="st-sub">ESPECIALIDAD</div></div></div>
+                        
+                        <div class="st-widget st-col-8" data-id="w-p-graph"><div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO (Últimas 15)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content"><div class="st-chart-wrapper" id="st-p-svg-container"></div></div></div>
+                        <div class="st-widget st-col-4" data-id="w-p-dist"><div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-p-bar-container"></div></div>
+                        
+                        <div class="st-widget st-col-4" data-id="w-p-donut"><div class="st-widget-header"><span class="drag-handle">≡ PRECISIÓN COMPETITIVA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-p-donut-acc"></div></div>
+                        <div class="st-widget st-col-4" data-id="w-p-trend"><div class="st-widget-header"><span class="drag-handle">≡ TENDENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-trend-val">0%</div><div class="st-sub">VS PRIMERAS 10</div></div></div>
+                        <div class="st-widget st-col-4" data-id="w-p-cons"><div class="st-widget-header"><span class="drag-handle">≡ CONSTANCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-p-donut-cons"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;">CARRERAS SOBRE EL PROMEDIO</div></div>
+                        
+                        <div class="st-widget st-widget-error st-col-8" data-id="w-p-heat"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="keyboard-container heatmap-cananstudio" style="padding:0;"><div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div><div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div><div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div></div></div></div>
+                        
+                        <div class="st-widget st-col-4" data-id="w-p-top"><div class="st-widget-header"><span class="drag-handle">≡ MEJORES CARRERAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height: 300px;"><ul class="st-list" id="st-p-top10-races"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-p-worst"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS A MEJORAR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-tracks"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-p-words"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ PALABRAS CRÍTICAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-words"></ul></div></div>
+                    </div>
+                </div>
+
+                <div id="pane-stats-elite" class="st-pane hidden">
+                    <div id="grid-stats-elite" class="st-grid">
+                        <div class="st-widget st-col-3" data-id="w-e-vol"><div class="st-widget-header"><span class="drag-handle">≡ MAYOR VOLUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-e-most-races-val">0</div><div class="st-sub" id="st-e-most-races-user">-</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-e-dom"><div class="st-widget-header"><span class="drag-handle">≡ MAYOR DOMINIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-e-top1-val">0</div><div class="st-sub" id="st-e-top1-user">-</div></div></div>
+                        <div class="st-widget st-col-3" data-id="w-e-eff"><div class="st-widget-header"><span class="drag-handle">≡ MEJOR PROMEDIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-e-bestavg-val">0</div><div class="st-sub" id="st-e-bestavg-user">-</div></div></div>
+                        <div class="st-widget st-card-highlight st-col-3" data-id="w-e-rec"><div class="st-widget-header"><span class="drag-handle">≡ RÉCORD MUNDIAL</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-e-record-val">0</div><div class="st-sub" id="st-e-record-user">-</div></div></div>
+                        
+                        <div class="st-widget st-col-12" data-id="w-e-graph"><div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO GLOBAL (Últimas 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content"><div class="st-chart-wrapper" id="st-e-svg-container"></div></div></div>
+                        
+                        <div class="st-widget st-col-4" data-id="w-e-donut"><div class="st-widget-header"><span class="drag-handle">≡ TASA DE MONOPOLIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-e-donut-monopoly"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;" id="st-e-donut-user">-</div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-tier"><div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN POR TIERS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-e-bar-tier"></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-modes"><div class="st-widget-header"><span class="drag-handle">≡ META ACTUAL</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-e-donut-modes"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;">% JUGADORES EN NORMAL</div></div>
+
+                        <div class="st-widget st-col-4" data-id="w-e-texts"><div class="st-widget-header"><span class="drag-handle">≡ TOP TEXTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-texts"></ul></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-cats"><div class="st-widget-header"><span class="drag-handle">≡ TOP CATEGORÍAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-cats"></ul></div></div>
+                        <div class="st-widget st-col-4" data-id="w-e-players"><div class="st-widget-header"><span class="drag-handle">≡ MÁS ACTIVOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-players"></ul></div></div>
+                    </div>
+                </div>
+
+                <div id="pane-stats-hc" class="st-pane hidden">
+                    <div id="grid-stats-hc" class="st-grid">
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-rec"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ RÉCORD HC</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" style="color:var(--error);" id="st-hc-record">0</div><div class="st-sub">VELOCIDAD MÁXIMA</div></div></div>
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-surv"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ SUPERVIVENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" style="color:var(--error);" id="st-hc-surv">0</div><div class="st-sub">CARRERAS COMPLETADAS</div></div></div>
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-death"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MUERTES SÚBITAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" style="color:var(--error);" id="st-hc-deaths">0</div><div class="st-sub">ELIMINACIONES</div></div></div>
+                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-rate"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TASA MORTALIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-hc-donut-rate"></div></div>
+                        
+                        <div class="st-widget st-widget-error st-col-12" data-id="w-h-zones"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ ZONAS LETALES (Por Tamaño de Pista)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-hc-bar-zones"></div></div>
+
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-h-top"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MEJORES SOBREVIVIDAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-top10"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-6" data-id="w-h-worst"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-worst"></ul></div></div>
+                        
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-legends"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ LEYENDAS (MÁS SUPERVIVENCIAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-legends"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-victims"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ VÍCTIMAS (MÁS MUERTES)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-victims"></ul></div></div>
+                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-safe"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS MÁS SEGUROS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-safe"></ul></div></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
         <section id="profile-screen" class="screen hidden">
             <header class="top-nav" style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px; margin-bottom: 15px; border: none; padding-bottom: 0; width: 100%;">
                 <div class="user-search-bar" style="position:relative; width: 100%;">
@@ -333,100 +430,53 @@
             </div>
         </section>
 
-        <section id="info-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: 1px solid var(--border);">
-                <div>
-                    <h2 id="info-display-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Información</h2>
+        <section id="game-screen" class="screen hidden">
+            <div class="game-container" style="max-width: 1200px; width: 100%;">
+                <div class="game-hud">
+                    <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
+                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
                 </div>
-                <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
-            </header>
-            <div class="custom-scroll info-content" id="info-display-content" style="flex-grow: 1; padding: 20px; background: var(--surface-light); border-radius: 15px; border: 1px solid var(--border);"></div>
+                <div class="progress-container" style="margin-bottom: 25px; position:relative;">
+                    <div id="race-progress" class="progress-bar"></div>
+                    <div id="ghost-progress" class="ghost-bar hidden"></div>
+                </div>
+                <div id="target-text" class="game-text-display"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
+                <div id="in-game-controls" class="game-controls">
+                    <button id="t_btn_back" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
+                    <button id="t_btn_retry" onclick="window.App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
+                    <button id="t_btn_new" onclick="window.App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                </div>
+                <div id="game-result-modal" class="game-result hidden">
+                    <h2 id="final-speed-display" class="result-score">0 CPM</h2>
+                    <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
+                    <div class="result-actions" style="margin-top: 25px;">
+                        <button id="t_btn_retry2" onclick="window.App.retryRace()" class="btn-outline">Repetir</button>
+                        <button id="t_btn_cont" onclick="window.App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button id="t_btn_back2" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
-        <section id="stats-screen" class="screen hidden">
-            <header class="top-nav" style="border-bottom: none; margin-bottom: 10px; padding-bottom: 10px;">
-                <div style="flex: 1;">
-                    <h2 id="t_hd_stats" style="color: var(--p); margin: 0; font-size: 1.5rem;">Estadísticas</h2>
-                    <p id="t_hd_stats_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem; font-weight: bold;">Análisis de rendimiento</p>
-                </div>
-                
-                <div class="stats-nav-tabs" style="display: flex; gap: 15px; align-items: center; justify-content: center; flex: 2;">
-                    <button id="t-st-pe" class="st-nav-btn active" onclick="window.UI.switchStatsTab('personal')">Individuales</button>
-                    <button id="t-st-el" class="st-nav-btn st-nav-ranking" onclick="window.UI.switchStatsTab('elite')">👑 RANKING</button>
-                    <button id="t-st-hc" class="st-nav-btn st-nav-hc" onclick="window.UI.switchStatsTab('hc')">Hardcore 💀</button>
-                </div>
-
-                <div style="display:flex; gap:15px; align-items:center; justify-content: flex-end; flex: 1;">
-                    <button id="btn-stats-widgets" class="btn-outline admin-only hidden" onclick="window.UI.toggleWidgetsMenu()" style="border-color:#ffd700; color:#ffd700;">⚙️ Widgets</button>
-                    <button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button>
-                </div>
-            </header>
-
-            <div id="widgets-menu" class="hidden" style="background:var(--surface-light); border:1px solid var(--border); padding:15px; border-radius:12px; margin-bottom:15px;">
-                <h3 style="margin:0 0 10px 0; color:var(--text-main); font-size:1rem;">Gestión de Widgets</h3>
-                <div id="widgets-menu-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;"></div>
-            </div>
-
-            <div id="st-transition-wrapper" class="st-dashboard custom-scroll" style="flex-grow:1; border-radius:12px; border:1px solid var(--border); overflow-x: hidden;">
-                <div id="pane-stats-personal" class="st-pane">
-                    <div id="grid-stats-personal" class="st-grid">
-                        <div class="st-widget st-col-3" data-id="w-p-summary"><div class="st-widget-header"><span class="drag-handle">≡ RESUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-total-races">0</div><div class="st-sub">CARRERAS TOTALES</div></div></div>
-                        <div class="st-widget st-col-3" data-id="w-p-recent"><div class="st-widget-header"><span class="drag-handle">≡ PROM. ÚLT 10</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-last10-avg">0</div><div class="st-sub">VELOCIDAD</div></div></div>
-                        <div class="st-widget st-card-highlight st-col-3" data-id="w-p-record"><div class="st-widget-header"><span class="drag-handle">≡ RECORD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-p-record-val">0</div><div class="st-sub">MÁXIMA ABSOLUTA</div></div></div>
-                        <div class="st-widget st-col-3" data-id="w-p-specialty"><div class="st-widget-header"><span class="drag-handle">≡ MEJOR CATEGORÍA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-best-cat" style="font-size:1.5rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div><div class="st-sub">ESPECIALIDAD</div></div></div>
-                        
-                        <div class="st-widget st-col-8" data-id="w-p-graph"><div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO (Últimas 15)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content"><div class="st-chart-wrapper" id="st-p-svg-container"></div></div></div>
-                        <div class="st-widget st-col-4" data-id="w-p-dist"><div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-p-bar-container"></div></div>
-                        
-                        <div class="st-widget st-col-4" data-id="w-p-donut"><div class="st-widget-header"><span class="drag-handle">≡ PRECISIÓN COMPETITIVA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-p-donut-acc"></div></div>
-                        <div class="st-widget st-col-4" data-id="w-p-trend"><div class="st-widget-header"><span class="drag-handle">≡ TENDENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-p-trend-val">0%</div><div class="st-sub">VS PRIMERAS 10</div></div></div>
-                        <div class="st-widget st-col-4" data-id="w-p-cons"><div class="st-widget-header"><span class="drag-handle">≡ CONSTANCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-p-donut-cons"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;">CARRERAS SOBRE EL PROMEDIO</div></div>
-                        
-                        <div class="st-widget st-widget-error st-col-8" data-id="w-p-heat"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MAPA DE CALOR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="keyboard-container heatmap-cananstudio" style="padding:0;"><div class="keyboard-row"><kbd data-key="q">Q</kbd><kbd data-key="w">W</kbd><kbd data-key="e">E</kbd><kbd data-key="r">R</kbd><kbd data-key="t">T</kbd><kbd data-key="y">Y</kbd><kbd data-key="u">U</kbd><kbd data-key="i">I</kbd><kbd data-key="o">O</kbd><kbd data-key="p">P</kbd></div><div class="keyboard-row"><kbd data-key="a">A</kbd><kbd data-key="s">S</kbd><kbd data-key="d">D</kbd><kbd data-key="f">F</kbd><kbd data-key="g">G</kbd><kbd data-key="h">H</kbd><kbd data-key="j">J</kbd><kbd data-key="k">K</kbd><kbd data-key="l">L</kbd><kbd data-key="ñ">Ñ</kbd></div><div class="keyboard-row"><kbd data-key="z">Z</kbd><kbd data-key="x">X</kbd><kbd data-key="c">C</kbd><kbd data-key="v">V</kbd><kbd data-key="b">B</kbd><kbd data-key="n">N</kbd><kbd data-key="m">M</kbd></div></div></div></div>
-                        
-                        <div class="st-widget st-col-4" data-id="w-p-top"><div class="st-widget-header"><span class="drag-handle">≡ MEJORES CARRERAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height: 300px;"><ul class="st-list" id="st-p-top10-races"></ul></div></div>
-                        <div class="st-widget st-widget-error st-col-4" data-id="w-p-worst"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS A MEJORAR</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-tracks"></ul></div></div>
-                        <div class="st-widget st-widget-error st-col-4" data-id="w-p-words"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ PALABRAS CRÍTICAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height: 300px;"><ul class="st-list st-list-err" id="st-p-worst-words"></ul></div></div>
+        <section id="track-screen" class="screen hidden">
+            <header class="top-nav" style="border-bottom: 1px solid var(--border);"><div><h2 id="t_hd_track" style="color: var(--p); margin: 0; font-size: 1.5rem;">Modo Personalizado</h2><p id="t_hd_track_sub" style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Selecciona una categoría o texto</p></div><button onclick="window.UI.showLobby()" class="btn-outline">VOLVER</button></header>
+            <div class="track-selection-area">
+                <input type="text" id="track-search" placeholder="Buscar texto por ID o palabras..." oninput="window.UI.renderTrackList()" style="margin-bottom: 15px;">
+                <div id="track-category-view" class="category-grid custom-scroll"></div>
+                <div id="track-list-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; flex-grow: 1; min-height: 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <button id="btn-back-cat-track" onclick="window.UI.showTrackCategorySelect()" class="btn-outline"><span id="t_trk_back">← Categorías</span></button>
+                        <div class="layout-controls" style="display:flex; gap:5px;">
+                            <button onclick="window.UI.setLayout('layout-list')" class="btn-outline layout-btn" data-mode="layout-list" style="padding:4px 8px;" title="Lista">☷</button>
+                            <button onclick="window.UI.setLayout('layout-grid')" class="btn-outline layout-btn" data-mode="layout-grid" style="padding:4px 8px;" title="Cuadrícula">⊞</button>
+                            <button onclick="window.UI.setLayout('layout-compact')" class="btn-outline layout-btn" data-mode="layout-compact" style="padding:4px 8px;" title="Compacto">⊟</button>
+                            <button onclick="window.UI.setLayout('layout-zoom')" class="btn-outline layout-btn" data-mode="layout-zoom" style="padding:4px 8px;" title="Alejar Zoom">🔍</button>
+                        </div>
                     </div>
+                    <div id="track-list-full" class="custom-scroll track-list"></div>
+                    <div class="pagination-bar" style="margin-top: 15px;"><button id="track-prev" class="btn-outline" onclick="window.UI.changeTrackPage(-1)">←</button><span id="track-page-num" class="page-indicator">Página 1</span><button id="track-next" class="btn-outline" onclick="window.UI.changeTrackPage(1)">→</button></div>
                 </div>
-
-                <div id="pane-stats-elite" class="st-pane hidden">
-                    <div id="grid-stats-elite" class="st-grid">
-                        <div class="st-widget st-col-3" data-id="w-e-vol"><div class="st-widget-header"><span class="drag-handle">≡ MAYOR VOLUMEN</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-e-most-races-val">0</div><div class="st-sub" id="st-e-most-races-user">-</div></div></div>
-                        <div class="st-widget st-col-3" data-id="w-e-dom"><div class="st-widget-header"><span class="drag-handle">≡ MAYOR DOMINIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" id="st-e-top1-val">0</div><div class="st-sub" id="st-e-top1-user">-</div></div></div>
-                        <div class="st-widget st-col-3" data-id="w-e-eff"><div class="st-widget-header"><span class="drag-handle">≡ MEJOR PROMEDIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-e-bestavg-val">0</div><div class="st-sub" id="st-e-bestavg-user">-</div></div></div>
-                        <div class="st-widget st-card-highlight st-col-3" data-id="w-e-rec"><div class="st-widget-header"><span class="drag-handle">≡ RÉCORD MUNDIAL</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" id="st-e-record-val">0</div><div class="st-sub" id="st-e-record-user">-</div></div></div>
-                        
-                        <div class="st-widget st-col-12" data-id="w-e-graph"><div class="st-widget-header"><span class="drag-handle">≡ RENDIMIENTO GLOBAL (Últimas 20)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content"><div class="st-chart-wrapper" id="st-e-svg-container"></div></div></div>
-                        
-                        <div class="st-widget st-col-4" data-id="w-e-donut"><div class="st-widget-header"><span class="drag-handle">≡ TASA DE MONOPOLIO</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-e-donut-monopoly"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;" id="st-e-donut-user">-</div></div>
-                        <div class="st-widget st-col-4" data-id="w-e-tier"><div class="st-widget-header"><span class="drag-handle">≡ DISTRIBUCIÓN POR TIERS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-e-bar-tier"></div></div>
-                        <div class="st-widget st-col-4" data-id="w-e-modes"><div class="st-widget-header"><span class="drag-handle">≡ META ACTUAL</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-e-donut-modes"></div><div class="st-sub" style="text-align:center; padding-bottom:10px;">% JUGADORES EN NORMAL</div></div>
-
-                        <div class="st-widget st-col-4" data-id="w-e-texts"><div class="st-widget-header"><span class="drag-handle">≡ TOP TEXTOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-texts"></ul></div></div>
-                        <div class="st-widget st-col-4" data-id="w-e-cats"><div class="st-widget-header"><span class="drag-handle">≡ TOP CATEGORÍAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-cats"></ul></div></div>
-                        <div class="st-widget st-col-4" data-id="w-e-players"><div class="st-widget-header"><span class="drag-handle">≡ MÁS ACTIVOS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll" style="padding:0; max-height:300px;"><ul class="st-list" id="st-e-table-players"></ul></div></div>
-                    </div>
-                </div>
-
-                <div id="pane-stats-hc" class="st-pane hidden">
-                    <div id="grid-stats-hc" class="st-grid">
-                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-rec"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ RÉCORD HC</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val val-blurrable" style="color:var(--error);" id="st-hc-record">0</div><div class="st-sub">VELOCIDAD MÁXIMA</div></div></div>
-                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-surv"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ SUPERVIVENCIA</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" style="color:var(--error);" id="st-hc-surv">0</div><div class="st-sub">CARRERAS COMPLETADAS</div></div></div>
-                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-death"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MUERTES SÚBITAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center"><div class="st-val" style="color:var(--error);" id="st-hc-deaths">0</div><div class="st-sub">ELIMINACIONES</div></div></div>
-                        <div class="st-widget st-widget-error st-col-3" data-id="w-h-rate"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TASA MORTALIDAD</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content st-flex-center" id="st-hc-donut-rate"></div></div>
-                        
-                        <div class="st-widget st-widget-error st-col-12" data-id="w-h-zones"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ ZONAS LETALES (Por Tamaño de Pista)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content" id="st-hc-bar-zones"></div></div>
-
-                        <div class="st-widget st-widget-error st-col-6" data-id="w-h-top"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ MEJORES SOBREVIVIDAS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-top10"></ul></div></div>
-                        <div class="st-widget st-widget-error st-col-6" data-id="w-h-worst"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS MORTALES</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-worst"></ul></div></div>
-                        
-                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-legends"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ LEYENDAS (MÁS SUPERVIVENCIAS)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-legends"></ul></div></div>
-                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-victims"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ VÍCTIMAS (MÁS MUERTES)</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-victims"></ul></div></div>
-                        <div class="st-widget st-widget-error st-col-4" data-id="w-h-safe"><div class="st-widget-header"><span class="drag-handle" style="color:var(--error);">≡ TEXTOS MÁS SEGUROS</span><button class="st-resize-btn admin-only hidden" onclick="window.UI.cycleWidgetSize(this)">⤢</button></div><div class="st-widget-content custom-scroll error-scroll" style="padding:0; max-height:300px;"><ul class="st-list st-list-err" id="st-hc-safe"></ul></div></div>
-                    </div>
-                </div>
-
             </div>
         </section>
 
@@ -455,6 +505,100 @@
         <div id="crop-modal" class="crop-overlay hidden"><div class="crop-box"><h3 id="t_crop_title" style="color:var(--p); margin: 0 0 5px 0;">Ajusta tu foto</h3><p id="t_crop_sub" style="color:var(--text-muted); font-size:0.8rem; margin: 0 0 15px 0;">Arrastra y usa el zoom.</p><div class="crop-viewport" id="crop-area"><img id="crop-image" src="" alt="preview"></div><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" class="crop-slider"><div class="crop-actions"><button id="t_crop_btn_s" onclick="window.App.saveCrop()" class="btn-primary">Guardar</button><button id="t_crop_btn_c" onclick="window.UI.closeCropModal()" class="btn-outline">Cancelar</button></div></div></div>
         
         <div id="announcement-modal" class="crop-overlay hidden" style="z-index: 2000;"><div class="auth-card" style="position: relative; max-width: 550px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 35px;"><div id="motd-icon" style="font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); text-align: center; flex-shrink: 0;"></div><h2 id="motd-title" style="color: var(--p); margin: 0 0 15px 0; font-size: 1.8rem; flex-shrink: 0;"></h2><div id="motd-msg" class="custom-scroll" style="color: var(--text-main); line-height: 1.6; margin-bottom: 25px; font-size: 1.05rem; white-space: pre-wrap; text-align: center; overflow-y: auto; flex-grow: 1;"></div><button class="btn-primary btn-large" onclick="window.UI.closeAnnouncement()" style="box-shadow: 0 0 20px color-mix(in srgb, var(--p) 30%, transparent); flex-shrink: 0; padding: 15px;">¡ENTENDIDO!</button></div></div>
+
+        <div id="track-preview-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="auth-card" style="position: relative; max-width: 600px; width: 90%; text-align: left; padding: 30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:15px;">
+                    <h2 id="tp-title" style="color: var(--p); margin: 0; font-size: 1.5rem;">Título</h2>
+                    <button onclick="window.UI.closeTrackPreview()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem; font-weight:bold;">×</button>
+                </div>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <span id="tp-cat" style="background:var(--surface); padding:5px 10px; border-radius:5px; font-size:0.8rem; color:var(--text-main); border:1px solid var(--border);"></span>
+                    <span id="tp-words" style="background:var(--surface); padding:5px 10px; border-radius:5px; font-size:0.8rem; color:var(--text-main); border:1px solid var(--border);"></span>
+                </div>
+                <div id="tp-content" class="custom-scroll" style="color: var(--text-main); font-size:1.1rem; line-height:1.6; max-height: 40vh; overflow-y:auto; margin-bottom:20px; padding:15px; background:var(--bg); border:1px solid var(--border); border-radius:10px;">
+                </div>
+                <button id="tp-btn-play" class="btn-primary btn-large" style="width:100%;">JUGAR ESTA PISTA</button>
+            </div>
+        </div>
+
+        <div id="medals-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="crop-box" style="width: 550px; max-width: 90vw; text-align: left;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="color:var(--p); margin: 0 0 5px 0;">Medallas y Logros</h3>
+                    <button onclick="window.UI.closeMedalsModal()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem; font-weight:bold;">×</button>
+                </div>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 10px 0;">Historial completo de hazañas del piloto.</p>
+                <div id="all-medals-content" class="custom-scroll" style="max-height: 60vh; padding-right: 10px;"></div>
+            </div>
+        </div>
+
+        <div id="edit-profile-modal" class="crop-overlay hidden" style="z-index: 2000;">
+            <div class="crop-box" style="width: 500px; max-width: 90vw; text-align: left;">
+                <h3 style="color:var(--p); margin: 0 0 5px 0;">Editar Perfil Público</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin: 0 0 20px 0;">Personaliza cómo te ve el resto de la comunidad.</p>
+                
+                <div class="admin-form custom-scroll" style="max-height: 60vh; padding-right: 10px;">
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-bottom: -5px;">Nombre a mostrar (Max 15 caracteres)</label>
+                    <input type="text" id="ep-name" maxlength="15" placeholder="Tu nombre">
+                    
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom: -5px;">Biografía (Max 150 caracteres)</label>
+                    <textarea id="ep-bio" maxlength="150" rows="3" placeholder="Escribe algo sobre ti..." style="resize:none;"></textarea>
+                    
+                    <div style="display:flex; gap:15px; margin-top:10px;">
+                        <div style="flex:1; display:flex; flex-direction:column; gap: 5px;">
+                            <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold;">País (Opcional)</label>
+                            <select id="ep-country" class="admin-select" style="width:100%; padding: 13px;">
+                                <option value="">No especificar</option>
+                                <option value="🌍 Argentina">🌍 Argentina</option>
+                                <option value="🌍 Bolivia">🌍 Bolivia</option>
+                                <option value="🌍 Chile">🌍 Chile</option>
+                                <option value="🌍 Colombia">🌍 Colombia</option>
+                                <option value="🌍 Costa Rica">🌍 Costa Rica</option>
+                                <option value="🌍 Cuba">🌍 Cuba</option>
+                                <option value="🌍 Ecuador">🌍 Ecuador</option>
+                                <option value="🌍 El Salvador">🌍 El Salvador</option>
+                                <option value="🌍 España">🌍 España</option>
+                                <option value="🌍 Estados Unidos">🌍 Estados Unidos</option>
+                                <option value="🌍 Guatemala">🌍 Guatemala</option>
+                                <option value="🌍 Honduras">🌍 Honduras</option>
+                                <option value="🌍 México">🌍 México</option>
+                                <option value="🌍 Nicaragua">🌍 Nicaragua</option>
+                                <option value="🌍 Panamá">🌍 Panamá</option>
+                                <option value="🌍 Paraguay">🌍 Paraguay</option>
+                                <option value="🌍 Perú">🌍 Perú</option>
+                                <option value="🌍 Rep. Dominicana">🌍 Rep. Dominicana</option>
+                                <option value="🌍 Uruguay">🌍 Uruguay</option>
+                                <option value="🌍 Venezuela">🌍 Venezuela</option>
+                                <option value="🌍 Otro País">🌍 Otro País</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; display:flex; flex-direction:column; gap: 5px;">
+                            <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold;">Layout</label>
+                            <select id="ep-layout" class="admin-select" style="width:100%; padding: 13px;">
+                                <option value="">No especificar</option>
+                                <option value="QWERTY">QWERTY</option>
+                                <option value="Dvorak">Dvorak</option>
+                                <option value="Colemak">Colemak</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom: -5px;">Teclado / Switches (Opcional)</label>
+                    <input type="text" id="ep-switches" maxlength="30" placeholder="Ej. Redragon Kumara / Outemu Red">
+
+                    <label style="color:var(--text-main); font-size:0.8rem; font-weight:bold; margin-top:10px; margin-bottom: -5px;">Discord (Usuario)</label>
+                    <input type="text" id="ep-discord" maxlength="30" placeholder="Ej. tu_usuario_discord">
+                </div>
+
+                <div style="display:flex; gap:15px; margin-top:20px;">
+                    <button onclick="window.App.saveProfileEdits()" class="btn-primary" style="flex:1;">GUARDAR CAMBIOS</button>
+                    <button onclick="window.UI.closeEditProfileModal()" class="btn-outline" style="flex:1;">Cancelar</button>
+                </div>
+                <button onclick="document.getElementById('img-input').click()" class="btn-outline" style="width:100%; margin-top:15px;">🖼️ Cambiar Foto de Perfil</button>
+            </div>
+        </div>
 
     </div>
 
