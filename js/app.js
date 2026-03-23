@@ -5,6 +5,19 @@
 window.App = {
     currentTrack: null, activeEngine: null, currentRaceContext: null,
     
+    // NUEVO: Catálogo de medallas en memoria
+    medalsCatalog: [],
+
+    // Carga inicial del catálogo de medallas
+    loadMedalsCatalog: async () => {
+        try {
+            const snap = await window.db.collection('medals').get();
+            window.App.medalsCatalog = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (e) {
+            console.error("Error cargando catálogo de medallas:", e);
+        }
+    },
+    
     handleDragReorder: async (type, domOldIdx, domNewIdx, pageContext) => {
         if (type === 'favs') {
             const u = window.CT.ses(); if(!u) return;
@@ -37,6 +50,9 @@ window.App = {
     },
 
     loadDashboardData: async () => {
+        // Cargar medallas al inicio
+        if(window.App.medalsCatalog.length === 0) await window.App.loadMedalsCatalog();
+
         try {
             const topReqFb = await window.db.collection('scores').orderBy('c', 'desc').limit(50).get();
             window.CT.data.s_top = topReqFb.docs.map(d => d.data());
@@ -119,23 +135,12 @@ window.App = {
         if(track) { window.App.currentTrack = track; if(window.App.activeEngine) window.App.activeEngine.stop(); window.App.activeEngine = new window.Engine(track, 'normal'); } 
     },
 
-    // =====================================================================
-    // NUEVAS FUNCIONES DE LA ARENA (TORNEOS)
-    // =====================================================================
     startArenaRace: () => {
         window.App.currentRaceContext = { type: 'arena' };
-        
-        // Simulación: Buscamos un texto adecuado en la base de datos (Ej: el primero de "General")
-        // En el futuro, esto leerá la ID del texto oficial desde Firebase `events`
         let tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]')); 
         if(!tracks || tracks.length === 0) return alert("No hay textos disponibles para la Arena."); 
-        
-        // Elegimos uno consistente para el torneo
         window.App.currentTrack = tracks[0]; 
-        
         if(window.App.activeEngine) window.App.activeEngine.stop(); 
-        
-        // Instanciamos el motor en modo 'arena', lo que activa la UI estricta
         window.App.activeEngine = new window.Engine(window.App.currentTrack, 'arena'); 
     },
 
@@ -143,11 +148,9 @@ window.App = {
         if(confirm("¿Seguro que deseas rendirte? Obtendrás 0 puntos en el Torneo.")) {
             if(window.App.activeEngine) { window.App.activeEngine.stop(); window.App.activeEngine = null; } 
             window.App.currentRaceContext = null;
-            // A futuro aquí enviaremos un "0" a Firebase para penalizar el ragequit
-            window.UI.show('arena-screen'); // Volvemos a la sala de espera del torneo
+            window.UI.show('arena-screen');
         }
     },
-    // =====================================================================
     
     retryRace: () => { if(window.App.activeEngine) { const m = window.App.activeEngine.mode; const g = window.App.activeEngine.ghostCPM; window.App.activeEngine.stop(); if(window.App.currentTrack) window.App.activeEngine = new window.Engine(window.App.currentTrack, m, g); } },
     
@@ -235,15 +238,20 @@ window.App = {
         const newSwitches = document.getElementById('ep-switches').value.trim();
         const newDiscord = document.getElementById('ep-discord').value.trim();
 
+        // Obtener medallas seleccionadas para lucir
+        const selectedMedals = Array.from(document.querySelectorAll('#ep-medals-grid input[type="checkbox"]:checked')).map(cb => cb.value);
+
         if(!newName) return alert("El nombre no puede estar vacío.");
         if(newName.length > 15) return alert("El nombre no puede exceder los 15 caracteres.");
+        if(selectedMedals.length > 6) return alert("Solo puedes destacar un máximo de 6 medallas en tu perfil.");
 
         const btn = document.querySelector('#edit-profile-modal .btn-primary');
         const oldText = btn.innerText; btn.innerText = "GUARDANDO..."; btn.disabled = true;
 
         try {
             await window.db.collection('users').doc(u.h).update({ 
-                n: newName, bio: newBio, country: newCountry, layout: newLayout, switches: newSwitches, discord: newDiscord 
+                n: newName, bio: newBio, country: newCountry, layout: newLayout, switches: newSwitches, discord: newDiscord,
+                visible_medals: selectedMedals
             });
             
             if (u.n !== newName) {
@@ -311,7 +319,8 @@ window.App = {
             const role = (handle === '@angel') ? 'admin' : 'usuario'; 
             const newUser = { 
                 h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [],
-                createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: ''
+                createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: '',
+                visible_medals: []
             }; 
             await window.db.collection('users').doc(handle).set(newUser); 
             window.UI.toggleAuth(true); alert("Cuenta creada con éxito."); 
