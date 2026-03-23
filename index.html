@@ -140,7 +140,7 @@
             </div>
         </section>
 
-       <section id="arena-screen" class="screen hidden arena-bg" style="padding: 20px;">
+        <section id="arena-screen" class="screen hidden arena-bg" style="padding: 20px;">
             <header class="top-nav" style="border: none; position: relative; z-index: 2;">
                 <div style="display:flex; align-items:center; gap: 15px;">
                     <button onclick="window.UI.showLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← SALIR DE LA ARENA</button>
@@ -171,7 +171,11 @@
                 <div class="arena-info-grid">
                     <div class="arena-panel">
                         <h4 class="arena-panel-title">📜 DIRECTIVAS DEL EVENTO</h4>
-                        <p style="color: #aaa; line-height: 1.6; font-size: 0.95rem;">Bienvenidos al primer torneo de calibración del sistema. <br><br>Para clasificar, debes completar la pista oficial del torneo. Puedes intentarlo todas las veces que quieras; <b>solo se guardará tu mejor tiempo (PUNTOS)</b> calculados en base a tu velocidad y precisión. <br><br>Al finalizar la cuenta regresiva, el tablero se congelará y las recompensas serán inyectadas en los perfiles de los vencedores.</p>
+                        <p style="color: #aaa; line-height: 1.6; font-size: 0.95rem;">
+                            Bienvenidos al primer torneo de calibración del sistema. <br><br>
+                            <b>SISTEMA DE PUNTUACIÓN:</b> En la Arena, la velocidad no lo es todo. Tu Puntaje Final se calcula multiplicando tu <b>Velocidad Bruta (CPM)</b> por tu porcentaje de <b>Precisión</b>.<br><br>
+                            <span style="color:var(--error);">Cada error te restará precisión y bajará tu multiplicador.</span> Teclear a 100 CPM con 90% de precisión te dará 90 Puntos. ¡Busca la perfección!
+                        </p>
                     </div>
                     
                     <div class="arena-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
@@ -243,7 +247,7 @@
                 </div>
             </div>
         </section>
-        
+
         <section id="info-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
@@ -470,35 +474,6 @@
                            <p style="color:#aaa; font-size:0.9rem; font-family: monospace; margin: 0;">> Implementación de perfiles de piloto completada. Modos competitivos en línea. Esperando directivas de CananStudio...</p>
                       </div>
                  </div>
-            </div>
-        </section>
-
-        <section id="game-screen" class="screen hidden">
-            <div class="game-container" style="max-width: 1200px; width: 100%;">
-                <div class="game-hud">
-                    <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
-                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
-                </div>
-                <div class="progress-container" style="margin-bottom: 25px; position:relative;">
-                    <div id="race-progress" class="progress-bar"></div>
-                    <div id="ghost-progress" class="ghost-bar hidden"></div>
-                </div>
-                <div id="target-text" class="game-text-display"></div>
-                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
-                <div id="in-game-controls" class="game-controls">
-                    <button id="t_btn_back" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
-                    <button id="t_btn_retry" onclick="window.App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
-                    <button id="t_btn_new" onclick="window.App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
-                </div>
-                <div id="game-result-modal" class="game-result hidden">
-                    <h2 id="final-speed-display" class="result-score">0 CPM</h2>
-                    <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
-                    <div class="result-actions" style="margin-top: 25px;">
-                        <button id="t_btn_retry2" onclick="window.App.retryRace()" class="btn-outline">Repetir</button>
-                        <button id="t_btn_cont" onclick="window.App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
-                        <button id="t_btn_back2" onclick="window.App.quitRace()" class="btn-outline">Volver</button>
-                    </div>
-                </div>
             </div>
         </section>
 
