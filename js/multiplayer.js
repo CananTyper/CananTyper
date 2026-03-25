@@ -92,7 +92,6 @@ if (!document.getElementById('mp-custom-styles')) {
         @keyframes slideIn { from { transform: translateX(-50px) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         
-        /* Estilo para la caja del Némesis en la cinemática */
         .nemesis-box { background: rgba(0,0,0,0.6); border: 2px solid #ffd700; border-radius: 12px; padding: 10px 25px; margin-bottom: 30px; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
         .nemesis-box.first { border-color: #888; box-shadow: none; border-style: dashed; }
     `;
@@ -124,7 +123,8 @@ window.Multiplayer = {
     lastTauntT: 0,
     lastMyTauntT: 0,
     nemesisLoaded: false,
-    pingInterval: null, // NUEVO: Sistema de latidos para evitar fantasmas
+    pingInterval: null, 
+    afkTimeout: null, // NUEVO: Detector de inactividad AFK
     
     initLobby: async () => {
         const u = window.CT.ses();
@@ -171,22 +171,24 @@ window.Multiplayer = {
                 vh: window.Multiplayer.myVehicle,
                 mp: userDoc.mp, streak: userDoc.mp.streak || 0,
                 status: 'idle', matchId: null, invite: null,
-                lastPing: Date.now(), // NUEVO: Primer latido
+                lastPing: Date.now(), 
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             await window.db.collection('mp_lobby').doc(userDoc.h).set(presenceData);
             window.Multiplayer.isOnline = true;
             
-            // Iniciar Latido (Ping) cada 15 segundos
+            // Latido (Ping) CADA 60 SEGUNDOS para ahorrar cuota
             if (window.Multiplayer.pingInterval) clearInterval(window.Multiplayer.pingInterval);
             window.Multiplayer.pingInterval = setInterval(() => {
                 if (window.Multiplayer.isOnline && window.Multiplayer.myHandle) {
                     window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ lastPing: Date.now() }).catch(()=>{});
                 }
-            }, 15000);
+            }, 60000);
 
-            // Triple candado por si recargan/cierran
+            // INICIAR DETECTOR AFK (5 Minutos)
+            window.Multiplayer.startAfkTimer();
+
             window.addEventListener('beforeunload', window.Multiplayer.handleUnload);
             window.addEventListener('pagehide', window.Multiplayer.handleUnload);
             window.addEventListener('unload', window.Multiplayer.handleUnload);
@@ -200,6 +202,7 @@ window.Multiplayer = {
 
     goOffline: async () => {
         window.Multiplayer.isOnline = false;
+        window.Multiplayer.stopAfkTimer(); // Frenar AFK
         if (window.Multiplayer.pingInterval) { clearInterval(window.Multiplayer.pingInterval); window.Multiplayer.pingInterval = null; }
         if (window.Multiplayer.lobbyUnsubscribe) { window.Multiplayer.lobbyUnsubscribe(); window.Multiplayer.lobbyUnsubscribe = null; }
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
@@ -212,13 +215,40 @@ window.Multiplayer = {
 
     handleUnload: () => {
         if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
-            // Se usa sendBeacon si es posible para asegurar que llegue, o un simple delete
             window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete().catch(()=>{});
             if(window.Multiplayer.currentMatchId) {
                 window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(()=>{});
             }
         }
     },
+
+    // --- SISTEMA AFK (Away From Keyboard) ---
+    startAfkTimer: () => {
+        window.Multiplayer.stopAfkTimer();
+        document.addEventListener('mousemove', window.Multiplayer.resetAfkTimer);
+        document.addEventListener('keydown', window.Multiplayer.resetAfkTimer);
+        document.addEventListener('click', window.Multiplayer.resetAfkTimer);
+        window.Multiplayer.resetAfkTimer();
+    },
+
+    stopAfkTimer: () => {
+        if (window.Multiplayer.afkTimeout) clearTimeout(window.Multiplayer.afkTimeout);
+        document.removeEventListener('mousemove', window.Multiplayer.resetAfkTimer);
+        document.removeEventListener('keydown', window.Multiplayer.resetAfkTimer);
+        document.removeEventListener('click', window.Multiplayer.resetAfkTimer);
+    },
+
+    resetAfkTimer: () => {
+        if (window.Multiplayer.afkTimeout) clearTimeout(window.Multiplayer.afkTimeout);
+        // Timeout de 5 minutos (300,000 ms)
+        window.Multiplayer.afkTimeout = setTimeout(() => {
+            if (window.Multiplayer.isOnline && !window.Multiplayer.currentMatchId) {
+                alert("Fuiste desconectado del Coliseo por inactividad (AFK) para ahorrar energía del servidor.");
+                window.Multiplayer.exitLobby();
+            }
+        }, 300000);
+    },
+    // ------------------------------------------
 
     updateNemesisDisplay: (history) => {
         if (!history || history.length === 0) return;
@@ -245,8 +275,7 @@ window.Multiplayer = {
                 const nEl = document.getElementById('mp-stat-nemesis');
                 const sEl = document.getElementById('mp-stat-nemesis-score');
                 if(nEl) nEl.innerText = nemesis.toUpperCase();
-                // FIX ESTÉTICA: Sin la palabra "Historial"
-                if(sEl) sEl.innerText = `Tú ${mS} - ${rS} Rival`;
+                if(sEl) sEl.innerText = `Tú ${mS} - ${rS} Rival`; // TEXTO LIMPIO SIN "Historial:"
             }
         }).catch(()=>{});
     },
@@ -256,15 +285,15 @@ window.Multiplayer = {
             let rawPlayers = snap.docs.map(doc => doc.data());
             const now = Date.now();
             
-            // LA BARREDORA DE FANTASMAS (Borra a los que no laten hace más de 45 segs)
+            // LA BARREDORA (Purga a los fantasmas de 120 segundos)
             rawPlayers.forEach(p => {
-                if (p.h !== window.Multiplayer.myHandle && p.lastPing && (now - p.lastPing > 45000)) {
+                if (p.h !== window.Multiplayer.myHandle && p.lastPing && (now - p.lastPing > 120000)) {
                     window.db.collection('mp_lobby').doc(p.h).delete().catch(()=>{});
                 }
             });
 
-            // Solo renderizamos a los vivos
-            const players = rawPlayers.filter(p => !p.lastPing || (now - p.lastPing <= 45000));
+            // Solo mostrar los que laten
+            const players = rawPlayers.filter(p => !p.lastPing || (now - p.lastPing <= 120000));
             window.Multiplayer.renderLobbyState(players);
         });
     },
@@ -478,6 +507,7 @@ window.Multiplayer = {
         window.Multiplayer.matchEnded = false;
         window.Multiplayer.resetting = false;
         window.Multiplayer.currentRound = 1;
+        window.Multiplayer.stopAfkTimer(); // Desactiva AFK al estar en carrera
 
         const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
         if(!matchDoc.exists) return window.Multiplayer.quitDuel();
@@ -635,12 +665,10 @@ window.Multiplayer = {
             const cineLayer = document.createElement('div');
             cineLayer.className = 'cinematic-overlay';
             
-            // FIX ESTÉTICO: Caja de Némesis
             let scoreHtml = '';
             if (myScore > 0 || rivalScore > 0) {
                 scoreHtml = `
                 <div class="nemesis-box">
-                    <span style="color: #aaa; font-size: 0.85rem; font-weight: bold; letter-spacing: 2px; display: block; text-align: center; margin-bottom: 5px;">MARCADOR HISTÓRICO</span>
                     <div style="color: #ffd700; font-family: monospace; font-size: 2rem; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">TÚ ${myScore} - ${rivalScore} RIVAL</div>
                 </div>`;
             } else {
@@ -924,7 +952,7 @@ window.Multiplayer = {
             await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
                 [`${window.Multiplayer.myMatchKey}.rematch`]: true
             });
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     },
 
     triggerRematchReset: async () => {
@@ -942,10 +970,11 @@ window.Multiplayer = {
                 'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null, 'p2.exploded': false,
                 status: 'starting'
             });
-        } catch(e) {}
+        } catch(e) { console.error("Error reseteando sala:", e); }
     },
 
     quitDuel: async () => {
+        window.Multiplayer.stopAfkTimer(); // Activa el stop AFK manual
         if (window.Multiplayer.pingInterval) { clearInterval(window.Multiplayer.pingInterval); window.Multiplayer.pingInterval = null; }
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
         window.removeEventListener('keydown', window.Multiplayer.tauntKeyListener);
@@ -978,5 +1007,8 @@ window.Multiplayer = {
         document.getElementById('duel-screen').classList.remove('hc-active');
 
         window.UI.show('multiplayer-screen');
+        
+        // Reiniciamos AFK al volver al lobby
+        window.Multiplayer.startAfkTimer();
     }
 };
