@@ -87,7 +87,7 @@ Object.assign(window.UI, {
         });
 
         if (!user.createdAt) {
-            earnedMedals.push({ id: 'anomalia_cero', icon: '💠', name: 'Anomalía Cero', desc: 'Registros anteriores al sistema', count: 1, isStackable: false });
+            earnedMedals.push({ id: 'anomalia_cero', icon: '💠', name: 'Beta Tester', desc: 'Registros anteriores al sistema', count: 1, isStackable: false });
         }
 
         return earnedMedals;
@@ -345,8 +345,8 @@ Object.assign(window.UI, {
         
         if (earnedMedals.some(m => m.id === 'anomalia_cero')) {
             html += `<div class="medal-slot unlocked" title="Registros anteriores al sistema">
-                        <span class="m-icon" style="font-size: 2.5rem;">💠</span>
-                        <span class="m-name">Anomalía Cero</span>
+                        <span class="m-icon" style="font-size: 2.5rem;">🧪</span>
+                        <span class="m-name">Beta Tester</span>
                      </div>`;
         }
         
