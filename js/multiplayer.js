@@ -1,6 +1,6 @@
 /* ================================================================
     CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA + CANANTYPER 2.0)
-    Lobby, Matchmaking, Sincronización, Cinemáticas y Taunts
+    Lobby, Matchmaking, Sincronización, Cinemáticas y Taunts (FIXED)
    ================================================================ */
 
 if (!document.getElementById('mp-custom-styles')) {
@@ -42,7 +42,6 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-input-box:focus { box-shadow: 0 0 30px rgba(179,136,255,0.4); background: rgba(179,136,255,0.05); }
         .duel-input-box.error-shake { animation: shake 0.3s; border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4); }
         
-        /* FIX CONTADOR CENTRALIZADO */
         .duel-countdown { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12rem; font-weight: 900; color: #fff; text-shadow: 0 0 50px #b388ff, 0 0 20px #b388ff; z-index: 9999; pointer-events: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
@@ -60,8 +59,14 @@ if (!document.getElementById('mp-custom-styles')) {
         
         .taunt-btn { background: rgba(0,0,0,0.6); border: 1px solid #b388ff; color: #b388ff; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; font-family: monospace; font-weight: bold;}
         .taunt-btn:hover { background: #b388ff; color: #000; box-shadow: 0 0 10px #b388ff; }
-        .taunt-popup { position: absolute; background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; border: 1px solid #b388ff; padding: 5px 12px; border-radius: 8px; z-index: 2000; animation: floatUp 2s forwards; pointer-events: none; white-space: nowrap; font-size: 1.5rem; box-shadow: 0 0 20px rgba(179,136,255,0.6); }
-        @keyframes floatUp { 0% { opacity: 0; transform: translateY(10px) scale(0.8); } 15% { opacity: 1; transform: translateY(-10px) scale(1.1); } 80% { opacity: 1; transform: translateY(-40px) scale(1); } 100% { opacity: 0; transform: translateY(-60px); } }
+        
+        /* Emote Normal (En carrera) */
+        .taunt-popup { position: absolute; background: rgba(0,0,0,0.9); color: #fff; font-weight: bold; border: 1px solid #b388ff; padding: 8px 15px; border-radius: 10px; z-index: 2000; animation: floatUp 2.5s forwards; pointer-events: none; white-space: nowrap; font-size: 1.5rem; box-shadow: 0 0 20px rgba(179,136,255,0.6); }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(10px) scale(0.5); } 15% { opacity: 1; transform: translateY(-10px) scale(1.2); } 80% { opacity: 1; transform: translateY(-40px) scale(1); } 100% { opacity: 0; transform: translateY(-60px); } }
+
+        /* Emote Gigante (En Victoria/Derrota) */
+        .endgame-taunt { font-size: 4rem !important; background: transparent !important; border: none !important; box-shadow: none !important; animation: floatUpEndgame 3s forwards !important; text-shadow: 0 0 30px rgba(255,255,255,0.5); z-index: 3000; }
+        @keyframes floatUpEndgame { 0% { opacity: 0; transform: translate(-50%, 20px) scale(0.5); } 15% { opacity: 1; transform: translate(-50%, -20px) scale(1.5); } 80% { opacity: 1; transform: translate(-50%, -80px) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -120px); } }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -79,7 +84,6 @@ window.Multiplayer = {
     myVehicle: localStorage.getItem('ct_mp_vehicle') || '🏎️',
     availableVehicles: ['🏎️', '🚀', '🛸', '🚤', '🦖', '🐉', '🏍️', '🚁'],
     
-    // Motor de Combate Variables
     currentMatchId: null,
     currentRivalHandle: null, 
     currentRound: 1,          
@@ -95,17 +99,15 @@ window.Multiplayer = {
     nextCheckpointIdx: 0,
     lastTauntT: 0,
     lastMyTauntT: 0,
+    nemesisLoaded: false, // Flag para no quemar lecturas en el lobby
     
     initLobby: async () => {
         const u = window.CT.ses();
         if (!u) return window.UI.show('auth-screen');
-
         window.Multiplayer.myHandle = u.h;
+        window.Multiplayer.nemesisLoaded = false;
         window.UI.show('multiplayer-screen');
-        
         window.Multiplayer.renderVehicleSelector();
-        document.getElementById('mp-online-list').innerHTML = '<li style="text-align: center; color: #b388ff; padding: 20px;">Estableciendo enlace seguro...</li>';
-        
         await window.Multiplayer.goOnline(u);
     },
 
@@ -166,11 +168,41 @@ window.Multiplayer = {
         try { if (window.Multiplayer.myHandle) await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete(); } catch (e) {}
     },
 
-    handleUnload: (e) => {
+    handleUnload: () => {
         if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
             window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete();
             if(window.Multiplayer.currentMatchId) window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete();
         }
+    },
+
+    updateNemesisDisplay: (history) => {
+        if (!history || history.length === 0) return;
+        let counts = {};
+        let nemesis = history[0].rival;
+        let max = 0;
+        
+        history.forEach(h => {
+            if(!h.rival) return;
+            counts[h.rival] = (counts[h.rival] || 0) + 1;
+            if(counts[h.rival] > max) { max = counts[h.rival]; nemesis = h.rival; }
+        });
+        
+        if(!nemesis) return;
+
+        const myH = window.Multiplayer.myHandle;
+        const sortedH = [myH, nemesis].sort();
+        window.db.collection('mp_rivalries').doc(`${sortedH[0]}_${sortedH[1]}`).get().then(doc => {
+            if(doc.exists) {
+                const d = doc.data();
+                const mS = myH === sortedH[0] ? d.score_p1 : d.score_p2;
+                const rS = nemesis === sortedH[0] ? d.score_p1 : d.score_p2;
+                
+                const nEl = document.getElementById('mp-stat-nemesis');
+                const sEl = document.getElementById('mp-stat-nemesis-score');
+                if(nEl) nEl.innerText = nemesis.toUpperCase();
+                if(sEl) sEl.innerText = `Historial: Tú ${mS} - ${rS} Rival`;
+            }
+        }).catch(()=>{});
     },
 
     startRadar: () => {
@@ -195,14 +227,19 @@ window.Multiplayer = {
         if (me.mp) {
             const total = me.mp.wins + me.mp.losses;
             const wr = total > 0 ? Math.round((me.mp.wins / total) * 100) : 0;
-            const myStreak = me.mp.streak || 0;
-            const streakDisplay = myStreak >= 3 ? `<span style="font-size:0.9rem; color:#ff9800; vertical-align:middle; text-shadow: 0 0 10px #ff9800;">🔥x${myStreak}</span>` : '';
+            const streakDisplay = me.mp.streak >= 3 ? `<span style="font-size:0.9rem; color:#ff9800; vertical-align:middle; text-shadow: 0 0 10px #ff9800;">🔥x${me.mp.streak}</span>` : '';
             
             document.getElementById('mp-stat-winrate').innerHTML = `${wr}% ${streakDisplay}`;
             document.getElementById('mp-stat-wins').innerText = me.mp.wins;
             document.getElementById('mp-stat-losses').innerText = me.mp.losses;
             document.getElementById('mp-stat-avg').innerText = me.mp.avg_cpm || 0;
             document.getElementById('mp-stat-best').innerText = me.mp.best_cpm || 0;
+
+            // FIX: Cargar Némesis en el Lobby ($0 Costo, solo lee 1 vez al entrar)
+            if (!window.Multiplayer.nemesisLoaded && me.mp.history && me.mp.history.length > 0) {
+                window.Multiplayer.nemesisLoaded = true;
+                window.Multiplayer.updateNemesisDisplay(me.mp.history);
+            }
         }
 
         document.getElementById('mp-online-count').innerText = `${players.length} ONLINE`;
@@ -303,8 +340,12 @@ window.Multiplayer = {
 
     tauntKeyListener: (e) => {
         if (['1','2','3'].includes(e.key)) {
-            const activeWordEl = document.querySelector('.active-word');
-            if (activeWordEl && activeWordEl.innerText.includes(e.key) && document.activeElement.id === 'duel-input') return;
+            // Si el input está enfocado y activo, validamos si la palabra lleva ese número
+            if (document.activeElement.id === 'duel-input' && !window.Multiplayer.matchEnded) {
+                const activeWordEl = document.querySelector('.active-word');
+                if (activeWordEl && activeWordEl.innerText.includes(e.key)) return;
+            }
+            
             e.preventDefault();
             if (e.key === '1') window.Multiplayer.sendTaunt('GG');
             if (e.key === '2') window.Multiplayer.sendTaunt('EZ');
@@ -324,26 +365,30 @@ window.Multiplayer = {
     showTaunt: (msg, who) => {
         const cinematic = document.querySelector('.cinematic-overlay');
         let target;
+        let isEndgame = false;
         
         if (cinematic && window.Multiplayer.matchEnded) {
-            // Si el duelo terminó, buscamos la foto del ganador en el medio
             const winnerBox = cinematic.querySelector('.winner-avatar-wrapper');
-            if (winnerBox) target = winnerBox;
+            if (winnerBox) { target = winnerBox; isEndgame = true; }
         } else {
-            // Si estamos en carrera, sale de las fotos de arriba
             target = who === 'me' ? document.querySelector('.duel-player-card:not(.right)') : document.querySelector('.duel-player-card.right');
         }
 
         if(!target) return;
         
         const popup = document.createElement('div');
-        popup.className = 'taunt-popup';
+        popup.className = isEndgame ? 'taunt-popup endgame-taunt' : 'taunt-popup';
         popup.innerText = msg;
         
-        // Ajustamos la posición para que se vea bien centrado arriba
-        popup.style.top = '-10px';
-        popup.style.left = '50%';
-        popup.style.transform = 'translateX(-50%)';
+        if (isEndgame) {
+            popup.style.top = '50%';
+            popup.style.left = '50%';
+            popup.style.transform = 'translate(-50%, -50%)';
+        } else {
+            popup.style.top = '-20px';
+            if (who === 'me') popup.style.left = '60px';
+            else popup.style.right = '60px';
+        }
         
         target.appendChild(popup);
         setTimeout(() => popup.remove(), 2500);
@@ -384,7 +429,6 @@ window.Multiplayer = {
         let myScore = 0; let rivalScore = 0;
         
         try {
-            // Buscamos estrictamente en la base de datos la rivalidad
             const rivDoc = await window.db.collection('mp_rivalries').doc(rivalryId).get();
             if (rivDoc.exists) {
                 const rData = rivDoc.data();
@@ -393,7 +437,6 @@ window.Multiplayer = {
             }
         } catch(e) { console.log("Error buscando rivalidad: ", e); }
 
-        // Iniciamos la ronda pasando los scores validados
         window.Multiplayer.startNewRound(matchData.track, true, myScore, rivalScore);
 
         window.Multiplayer.matchUnsubscribe = window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).onSnapshot(snap => {
@@ -440,7 +483,6 @@ window.Multiplayer = {
                 window.Multiplayer.matchEnded = false;
                 window.Multiplayer.resetting = false;
                 
-                // En la revancha, recalculamos el score de la base de datos para mostrar el punto nuevo
                 window.db.collection('mp_rivalries').doc(rivalryId).get().then(doc => {
                      let mS = 0, rS = 0;
                      if(doc.exists) {
@@ -491,13 +533,13 @@ window.Multiplayer = {
         input.disabled = true;
         input.placeholder = "[ PREPARANDO ENLACE ]";
 
-        // Creamos la capa para el contador (Aseguramos que esté lista y vacía)
+        // FIX CONTADOR CENTRALIZADO (Se asegura de existir fuera del flujo del HTML relativo)
         let cd = document.getElementById('duel-cd');
         if (!cd) {
             cd = document.createElement('div');
             cd.id = 'duel-cd';
             cd.className = 'duel-countdown';
-            document.querySelector('.duel-container').appendChild(cd);
+            document.body.appendChild(cd); // Lo manda directo al body para el centro absoluto
         }
         cd.style.display = 'none';
 
@@ -784,10 +826,11 @@ window.Multiplayer = {
             try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle', matchId: null }); } catch(e){}
         }
 
+        window.Multiplayer.nemesisLoaded = false; // Reset para que vuelva a leer el historial al salir
+        
         const input = document.getElementById('duel-input');
         input.disabled = true; input.value = ''; input.classList.remove('error-shake');
         
-        // Nos aseguramos de ocultar el contador al salir
         const cd = document.getElementById('duel-cd');
         if (cd) cd.style.display = 'none';
 
