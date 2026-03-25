@@ -1,23 +1,19 @@
 /* ================================================================
-    CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA)
-    Lobby, Matchmaking, Selección de Naves y UI de Duelos
+    CANANTYPER - MÓDULO MULTIJUGADOR (FASE 4 - MOTOR DE COMBATE)
+    Lobby, Matchmaking, Selección de Naves y Sincronización
    ================================================================ */
 
-// INYECCIÓN DE ESTÉTICA VIP Y COLISÉO (Aislado del resto de CananTyper)
 if (!document.getElementById('mp-custom-styles')) {
     const style = document.createElement('style');
     style.id = 'mp-custom-styles';
     style.innerHTML = `
-        /* Scrollbar VIP */
         #multiplayer-screen .custom-scroll::-webkit-scrollbar-thumb { background: #b388ff; border-radius: 10px; border: 2px solid rgba(10,10,15,1); }
         #multiplayer-screen .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9b59b6; }
         
-        /* Selectores de Naves */
         .vehicle-btn { background: transparent; border: 1px solid rgba(179,136,255,0.3); border-radius: 8px; font-size: 1.8rem; padding: 10px 15px; cursor: pointer; transition: 0.3s; filter: grayscale(1); opacity: 0.6; }
         .vehicle-btn:hover { border-color: #b388ff; opacity: 1; filter: grayscale(0); }
         .vehicle-btn.active { border-color: #b388ff; background: rgba(179,136,255,0.1); filter: grayscale(0); opacity: 1; box-shadow: 0 0 15px rgba(179,136,255,0.4); transform: scale(1.1); }
 
-        /* --- MOTOR VISUAL: EL COLISEO (DUEL SCREEN) --- */
         .duel-mode-bg { background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 80%); }
         .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
         
@@ -33,15 +29,21 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-track-line { position: relative; height: 50px; border-bottom: 2px dashed rgba(179,136,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
         .duel-track-line:last-child { border-bottom: none; margin-bottom: 0; }
         
-        /* Acá ocurre la magia fluida (interpolación de 1.5s) */
         .duel-vehicle-icon { position: absolute; font-size: 2.5rem; top: 50%; transform: translateY(-50%); left: 0%; transition: left 1.5s linear; z-index: 5; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
         .duel-progress-glow { position: absolute; height: 4px; background: #b388ff; top: 50%; transform: translateY(-50%); left: 0; width: 0%; transition: width 1.5s linear; box-shadow: 0 0 15px #b388ff; z-index: 1; border-radius: 2px; }
 
-        .duel-text-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(179,136,255,0.2); border-radius: 12px; padding: 30px; color: #ccc; font-size: 1.4rem; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 150px; text-align: justify; backdrop-filter: blur(10px); box-shadow: inset 0 0 20px rgba(179,136,255,0.02); }
+        .duel-text-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(179,136,255,0.2); border-radius: 12px; padding: 30px; color: #666; font-size: 1.4rem; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 150px; text-align: justify; backdrop-filter: blur(10px); box-shadow: inset 0 0 20px rgba(179,136,255,0.02); }
+        .duel-text-box span { transition: color 0.1s; }
+        .duel-text-box .correct { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.4); }
+        .duel-text-box .error { color: #ff4a4a; text-decoration: underline; text-shadow: 0 0 8px rgba(255,74,74,0.6); }
+        .duel-text-box .active-word { border-bottom: 2px solid #b388ff; color: #ccc; }
+
         .duel-input-box { width: 100%; background: rgba(0,0,0,0.5); border: 2px solid #b388ff; border-radius: 12px; padding: 20px; color: #fff; font-size: 1.5rem; text-align: center; outline: none; transition: 0.3s; box-shadow: 0 0 20px rgba(179,136,255,0.1); }
         .duel-input-box:focus { box-shadow: 0 0 30px rgba(179,136,255,0.4); background: rgba(179,136,255,0.05); }
+        .duel-input-box.error-shake { animation: shake 0.3s; border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4); }
         
         .duel-countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; font-weight: 900; color: #fff; text-shadow: 0 0 40px #b388ff; z-index: 100; pointer-events: none; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     `;
     document.head.appendChild(style);
 }
@@ -49,9 +51,19 @@ if (!document.getElementById('mp-custom-styles')) {
 window.Multiplayer = {
     isOnline: false,
     lobbyUnsubscribe: null,
+    matchUnsubscribe: null,
     myHandle: null,
     myVehicle: localStorage.getItem('ct_mp_vehicle') || '🏎️',
     availableVehicles: ['🏎️', '🚀', '🛸', '🚤', '🦖', '🐉', '🏍️', '🚁'],
+    
+    // Motor de Combate Variables
+    currentMatchId: null,
+    duelWords: [],
+    currentWordIndex: 0,
+    startTime: null,
+    errorsCount: 0,
+    checkpoints: [10, 25, 50, 75, 100],
+    nextCheckpointIdx: 0,
     
     initLobby: async () => {
         const u = window.CT.ses();
@@ -61,7 +73,6 @@ window.Multiplayer = {
         window.UI.show('multiplayer-screen');
         
         window.Multiplayer.renderVehicleSelector();
-
         document.getElementById('mp-online-list').innerHTML = '<li style="text-align: center; color: #b388ff; padding: 20px;">Estableciendo enlace seguro...</li>';
         
         await window.Multiplayer.goOnline(u);
@@ -86,36 +97,25 @@ window.Multiplayer = {
         window.Multiplayer.renderVehicleSelector();
 
         if (window.Multiplayer.isOnline && window.Multiplayer.myHandle) {
-            try {
-                await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ vh: v });
-            } catch (e) { console.error("Error al guardar nave:", e); }
+            try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ vh: v }); } 
+            catch (e) { console.error("Error al guardar nave:", e); }
         }
     },
 
     exitLobby: async () => {
-        if (!window.Multiplayer.isOnline) {
-            window.UI.showLobby();
-            return;
-        }
-
+        if (!window.Multiplayer.isOnline) return window.UI.showLobby();
         document.getElementById('mp-online-list').innerHTML = '<li style="text-align: center; color: #777; padding: 20px;">Desconectando...</li>';
         await window.Multiplayer.goOffline();
         window.UI.showLobby();
     },
 
-    // --- CONEXIÓN DE DATOS ---
     goOnline: async (user) => {
         try {
             const userDoc = window.CT.dbLocal('u').find(x => x.h === user.h) || user;
-            
             const presenceData = {
-                h: userDoc.h,
-                n: userDoc.n,
-                a: userDoc.a || '',
-                v: userDoc.v || 0,
-                vh: window.Multiplayer.myVehicle, // Inyectamos la nave elegida
-                status: 'idle',
-                invite: null,
+                h: userDoc.h, n: userDoc.n, a: userDoc.a || '', v: userDoc.v || 0,
+                vh: window.Multiplayer.myVehicle,
+                status: 'idle', matchId: null, invite: null,
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -123,32 +123,24 @@ window.Multiplayer = {
             window.Multiplayer.isOnline = true;
             window.addEventListener('beforeunload', window.Multiplayer.handleUnload);
             window.Multiplayer.startRadar();
-
         } catch (e) {
-            console.error("Error conectando al Lobby:", e);
-            alert("Los servidores de duelo están inalcanzables en este momento.");
+            alert("Los servidores de duelo están inalcanzables.");
             window.UI.showLobby();
         }
     },
 
     goOffline: async () => {
         window.Multiplayer.isOnline = false;
-        if (window.Multiplayer.lobbyUnsubscribe) {
-            window.Multiplayer.lobbyUnsubscribe();
-            window.Multiplayer.lobbyUnsubscribe = null;
-        }
+        if (window.Multiplayer.lobbyUnsubscribe) { window.Multiplayer.lobbyUnsubscribe(); window.Multiplayer.lobbyUnsubscribe = null; }
+        if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
         window.removeEventListener('beforeunload', window.Multiplayer.handleUnload);
-        
-        try {
-            if (window.Multiplayer.myHandle) {
-                await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete();
-            }
-        } catch (e) { console.error("Error al borrar presencia:", e); }
+        try { if (window.Multiplayer.myHandle) await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete(); } catch (e) {}
     },
 
     handleUnload: (e) => {
         if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
             window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete();
+            if(window.Multiplayer.currentMatchId) window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete();
         }
     },
 
@@ -163,104 +155,65 @@ window.Multiplayer = {
         const me = players.find(p => p.h === window.Multiplayer.myHandle);
         const others = players.filter(p => p.h !== window.Multiplayer.myHandle);
 
-        if (!me && window.Multiplayer.isOnline) {
-            window.Multiplayer.goOffline();
-            window.UI.showLobby();
+        if (!me && window.Multiplayer.isOnline) return window.Multiplayer.exitLobby();
+
+        // Si me aceptaron el reto o yo acepté, mi estado cambió a in_game y tengo matchId
+        if (me.status === 'in_game' && me.matchId && !window.Multiplayer.currentMatchId) {
+            window.Multiplayer.currentMatchId = me.matchId;
+            window.Multiplayer.initDuelInterface();
             return;
         }
 
         document.getElementById('mp-online-count').innerText = `${players.length} ONLINE`;
-        
         const onlineList = document.getElementById('mp-online-list');
+        
         if (others.length === 0) {
             onlineList.innerHTML = `<li style="text-align: center; color: #777; padding: 20px;">La sala está vacía.<br>Eres el único duelista aquí.</li>`;
         } else {
             onlineList.innerHTML = others.map(p => {
                 let actionBtn = '';
-                
-                if (p.status === 'in_game') {
-                    actionBtn = `<span style="color: var(--error); font-size: 0.75rem; font-weight:bold;">EN COMBATE</span>`;
-                } else if (p.status === 'waiting') {
-                    actionBtn = `<span style="color: #ffd700; font-size: 0.75rem; font-style:italic;">Ocupado...</span>`;
-                } else if (me.status === 'waiting') {
-                    actionBtn = `<span style="color: #555; font-size: 0.75rem;">Espera...</span>`;
-                } else {
-                    actionBtn = `<button class="btn-outline" style="border-color: #b388ff; color: #b388ff; padding: 6px 12px; font-size: 0.75rem;" onclick="window.Multiplayer.sendChallenge('${p.h}', '${p.n}')">RETAR ⚔️</button>`;
-                }
-
-                let vIcon = '';
-                if (p.v === 1) vIcon = `<svg style="width:16px; height:16px; margin-left:4px; vertical-align:text-bottom; filter:drop-shadow(0 0 2px var(--p));" viewBox="0 0 24 24"><path d="M11.99 2.5l-2.6 1.83-3.13-.53-.88 3.05-2.73 1.63L3.89 12l-1.24 3.52 2.73 1.63.88 3.05 3.13-.53 2.6 1.83 2.6-1.83 3.13.53.88-3.05 2.73-1.63L20.11 12l1.24-3.52-2.73-1.63-.88-3.05-3.13.53-2.6-1.83z" fill="var(--p)"/><path d="M10.5 15.5l-4-4 1.5-1.5 2.5 2.5 6-6 1.5 1.5-7.5 7.5z" fill="#000"/></svg>`;
-                else if (p.v === 2) vIcon = `<svg style="width:15px; height:15px; margin-left:4px; vertical-align:text-bottom; filter:drop-shadow(0 0 2px #e2e8f0);" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#e2e8f0"/><path d="M12 4.5l-6 3.4v8.2l6 3.4 6-3.4v-8.2l-6-3.4z" fill="#0a0a0c"/><path d="M12 15.5l-3.5-2V9.5L12 7.5l3.5 2v4l-3.5 2z" fill="#e2e8f0"/></svg>`;
+                if (p.status === 'in_game') actionBtn = `<span style="color: var(--error); font-size: 0.75rem; font-weight:bold;">EN COMBATE</span>`;
+                else if (p.status === 'waiting') actionBtn = `<span style="color: #ffd700; font-size: 0.75rem; font-style:italic;">Ocupado...</span>`;
+                else if (me.status === 'waiting') actionBtn = `<span style="color: #555; font-size: 0.75rem;">Espera...</span>`;
+                else actionBtn = `<button class="btn-outline" style="border-color: #b388ff; color: #b388ff; padding: 6px 12px; font-size: 0.75rem;" onclick="window.Multiplayer.sendChallenge('${p.h}', '${p.n}')">RETAR ⚔️</button>`;
 
                 return `
                 <li class="st-list-item" style="padding: 10px; border-color: rgba(255,255,255,0.05);">
-                    <div style="display:flex; align-items:center; gap:10px; flex-grow: 1; cursor:pointer;" onclick="window.UI.showProfile('${p.h}')">
+                    <div style="display:flex; align-items:center; gap:10px; flex-grow: 1;">
                         <div class="avatar-xs" style="border: 1px solid #b388ff; position:relative;">
                             <img src="${p.a || window.CT.defAvatar}">
                             <div style="position:absolute; bottom:-5px; right:-5px; font-size:0.8rem; filter:drop-shadow(0 0 2px #000);">${p.vh || '🏎️'}</div>
                         </div>
                         <div style="display:flex; flex-direction:column;">
-                            <span style="color:#fff; font-weight:bold; font-size:0.9rem;">${p.n} ${vIcon}</span>
+                            <span style="color:#fff; font-weight:bold; font-size:0.9rem;">${p.n}</span>
                             <span style="color:#777; font-size:0.7rem; font-family:monospace;">${p.h}</span>
                         </div>
                     </div>
-                    <div style="text-align: right;">
-                        ${actionBtn}
-                    </div>
+                    <div style="text-align: right;">${actionBtn}</div>
                 </li>`;
             }).join('');
         }
 
         const invitesList = document.getElementById('mp-invites-list');
-
         if (me.status === 'waiting') {
-            invitesList.innerHTML = `
-                <div style="text-align: center; padding: 30px 10px;">
-                    <div class="pulse" style="width: 20px; height: 20px; background: #ffd700; margin: 0 auto 15px; display: block;"></div>
-                    <h4 style="color: #ffd700; margin: 0 0 5px 0;">Reto Enviado</h4>
-                    <p style="color: #aaa; font-size: 0.85rem;">Esperando a que el rival acepte el desafío...</p>
-                    <button class="btn-outline" style="border-color: #ff4a4a; color: #ff4a4a; margin-top: 15px;" onclick="window.Multiplayer.cancelChallenge()">CANCELAR</button>
-                </div>`;
+            invitesList.innerHTML = `<div style="text-align: center; padding: 30px 10px;"><div class="pulse" style="width: 20px; height: 20px; background: #ffd700; margin: 0 auto 15px; display: block;"></div><h4 style="color: #ffd700; margin: 0 0 5px 0;">Reto Enviado</h4><p style="color: #aaa; font-size: 0.85rem;">Esperando respuesta...</p><button class="btn-outline" style="border-color: #ff4a4a; color: #ff4a4a; margin-top: 15px;" onclick="window.Multiplayer.cancelChallenge()">CANCELAR</button></div>`;
         } else if (me.invite) {
-            invitesList.innerHTML = `
-                <div style="background: rgba(179,136,255,0.1); border: 1px solid #b388ff; border-radius: 8px; padding: 20px; text-align: center; animation: pulseGlow 2s infinite;">
-                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🔥</div>
-                    <h4 style="color: #fff; margin: 0 0 5px 0; font-size: 1.2rem;">¡TE HAN DESAFIADO!</h4>
-                    <p style="color: #b388ff; font-size: 0.95rem; font-weight: bold; margin-bottom: 20px;">${me.invite.n} <span style="color:#777; font-size:0.8rem; font-family:monospace;">(${me.invite.h})</span></p>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-primary" style="flex: 1; background: #b388ff; color: #000;" onclick="window.Multiplayer.acceptChallenge('${me.invite.h}', '${me.invite.n}')">ACEPTAR</button>
-                        <button class="btn-outline" style="flex: 1; border-color: #ff4a4a; color: #ff4a4a;" onclick="window.Multiplayer.rejectChallenge()">RECHAZAR</button>
-                    </div>
-                </div>
-                <style>
-                    @keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(179,136,255,0.2); } 50% { box-shadow: 0 0 20px rgba(179,136,255,0.6); } 100% { box-shadow: 0 0 5px rgba(179,136,255,0.2); } }
-                </style>`;
+            invitesList.innerHTML = `<div style="background: rgba(179,136,255,0.1); border: 1px solid #b388ff; border-radius: 8px; padding: 20px; text-align: center;"><div style="font-size: 2.5rem; margin-bottom: 10px;">🔥</div><h4 style="color: #fff; margin: 0 0 5px 0; font-size: 1.2rem;">¡TE HAN DESAFIADO!</h4><p style="color: #b388ff; font-size: 0.95rem; font-weight: bold; margin-bottom: 20px;">${me.invite.n}</p><div style="display: flex; gap: 10px;"><button class="btn-primary" style="flex: 1; background: #b388ff; color: #000;" onclick="window.Multiplayer.acceptChallenge('${me.invite.h}')">ACEPTAR</button><button class="btn-outline" style="flex: 1; border-color: #ff4a4a; color: #ff4a4a;" onclick="window.Multiplayer.rejectChallenge()">RECHAZAR</button></div></div>`;
         } else {
-            invitesList.innerHTML = `
-                <div style="text-align: center; color: #777; padding: 30px 10px; font-size: 0.85rem;">
-                    <div style="font-size: 2rem; opacity: 0.5; margin-bottom: 10px;">🛡️</div>
-                    Ningún desafío pendiente.<br>Estás a salvo por ahora.
-                </div>`;
+            invitesList.innerHTML = `<div style="text-align: center; color: #777; padding: 30px 10px; font-size: 0.85rem;"><div style="font-size: 2rem; opacity: 0.5; margin-bottom: 10px;">🛡️</div>Ningún desafío pendiente.<br>Estás a salvo por ahora.</div>`;
         }
     },
 
-    sendChallenge: async (targetHandle, targetName) => {
+    sendChallenge: async (targetHandle) => {
         try {
             await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'waiting' });
             const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
-            
-            await window.db.collection('mp_lobby').doc(targetHandle).update({
-                invite: { h: myUser.h, n: myUser.n, t: Date.now() }
-            });
-
+            await window.db.collection('mp_lobby').doc(targetHandle).update({ invite: { h: myUser.h, n: myUser.n, t: Date.now() } });
             setTimeout(() => { window.Multiplayer.autoExpireChallenge(targetHandle); }, 15000);
-        } catch(e) { console.error("Error enviando reto:", e); window.Multiplayer.cancelChallenge(); }
+        } catch(e) { window.Multiplayer.cancelChallenge(); }
     },
 
-    cancelChallenge: async () => {
-        try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle' }); } catch(e) { console.error(e); }
-    },
+    cancelChallenge: async () => { try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle' }); } catch(e) {} },
 
     autoExpireChallenge: async (targetHandle) => {
         try {
@@ -269,7 +222,7 @@ window.Multiplayer = {
                 await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle' });
                 await window.db.collection('mp_lobby').doc(targetHandle).update({ invite: null });
             }
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     },
 
     rejectChallenge: async () => {
@@ -279,45 +232,232 @@ window.Multiplayer = {
             const rivalHandle = meDoc.data().invite.h;
             await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ invite: null });
             await window.db.collection('mp_lobby').doc(rivalHandle).update({ status: 'idle' });
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     },
 
-    // --- FASE 3: INICIO DE LA TRANSICIÓN VISUAL AL DUELO ---
-    acceptChallenge: async (rivalHandle, rivalName) => {
+    // --- CREADOR DE SALA (MATCHMAKING) ---
+    acceptChallenge: async (rivalHandle) => {
         try {
-            // Simulamos la creación de la sala visualmente para que veas el nuevo diseño
-            await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ invite: null });
-            
-            window.UI.show('duel-screen');
-            
-            // Renderizamos los nombres simulados en la nueva HUD (Más adelante lo ataremos a Firebase)
-            document.getElementById('duel-my-name').innerText = "TÚ";
-            document.getElementById('duel-rival-name').innerText = rivalName.toUpperCase();
-            
-            document.getElementById('duel-my-vehicle').innerText = window.Multiplayer.myVehicle;
-            document.getElementById('duel-rival-vehicle').innerText = "🚀"; // Provisional
-            
-            // Simulación de cuenta regresiva en pantalla
-            const cd = document.getElementById('duel-cd');
-            cd.style.display = 'block';
-            cd.innerText = "3";
-            setTimeout(() => cd.innerText = "2", 1000);
-            setTimeout(() => cd.innerText = "1", 2000);
-            setTimeout(() => { 
-                cd.innerText = "¡YA!"; 
-                document.getElementById('duel-input').disabled = false;
-                document.getElementById('duel-input').focus();
-                document.getElementById('duel-target-text').innerHTML = "La arquitectura <b>pro</b> está casi lista. En el próximo paso enlazaremos esta interfaz con el motor de juego.";
-                setTimeout(() => cd.style.display = 'none', 1000);
-            }, 3000);
+            const matchId = `duel_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+            const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
+            const tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]'));
+            const chosenTrack = tracks[Math.floor(Math.random() * tracks.length)];
 
-        } catch(e) { console.error(e); }
+            // Crear documento de combate
+            await window.db.collection('mp_matches').doc(matchId).set({
+                track: chosenTrack,
+                p1: { h: rivalHandle, prog: 0, cpm: 0, done: false },
+                p2: { h: myUser.h, prog: 0, cpm: 0, done: false },
+                status: 'starting'
+            });
+
+            // Limpiar mi invitación y mandar a ambos a 'in_game' con el matchId
+            const batch = window.db.batch();
+            batch.update(window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle), { invite: null, status: 'in_game', matchId: matchId });
+            batch.update(window.db.collection('mp_lobby').doc(rivalHandle), { status: 'in_game', matchId: matchId });
+            await batch.commit();
+
+        } catch(e) { console.error(e); alert("Error creando la sala de duelo."); }
     },
-    
-    quitDuel: () => {
-        // Por ahora vuelve al lobby
+
+    // --- FASE 4: MOTOR DE COMBATE Y SINCRONIZACIÓN ---
+    initDuelInterface: async () => {
+        window.UI.show('duel-screen');
+        const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
+        if(!matchDoc.exists) return window.Multiplayer.quitDuel();
+
+        const matchData = matchDoc.data();
+        const isP1 = matchData.p1.h === window.Multiplayer.myHandle;
+        const rivalHandle = isP1 ? matchData.p2.h : matchData.p1.h;
+
+        // Obtener datos visuales del rival desde el Lobby
+        const rivalLobbyDoc = await window.db.collection('mp_lobby').doc(rivalHandle).get();
+        const rivalData = rivalLobbyDoc.exists ? rivalLobbyDoc.data() : { n: rivalHandle, a: '', vh: '🚀' };
+        const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
+
+        document.getElementById('duel-my-name').innerText = "TÚ";
+        document.getElementById('duel-my-avatar').src = myUser.a || window.CT.defAvatar;
+        document.getElementById('duel-my-vehicle').innerText = window.Multiplayer.myVehicle;
+        
+        document.getElementById('duel-rival-name').innerText = rivalData.n.toUpperCase();
+        document.getElementById('duel-rival-avatar').src = rivalData.a || window.CT.defAvatar;
+        document.getElementById('duel-rival-vehicle').innerText = rivalData.vh || '🚀';
+
+        // Preparar Motor Local
+        window.Multiplayer.duelWords = matchData.track.text.split(' ');
+        window.Multiplayer.currentWordIndex = 0;
+        window.Multiplayer.errorsCount = 0;
+        window.Multiplayer.nextCheckpointIdx = 0;
+        
+        document.getElementById('duel-target-text').innerHTML = window.Multiplayer.duelWords.map((w, i) => `<span id="dw-${i}">${w}</span>`).join(' ');
+        document.getElementById('dw-0').classList.add('active-word');
+        
+        const input = document.getElementById('duel-input');
+        input.value = '';
+        input.disabled = true;
+        input.placeholder = "[ ESPERANDO SEÑAL ]";
+
+        // Iniciar Escucha de Pista
+        window.Multiplayer.matchUnsubscribe = window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).onSnapshot(snap => {
+            if(!snap.exists) return window.Multiplayer.quitDuel(); // El rival destruyó la sala al irse
+            const d = snap.data();
+            
+            // Sincronización Visual del Rival (Interpolación fluida)
+            const rivalProg = isP1 ? d.p2.prog : d.p1.prog;
+            document.getElementById('duel-rival-vehicle').style.left = `${rivalProg}%`;
+            document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
+            document.getElementById('duel-rival-cpm').innerText = `${isP1 ? d.p2.cpm : d.p1.cpm} CPM`;
+
+            // Ver si el rival terminó
+            const rivalDone = isP1 ? d.p2.done : d.p1.done;
+            if (rivalDone && !document.getElementById('duel-input').disabled) {
+                // Rival ganó
+                window.Multiplayer.endDuel(false);
+            }
+        });
+
+        // Cuenta Regresiva
+        const cd = document.getElementById('duel-cd');
+        cd.style.display = 'block';
+        cd.innerText = "3";
+        setTimeout(() => cd.innerText = "2", 1000);
+        setTimeout(() => cd.innerText = "1", 2000);
+        setTimeout(() => { 
+            cd.innerText = "¡YA!"; 
+            input.disabled = false;
+            input.placeholder = "";
+            input.focus();
+            window.Multiplayer.startTime = Date.now();
+            
+            // Listener del teclado
+            input.oninput = window.Multiplayer.handleInput;
+            
+            setTimeout(() => cd.style.display = 'none', 1000);
+        }, 3000);
+    },
+
+    handleInput: (e) => {
+        const input = e.target;
+        const typed = input.value;
+        const targetWord = window.Multiplayer.duelWords[window.Multiplayer.currentWordIndex];
+        const wordEl = document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`);
+
+        // Verificando errores en tiempo real
+        if (targetWord.startsWith(typed.trim())) {
+            input.classList.remove('error-shake');
+            wordEl.style.color = '#ccc';
+        } else {
+            input.classList.add('error-shake');
+            wordEl.style.color = '#ff4a4a';
+        }
+
+        // Palabra completada (Presionó Espacio)
+        if (typed.endsWith(' ')) {
+            if (typed.trim() === targetWord) {
+                // Correcto
+                input.value = '';
+                wordEl.classList.remove('active-word');
+                wordEl.classList.add('correct');
+                window.Multiplayer.currentWordIndex++;
+                
+                // Progreso Local fluido
+                const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
+                document.getElementById('duel-my-vehicle').style.left = `${rawProg}%`;
+                document.getElementById('duel-my-fill').style.width = `${rawProg}%`;
+
+                // CPM Actualizado Localmente
+                const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
+                const currentCPM = Math.round((window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length) / timeMin) || 0;
+                document.getElementById('duel-my-cpm').innerText = `${currentCPM} CPM`;
+
+                // EVALUACIÓN DE CHECKPOINTS A FIREBASE (Ahorro de Cuota)
+                if (window.Multiplayer.nextCheckpointIdx < window.Multiplayer.checkpoints.length) {
+                    const targetProg = window.Multiplayer.checkpoints[window.Multiplayer.nextCheckpointIdx];
+                    if (rawProg >= targetProg) {
+                        window.Multiplayer.syncProgress(targetProg, currentCPM, false);
+                        window.Multiplayer.nextCheckpointIdx++;
+                    }
+                }
+
+                // Fin del Texto
+                if (window.Multiplayer.currentWordIndex >= window.Multiplayer.duelWords.length) {
+                    window.Multiplayer.syncProgress(100, currentCPM, true);
+                    window.Multiplayer.endDuel(true);
+                } else {
+                    document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`).classList.add('active-word');
+                }
+            } else {
+                // Error al dar espacio
+                input.value = typed.trim(); 
+                window.Multiplayer.errorsCount++;
+                wordEl.classList.add('error');
+            }
+        }
+    },
+
+    syncProgress: async (prog, cpm, done) => {
+        if(!window.Multiplayer.currentMatchId) return;
+        try {
+            const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
+            if(!matchDoc.exists) return;
+            const d = matchDoc.data();
+            const isP1 = d.p1.h === window.Multiplayer.myHandle;
+            
+            const updatePayload = {};
+            if (isP1) { updatePayload['p1.prog'] = prog; updatePayload['p1.cpm'] = cpm; updatePayload['p1.done'] = done; } 
+            else { updatePayload['p2.prog'] = prog; updatePayload['p2.cpm'] = cpm; updatePayload['p2.done'] = done; }
+
+            await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update(updatePayload);
+        } catch(e) { console.error("Error sincronizando:", e); }
+    },
+
+    endDuel: (isWinner) => {
+        const input = document.getElementById('duel-input');
+        input.disabled = true;
+        input.oninput = null;
+        
+        const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
+        const chars = window.Multiplayer.duelWords.join(' ').length;
+        const finalCPM = Math.round(chars / timeMin) || 0;
+        
+        const acc = Math.max(0, 100 - (window.Multiplayer.errorsCount * 2)); // Precisión Beta
+
+        document.getElementById('duel-cd').style.display = 'block';
+        document.getElementById('duel-cd').style.fontSize = '4rem';
+        document.getElementById('duel-cd').innerHTML = isWinner ? `<span style="color:#a6ff00; text-shadow: 0 0 20px #a6ff00;">¡VICTORIA!</span><br><span style="font-size:1.5rem;">${finalCPM} CPM | ${acc}% Precisión</span>` : `<span style="color:#ff4a4a; text-shadow: 0 0 20px #ff4a4a;">DERROTA</span>`;
+
+        // El ganador destruye la sala tras 5 segundos
+        setTimeout(() => {
+            if(isWinner) {
+                window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(e=>{});
+            }
+            window.Multiplayer.quitDuel();
+        }, 5000);
+    },
+
+    quitDuel: async () => {
+        if (window.Multiplayer.matchUnsubscribe) {
+            window.Multiplayer.matchUnsubscribe();
+            window.Multiplayer.matchUnsubscribe = null;
+        }
+        
+        // Limpiamos la sala si salimos antes de tiempo
+        if(window.Multiplayer.currentMatchId) {
+            window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(e=>{});
+            window.Multiplayer.currentMatchId = null;
+        }
+
+        // Volver mi estado a idle en el lobby
+        if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
+            try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle', matchId: null }); } catch(e){}
+        }
+
+        const input = document.getElementById('duel-input');
+        input.disabled = true;
+        input.value = '';
+        input.classList.remove('error-shake');
+        document.getElementById('duel-cd').style.display = 'none';
+
         window.UI.show('multiplayer-screen');
-        document.getElementById('duel-input').disabled = true;
-        document.getElementById('duel-input').value = '';
     }
 };
