@@ -70,7 +70,6 @@ Object.assign(window.UI, {
             if (m.condition === 'manual') {
                 if (manualCounts[m.id] > 0) {
                     earned = true;
-                    // Solo multiplicamos si está marcada como stackeable
                     count = m.isStackable ? manualCounts[m.id] : 1;
                 }
             } 
@@ -88,7 +87,7 @@ Object.assign(window.UI, {
         });
 
         if (!user.createdAt) {
-            earnedMedals.push({ id: 'anomalia_cero', icon: '💠', name: 'Anomalía Cero', desc: 'Registros anteriores al sistema', count: 1 });
+            earnedMedals.push({ id: 'anomalia_cero', icon: '💠', name: 'Anomalía Cero', desc: 'Registros anteriores al sistema', count: 1, isStackable: false });
         }
 
         return earnedMedals;
@@ -229,7 +228,11 @@ Object.assign(window.UI, {
             
             let displayMedals = [];
             if (visibleIds.length > 0) {
-                displayMedals = earnedMedals.filter(m => visibleIds.includes(m.id));
+                // Respetamos el orden exacto en el que el jugador las eligió
+                visibleIds.forEach(vid => {
+                    const match = earnedMedals.find(m => m.id === vid);
+                    if(match) displayMedals.push(match);
+                });
             } else {
                 displayMedals = earnedMedals.slice(0, 6); 
             }
@@ -237,10 +240,14 @@ Object.assign(window.UI, {
             let medalsHTML = '';
             if (displayMedals.length > 0) {
                 medalsHTML = displayMedals.map(m => {
-                    const countBadge = m.count > 1 ? `<div style="position:absolute; bottom:-8px; right:-8px; background:var(--accent); color:#000; font-size:0.7rem; font-weight:900; padding:2px 6px; border-radius:10px; z-index:5; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">x${m.count}</div>` : '';
+                    // Diseño PRO para el multiplicador (xN)
+                    const countBadge = (m.isStackable && m.count > 1) 
+                        ? `<div style="position:absolute; bottom:-5px; right:-8px; background: linear-gradient(45deg, #00e5ff, #0077ff); color:#000; font-size:0.8rem; font-weight:900; padding:2px 7px; border-radius:12px; box-shadow: 0 0 10px rgba(0,229,255,0.6); border: 2px solid #000; z-index:5;">x${m.count}</div>` 
+                        : '';
+                    
                     return `
-                    <div style="position:relative; display:inline-block;" title="${m.name}: ${m.desc}">
-                        <span class="medal-item">${m.icon}</span>
+                    <div style="position:relative; display:inline-flex; align-items:center; justify-content:center; width: 50px; height: 50px; margin: 0 8px;" title="${m.name}: ${m.desc}">
+                        <span class="medal-item" style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">${m.icon}</span>
                         ${countBadge}
                     </div>`;
                 }).join('');
@@ -325,10 +332,13 @@ Object.assign(window.UI, {
             
             if (!hasIt && m.isSecret) return; 
 
-            const countBadge = hasIt && earnedMatch.count > 1 ? `<div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:#000; font-size:0.6rem; font-weight:bold; padding:2px 5px; border-radius:4px; z-index:5;">x${earnedMatch.count}</div>` : '';
+            // Multiplicador estético para la vitrina completa
+            const countBadge = (hasIt && m.isStackable && earnedMatch.count > 1) 
+                ? `<div style="position:absolute; bottom:-5px; right:-5px; background: linear-gradient(45deg, #00e5ff, #0077ff); color:#000; font-size:0.75rem; font-weight:900; padding:2px 6px; border-radius:10px; box-shadow: 0 0 8px rgba(0,229,255,0.5); border: 2px solid #000; z-index:5;">x${earnedMatch.count}</div>` 
+                : '';
 
             html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}" style="position:relative;">
-                        <span class="m-icon">${m.icon}</span>
+                        <span class="m-icon" style="font-size: 2.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">${m.icon}</span>
                         <span class="m-name">${m.name}</span>
                         ${countBadge}
                      </div>`;
@@ -336,7 +346,7 @@ Object.assign(window.UI, {
         
         if (earnedMedals.some(m => m.id === 'anomalia_cero')) {
             html += `<div class="medal-slot unlocked" title="Registros anteriores al sistema">
-                        <span class="m-icon">💠</span>
+                        <span class="m-icon" style="font-size: 2.5rem;">💠</span>
                         <span class="m-name">Anomalía Cero</span>
                      </div>`;
         }
@@ -360,6 +370,7 @@ Object.assign(window.UI, {
         }
     },
 
+    // --- NUEVO SISTEMA DE EDICIÓN ESTÉTICA Y ORDENADA ---
     openEditProfileModal: () => {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
@@ -372,33 +383,73 @@ Object.assign(window.UI, {
         document.getElementById('ep-discord').value = userDoc.discord || '';
 
         const earnedMedals = window.UI.getUserMedals(userDoc);
-        const visibleIds = userDoc.visible_medals || [];
-        const medalsGrid = document.getElementById('ep-medals-grid');
         
-        if (medalsGrid) {
-            if (earnedMedals.length === 0) {
-                medalsGrid.innerHTML = '<span style="color:#777; font-size:0.8rem; font-style:italic; grid-column: 1/-1;">Aún no has ganado medallas para lucir.</span>';
-            } else {
-                medalsGrid.innerHTML = earnedMedals.map(m => {
-                    const isChecked = visibleIds.includes(m.id) ? 'checked' : '';
-                    return `
-                    <label style="display: flex; align-items: center; gap: 8px; color: var(--text-main); font-size: 0.85rem; cursor: pointer; background: var(--surface); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
-                        <input type="checkbox" value="${m.id}" ${isChecked} onchange="window.UI.limitMedalSelection(this)"> 
-                        <span style="font-size:1.2rem;">${m.icon}</span> ${m.name}
-                    </label>`;
-                }).join('');
-            }
-        }
+        // Guardamos temporalmente los datos en window.UI para interactuar sin recargar
+        window.UI.tempEarnedMedals = earnedMedals; 
+        window.UI.selectedMedalsOrder = [...(userDoc.visible_medals || [])]; 
 
+        // Limpiamos medallas que quizá ya no tenga
+        window.UI.selectedMedalsOrder = window.UI.selectedMedalsOrder.filter(id => earnedMedals.some(m => m.id === id));
+
+        window.UI.renderMedalSelector();
         document.getElementById('edit-profile-modal').classList.remove('hidden');
     },
 
-    limitMedalSelection: (checkbox) => {
-        const checkedBoxes = document.querySelectorAll('#ep-medals-grid input[type="checkbox"]:checked');
-        if (checkedBoxes.length > 6) {
-            checkbox.checked = false;
-            alert("Solo puedes destacar un máximo de 6 medallas en tu perfil.");
+    renderMedalSelector: () => {
+        const medalsGrid = document.getElementById('ep-medals-grid');
+        const earnedMedals = window.UI.tempEarnedMedals || [];
+        
+        if (earnedMedals.length === 0) {
+            medalsGrid.innerHTML = '<span style="color:#777; font-size:0.8rem; font-style:italic; grid-column: 1/-1;">Aún no has ganado medallas para lucir.</span>';
+            return;
         }
+
+        let html = '';
+        earnedMedals.forEach(m => {
+            const index = window.UI.selectedMedalsOrder.indexOf(m.id);
+            const isSelected = index > -1;
+            
+            // Badge de Orden Numérico (1 al 6)
+            const orderBadge = isSelected ? `<div style="position:absolute; top:-5px; right:-5px; background:var(--accent); color:#000; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; box-shadow:0 0 5px var(--accent); border:2px solid #000; z-index:10;">${index + 1}</div>` : '';
+            
+            // Etiqueta visual para distinguir
+            const typeLabel = m.isStackable ? `<span style="color:#00e5ff; font-size:0.7rem;">📦 Múltiple (x${m.count})</span>` : `<span style="color:#777; font-size:0.7rem;">🔒 Única</span>`;
+
+            html += `
+            <div onclick="window.UI.toggleMedalSelection('${m.id}')" style="position:relative; display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; background: ${isSelected ? 'rgba(0,229,255,0.05)' : 'var(--surface)'}; border: 1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; transition:0.2s; user-select:none;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${isSelected ? 'var(--accent)' : 'var(--border)'}'">
+                <div style="font-size:2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                    ${m.icon}
+                </div>
+                <div style="display:flex; flex-direction:column; overflow:hidden;">
+                    <span style="color:#fff; font-weight:bold; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</span>
+                    ${typeLabel}
+                </div>
+                ${orderBadge}
+            </div>`;
+        });
+
+        // ⚠️ TRUCO QUIRÚRGICO: Inyectamos checkboxes invisibles en el orden EXACTO en que el jugador hizo clic.
+        // Así, cuando app.js ejecute `querySelectorAll(':checked')`, los leerá en tu orden preferido.
+        html += `<div id="hidden-ordered-checkboxes" style="display:none;">`;
+        window.UI.selectedMedalsOrder.forEach(id => {
+            html += `<input type="checkbox" value="${id}" checked>`;
+        });
+        html += `</div>`;
+
+        medalsGrid.innerHTML = html;
+    },
+
+    toggleMedalSelection: (id) => {
+        const idx = window.UI.selectedMedalsOrder.indexOf(id);
+        if (idx > -1) {
+            window.UI.selectedMedalsOrder.splice(idx, 1); // La quitamos
+        } else {
+            if (window.UI.selectedMedalsOrder.length >= 6) {
+                return alert("Solo puedes destacar un máximo de 6 medallas en tu perfil.");
+            }
+            window.UI.selectedMedalsOrder.push(id); // La añadimos al final de la fila
+        }
+        window.UI.renderMedalSelector();
     },
 
     closeEditProfileModal: () => { document.getElementById('edit-profile-modal').classList.add('hidden'); },
