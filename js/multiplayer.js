@@ -308,6 +308,25 @@ window.Multiplayer = {
         window.Multiplayer.errorsCount = 0;
         window.Multiplayer.nextCheckpointIdx = 0;
         
+        // HARD RESET: Apagamos transición, anclamos a cero y forzamos repintado para evitar el "salto" visual
+        const myVeh = document.getElementById('duel-my-vehicle');
+        const myFill = document.getElementById('duel-my-fill');
+        const rivalVeh = document.getElementById('duel-rival-vehicle');
+        const rivalFill = document.getElementById('duel-rival-fill');
+        
+        myVeh.style.transition = 'none'; myFill.style.transition = 'none';
+        rivalVeh.style.transition = 'none'; rivalFill.style.transition = 'none';
+        
+        myVeh.style.left = '0%'; myFill.style.width = '0%';
+        rivalVeh.style.left = '0%'; rivalFill.style.width = '0%';
+        document.getElementById('duel-my-cpm').innerText = '0 CPM';
+        document.getElementById('duel-rival-cpm').innerText = '0 CPM';
+        
+        void myVeh.offsetWidth; // Forzar reflow del DOM
+        
+        myVeh.style.transition = 'left 1.5s linear'; myFill.style.transition = 'width 1.5s linear';
+        rivalVeh.style.transition = 'left 1.5s linear'; rivalFill.style.transition = 'width 1.5s linear';
+
         document.getElementById('duel-target-text').innerHTML = window.Multiplayer.duelWords.map((w, i) => `<span id="dw-${i}">${w}</span>`).join(' ');
         document.getElementById('dw-0').classList.add('active-word');
         
@@ -381,13 +400,15 @@ window.Multiplayer = {
         let typed = input.value;
         const targetWord = window.Multiplayer.duelWords[window.Multiplayer.currentWordIndex];
         const wordEl = document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`);
+        const isLastWord = window.Multiplayer.currentWordIndex === window.Multiplayer.duelWords.length - 1;
 
-        // LÍMITE ESTRICTO DE ERRORES (Regla TypeRacer: no podés tipear al infinito si te equivocás)
+        // LÍMITE ESTRICTO DE ERRORES (Regla Pro: no podés tipear al infinito si te equivocás)
         if (typed.length > targetWord.length + 5) {
             typed = typed.slice(0, targetWord.length + 5);
             input.value = typed;
         }
 
+        // Iluminación Neon de Aciertos y Errores
         if (targetWord.startsWith(typed.trim())) {
             input.classList.remove('error-shake');
             wordEl.style.color = '#ccc';
@@ -396,40 +417,51 @@ window.Multiplayer = {
             wordEl.style.color = '#ff4a4a';
         }
 
-        if (typed.endsWith(' ')) {
-            if (typed.trim() === targetWord) {
-                input.value = '';
-                wordEl.classList.remove('active-word');
-                wordEl.classList.add('correct');
-                window.Multiplayer.currentWordIndex++;
-                
-                const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
-                document.getElementById('duel-my-vehicle').style.left = `${rawProg}%`;
-                document.getElementById('duel-my-fill').style.width = `${rawProg}%`;
+        let isCorrectAndFinished = false;
+        
+        // Condición 1: Dio espacio y la palabra es exacta
+        if (typed.endsWith(' ') && typed.trim() === targetWord) {
+            isCorrectAndFinished = true;
+        } 
+        // Condición 2: Es la ÚLTIMA palabra y el texto coincide exacto (No requiere barra espaciadora)
+        else if (isLastWord && typed === targetWord) {
+            isCorrectAndFinished = true;
+        }
 
-                const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
-                const currentCPM = Math.round((window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length) / timeMin) || 0;
-                document.getElementById('duel-my-cpm').innerText = `${currentCPM} CPM`;
+        if (isCorrectAndFinished) {
+            input.value = '';
+            wordEl.classList.remove('active-word');
+            wordEl.classList.add('correct');
+            window.Multiplayer.currentWordIndex++;
+            
+            const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
+            document.getElementById('duel-my-vehicle').style.left = `${rawProg}%`;
+            document.getElementById('duel-my-fill').style.width = `${rawProg}%`;
 
-                if (window.Multiplayer.nextCheckpointIdx < window.Multiplayer.checkpoints.length) {
-                    const targetProg = window.Multiplayer.checkpoints[window.Multiplayer.nextCheckpointIdx];
-                    if (rawProg >= targetProg) {
-                        window.Multiplayer.syncProgress(targetProg, currentCPM, false);
-                        window.Multiplayer.nextCheckpointIdx++;
-                    }
+            const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
+            const currentCPM = Math.round((window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length) / timeMin) || 0;
+            document.getElementById('duel-my-cpm').innerText = `${currentCPM} CPM`;
+
+            if (window.Multiplayer.nextCheckpointIdx < window.Multiplayer.checkpoints.length) {
+                const targetProg = window.Multiplayer.checkpoints[window.Multiplayer.nextCheckpointIdx];
+                if (rawProg >= targetProg) {
+                    window.Multiplayer.syncProgress(targetProg, currentCPM, false);
+                    window.Multiplayer.nextCheckpointIdx++;
                 }
-
-                if (window.Multiplayer.currentWordIndex >= window.Multiplayer.duelWords.length) {
-                    window.Multiplayer.syncProgress(100, currentCPM, true);
-                    window.Multiplayer.endDuel(true);
-                } else {
-                    document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`).classList.add('active-word');
-                }
-            } else {
-                input.value = typed.trim(); 
-                window.Multiplayer.errorsCount++;
-                wordEl.classList.add('error');
             }
+
+            if (window.Multiplayer.currentWordIndex >= window.Multiplayer.duelWords.length) {
+                window.Multiplayer.syncProgress(100, currentCPM, true);
+                window.Multiplayer.endDuel(true);
+            } else {
+                document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`).classList.add('active-word');
+            }
+        } 
+        // Si apretó espacio pero está mal escrito
+        else if (typed.endsWith(' ') && typed.trim() !== targetWord) {
+            input.value = typed.trim(); 
+            window.Multiplayer.errorsCount++;
+            wordEl.classList.add('error');
         }
     },
 
