@@ -144,6 +144,10 @@ window.App = {
         window.App.activeEngine = new window.Engine(window.App.currentTrack, 'arena'); 
     },
 
+    openMultiplayerLobby: () => {
+        alert("Iniciando conexión con el servidor dedicado de Duelos...\n\n[El módulo multiplayer.js está en desarrollo]");
+    },
+
     quitArenaRace: () => {
         if(confirm("¿Seguro que deseas rendirte? Obtendrás 0 puntos en el Torneo.")) {
             if(window.App.activeEngine) { window.App.activeEngine.stop(); window.App.activeEngine = null; } 
