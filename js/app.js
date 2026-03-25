@@ -50,7 +50,6 @@ window.App = {
     },
 
     loadDashboardData: async () => {
-        // Cargar medallas al inicio
         if(window.App.medalsCatalog.length === 0) await window.App.loadMedalsCatalog();
 
         try {
@@ -246,7 +245,6 @@ window.App = {
         const newSwitches = document.getElementById('ep-switches').value.trim();
         const newDiscord = document.getElementById('ep-discord').value.trim();
 
-        // Obtener medallas seleccionadas para lucir
         const selectedMedals = Array.from(document.querySelectorAll('#ep-medals-grid input[type="checkbox"]:checked')).map(cb => cb.value);
 
         if(!newName) return alert("El nombre no puede estar vacío.");
@@ -325,11 +323,15 @@ window.App = {
             const docRef = await window.db.collection('users').doc(handle).get(); 
             if(docRef.exists) return alert("Ese usuario ya está en uso"); 
             const role = (handle === '@angel') ? 'admin' : 'usuario'; 
+            
+            // CANANTYPER 2.0: Estructura base para el multijugador VIP
             const newUser = { 
                 h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [],
                 createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: '',
-                visible_medals: []
+                visible_medals: [],
+                mp: { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [] } // <-- EL NÚCLEO 2.0
             }; 
+            
             await window.db.collection('users').doc(handle).set(newUser); 
             window.UI.toggleAuth(true); alert("Cuenta creada con éxito."); 
         } catch(e) { alert("Error al conectar con la Nube"); } 
