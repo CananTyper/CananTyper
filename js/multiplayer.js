@@ -1,5 +1,5 @@
 /* ================================================================
-    CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA + FASE 1 CANANTYPER 2.0)
+    CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA + REVANCHA + RACHAS)
     Lobby, Matchmaking, Selección de Naves, Sincronización y Cinemáticas
    ================================================================ */
 
@@ -7,16 +7,13 @@ if (!document.getElementById('mp-custom-styles')) {
     const style = document.createElement('style');
     style.id = 'mp-custom-styles';
     style.innerHTML = `
-        /* Scrollbar VIP */
         #multiplayer-screen .custom-scroll::-webkit-scrollbar-thumb { background: #b388ff; border-radius: 10px; border: 2px solid rgba(10,10,15,1); }
         #multiplayer-screen .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9b59b6; }
         
-        /* Selectores de Naves */
         .vehicle-btn { background: transparent; border: 1px solid rgba(179,136,255,0.3); border-radius: 8px; font-size: 1.8rem; padding: 10px 15px; cursor: pointer; transition: 0.3s; filter: grayscale(1); opacity: 0.6; }
         .vehicle-btn:hover { border-color: #b388ff; opacity: 1; filter: grayscale(0); }
         .vehicle-btn.active { border-color: #b388ff; background: rgba(179,136,255,0.1); filter: grayscale(0); opacity: 1; box-shadow: 0 0 15px rgba(179,136,255,0.4); transform: scale(1.1); }
 
-        /* --- MOTOR VISUAL: EL COLISEO (DUEL SCREEN) --- */
         .duel-mode-bg { background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 80%); }
         .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; position: relative; }
         
@@ -32,7 +29,6 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-track-line { position: relative; height: 50px; border-bottom: 2px dashed rgba(179,136,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
         .duel-track-line:last-child { border-bottom: none; margin-bottom: 0; }
         
-        /* Magia fluida (interpolación de 1.5s) */
         .duel-vehicle-icon { position: absolute; font-size: 2.5rem; top: 50%; transform: translateY(-50%); left: 0%; transition: left 1.5s linear; z-index: 5; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
         .duel-progress-glow { position: absolute; height: 4px; background: #b388ff; top: 50%; transform: translateY(-50%); left: 0; width: 0%; transition: width 1.5s linear; box-shadow: 0 0 15px #b388ff; z-index: 1; border-radius: 2px; }
 
@@ -49,7 +45,6 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; font-weight: 900; color: #fff; text-shadow: 0 0 40px #b388ff; z-index: 100; pointer-events: none; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
-        /* --- CINEMÁTICAS E-SPORTS --- */
         .cinematic-overlay { position: absolute; inset: -20px; background: rgba(5,5,10,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.4s forwards; border-radius: 15px; }
         .vs-avatars { display: flex; align-items: center; gap: 40px; margin-bottom: 20px; }
         .vs-avatar-box { text-align: center; animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -78,6 +73,9 @@ window.Multiplayer = {
     
     // Motor de Combate Variables
     currentMatchId: null,
+    isHost: false, // Controla quién reinicia la sala en la revancha
+    matchEnded: false,
+    resetting: false,
     duelWords: [],
     currentWordIndex: 0,
     startTime: null,
@@ -101,13 +99,8 @@ window.Multiplayer = {
     renderVehicleSelector: () => {
         const container = document.getElementById('mp-vehicles');
         if (!container) return;
-
         container.innerHTML = window.Multiplayer.availableVehicles.map(v => `
-            <button class="vehicle-btn ${v === window.Multiplayer.myVehicle ? 'active' : ''}" 
-                    onclick="window.Multiplayer.selectVehicle('${v}')" 
-                    title="Elegir ${v}">
-                ${v}
-            </button>
+            <button class="vehicle-btn ${v === window.Multiplayer.myVehicle ? 'active' : ''}" onclick="window.Multiplayer.selectVehicle('${v}')" title="Elegir ${v}">${v}</button>
         `).join('');
     },
 
@@ -115,7 +108,6 @@ window.Multiplayer = {
         window.Multiplayer.myVehicle = v;
         localStorage.setItem('ct_mp_vehicle', v);
         window.Multiplayer.renderVehicleSelector();
-
         if (window.Multiplayer.isOnline && window.Multiplayer.myHandle) {
             try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ vh: v }); } 
             catch (e) { console.error("Error al guardar nave:", e); }
@@ -131,14 +123,13 @@ window.Multiplayer = {
 
     goOnline: async (user) => {
         try {
-            // Buscamos a ver si tiene el objeto mp creado, si no, se lo inventamos para que no explote
             const userDoc = window.CT.dbLocal('u').find(x => x.h === user.h) || user;
-            if(!userDoc.mp) userDoc.mp = { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [] };
+            if(!userDoc.mp) userDoc.mp = { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [], streak: 0 };
 
             const presenceData = {
                 h: userDoc.h, n: userDoc.n, a: userDoc.a || '', v: userDoc.v || 0,
                 vh: window.Multiplayer.myVehicle,
-                mp: userDoc.mp, // Enviamos nuestras estadísticas al lobby para el HUD
+                mp: userDoc.mp, streak: userDoc.mp.streak || 0, // <-- Exponemos la racha
                 status: 'idle', matchId: null, invite: null,
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -181,18 +172,20 @@ window.Multiplayer = {
 
         if (!me && window.Multiplayer.isOnline) return window.Multiplayer.exitLobby();
 
-        // Si me aceptaron el reto o yo acepté, arranco
         if (me.status === 'in_game' && me.matchId && !window.Multiplayer.currentMatchId) {
             window.Multiplayer.currentMatchId = me.matchId;
             window.Multiplayer.initDuelInterface();
             return;
         }
 
-        // CARGA DE ESTADÍSTICAS VIP DEL JUGADOR
+        // CARGA DE ESTADÍSTICAS VIP + RACHAS
         if (me.mp) {
             const total = me.mp.wins + me.mp.losses;
             const wr = total > 0 ? Math.round((me.mp.wins / total) * 100) : 0;
-            document.getElementById('mp-stat-winrate').innerText = `${wr}%`;
+            const myStreak = me.mp.streak || 0;
+            const streakDisplay = myStreak >= 3 ? `<span style="font-size:0.9rem; color:#ff9800; vertical-align:middle; text-shadow: 0 0 10px #ff9800;">🔥x${myStreak}</span>` : '';
+            
+            document.getElementById('mp-stat-winrate').innerHTML = `${wr}% ${streakDisplay}`;
             document.getElementById('mp-stat-wins').innerText = me.mp.wins;
             document.getElementById('mp-stat-losses').innerText = me.mp.losses;
             document.getElementById('mp-stat-avg').innerText = me.mp.avg_cpm || 0;
@@ -212,6 +205,9 @@ window.Multiplayer = {
                 else if (me.status === 'waiting') actionBtn = `<span style="color: #555; font-size: 0.75rem;">Espera...</span>`;
                 else actionBtn = `<button class="btn-outline" style="border-color: #b388ff; color: #b388ff; padding: 6px 12px; font-size: 0.75rem;" onclick="window.Multiplayer.sendChallenge('${p.h}', '${p.n}')">RETAR ⚔️</button>`;
 
+                // Rachas visuales de otros jugadores
+                let streakBadge = (p.streak && p.streak >= 3) ? `<span style="color:#ff9800; font-size:0.75rem; margin-left:5px; filter:drop-shadow(0 0 3px #ff9800);">🔥 x${p.streak}</span>` : '';
+
                 return `
                 <li class="st-list-item" style="padding: 10px; border-color: rgba(255,255,255,0.05);">
                     <div style="display:flex; align-items:center; gap:10px; flex-grow: 1;">
@@ -220,7 +216,7 @@ window.Multiplayer = {
                             <div style="position:absolute; bottom:-5px; right:-5px; font-size:0.8rem; filter:drop-shadow(0 0 2px #000);">${p.vh || '🏎️'}</div>
                         </div>
                         <div style="display:flex; flex-direction:column;">
-                            <span style="color:#fff; font-weight:bold; font-size:0.9rem;">${p.n}</span>
+                            <span style="color:#fff; font-weight:bold; font-size:0.9rem;">${p.n} ${streakBadge}</span>
                             <span style="color:#777; font-size:0.7rem; font-family:monospace;">${p.h}</span>
                         </div>
                     </div>
@@ -279,8 +275,8 @@ window.Multiplayer = {
 
             await window.db.collection('mp_matches').doc(matchId).set({
                 track: chosenTrack,
-                p1: { h: rivalHandle, prog: 0, cpm: 0, done: false },
-                p2: { h: myUser.h, prog: 0, cpm: 0, done: false },
+                p1: { h: rivalHandle, prog: 0, cpm: 0, done: false, rematch: false },
+                p2: { h: myUser.h, prog: 0, cpm: 0, done: false, rematch: false },
                 status: 'starting'
             });
 
@@ -294,11 +290,16 @@ window.Multiplayer = {
 
     initDuelInterface: async () => {
         window.UI.show('duel-screen');
+        window.Multiplayer.matchEnded = false;
+        window.Multiplayer.resetting = false;
+
         const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
         if(!matchDoc.exists) return window.Multiplayer.quitDuel();
 
         const matchData = matchDoc.data();
         const isP1 = matchData.p1.h === window.Multiplayer.myHandle;
+        window.Multiplayer.isHost = !isP1; // El que acepta (p2) es el Host para reiniciar la partida
+        
         const rivalHandle = isP1 ? matchData.p2.h : matchData.p1.h;
 
         const rivalLobbyDoc = await window.db.collection('mp_lobby').doc(rivalHandle).get();
@@ -312,17 +313,70 @@ window.Multiplayer = {
 
         document.getElementById('duel-my-name').innerText = myNameStr;
         document.getElementById('duel-my-avatar').src = myAvatarUrl;
-        document.getElementById('duel-my-vehicle').innerText = window.Multiplayer.myVehicle;
-        
         document.getElementById('duel-rival-name').innerText = rivalNameStr;
         document.getElementById('duel-rival-avatar').src = rivalAvatarUrl;
         document.getElementById('duel-rival-vehicle').innerText = rivalData.vh || '🚀';
 
-        window.Multiplayer.duelWords = matchData.track.text.split(' ');
+        window.Multiplayer.startNewRound(matchData.track, true); // true = Mostrar Cinemática inicial
+
+        // EL ESCUCHA PRINCIPAL DE LA PARTIDA Y DE REVANCHAS
+        window.Multiplayer.matchUnsubscribe = window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).onSnapshot(snap => {
+            if(!snap.exists) return window.Multiplayer.quitDuel(); 
+            const d = snap.data();
+            const isMeP1 = d.p1.h === window.Multiplayer.myHandle;
+            const myKey = isMeP1 ? 'p1' : 'p2';
+            const rivalKey = isMeP1 ? 'p2' : 'p1';
+            
+            // Reflejar progreso del rival
+            if (!window.Multiplayer.resetting) {
+                const rivalProg = d[rivalKey].prog;
+                document.getElementById('duel-rival-vehicle').style.left = `${rivalProg}%`;
+                document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
+                document.getElementById('duel-rival-cpm').innerText = `${d[rivalKey].cpm} CPM`;
+
+                // Verificar si el rival terminó la carrera
+                if (d[rivalKey].done && !document.getElementById('duel-input').disabled && !window.Multiplayer.matchEnded) {
+                    window.Multiplayer.endDuel(false, null);
+                }
+            }
+
+            // --- SISTEMA DE REVANCHA ---
+            if (d.p1.done && d.p2.done) {
+                // Si el rival pidió revancha, aviso en pantalla
+                if (d[rivalKey].rematch) {
+                    const statusEl = document.getElementById('rematch-status');
+                    if (statusEl) statusEl.innerHTML = `<span style="color:#ffd700; filter:drop-shadow(0 0 5px #ffd700);">¡El rival quiere revancha!</span>`;
+                }
+                // Si ambos piden revancha, el Host la reinicia
+                if (d.p1.rematch && d.p2.rematch) {
+                    if (window.Multiplayer.isHost && !window.Multiplayer.resetting) {
+                        window.Multiplayer.resetting = true;
+                        window.Multiplayer.triggerRematchReset();
+                    }
+                }
+            }
+
+            // Si la sala fue reiniciada por el Host (Los flags vuelven a false)
+            if (!d.p1.done && !d.p2.done && window.Multiplayer.matchEnded && d.status === 'starting') {
+                window.Multiplayer.matchEnded = false;
+                window.Multiplayer.resetting = false;
+                window.Multiplayer.startNewRound(d.track, false); // falso = sin cinemática de avatars, directo al 3,2,1
+            }
+        });
+    },
+
+    // Inicia una ronda (Usado al principio y en cada revancha)
+    startNewRound: (trackData, showCinematic) => {
+        // Limpiar overlays previos
+        const cines = document.querySelectorAll('.cinematic-overlay');
+        cines.forEach(c => c.remove());
+
+        window.Multiplayer.duelWords = trackData.text.split(' ');
         window.Multiplayer.currentWordIndex = 0;
         window.Multiplayer.errorsCount = 0;
         window.Multiplayer.nextCheckpointIdx = 0;
         
+        // HARD RESET VISUAL (Para que las naves salgan de la línea de partida sin lag/salto)
         const myVeh = document.getElementById('duel-my-vehicle');
         const myFill = document.getElementById('duel-my-fill');
         const rivalVeh = document.getElementById('duel-rival-vehicle');
@@ -333,10 +387,12 @@ window.Multiplayer = {
         
         myVeh.style.left = '0%'; myFill.style.width = '0%';
         rivalVeh.style.left = '0%'; rivalFill.style.width = '0%';
+        
+        document.getElementById('duel-my-vehicle').innerText = window.Multiplayer.myVehicle;
         document.getElementById('duel-my-cpm').innerText = '0 CPM';
         document.getElementById('duel-rival-cpm').innerText = '0 CPM';
         
-        void myVeh.offsetWidth; 
+        void myVeh.offsetWidth; // Forzar reflow del DOM
         
         myVeh.style.transition = 'left 1.5s linear'; myFill.style.transition = 'width 1.5s linear';
         rivalVeh.style.transition = 'left 1.5s linear'; rivalFill.style.transition = 'width 1.5s linear';
@@ -349,62 +405,57 @@ window.Multiplayer = {
         input.disabled = true;
         input.placeholder = "[ PREPARANDO ENLACE ]";
 
-        window.Multiplayer.matchUnsubscribe = window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).onSnapshot(snap => {
-            if(!snap.exists) return window.Multiplayer.quitDuel(); 
-            const d = snap.data();
-            
-            const rivalProg = isP1 ? d.p2.prog : d.p1.prog;
-            document.getElementById('duel-rival-vehicle').style.left = `${rivalProg}%`;
-            document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
-            document.getElementById('duel-rival-cpm').innerText = `${isP1 ? d.p2.cpm : d.p1.cpm} CPM`;
-
-            const rivalDone = isP1 ? d.p2.done : d.p1.done;
-            if (rivalDone && !document.getElementById('duel-input').disabled) {
-                window.Multiplayer.endDuel(false, finalCPM); // Falso = Perdió. Pero le pasamos el CPM si hace falta
-            }
-        });
-
-        const duelContainer = document.querySelector('.duel-container');
-        const cineLayer = document.createElement('div');
-        cineLayer.className = 'cinematic-overlay';
-        cineLayer.innerHTML = `
-            <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 40px; opacity: 0.7;">PREPARANDO PISTA</h3>
-            <div class="vs-avatars">
-                <div class="vs-avatar-box">
-                    <img src="${myAvatarUrl}">
-                    <div style="color: #b388ff; font-weight: bold; font-size: 1.3rem;">${myUser.n.toUpperCase()}</div>
+        // Iniciar Secuencia
+        if (showCinematic) {
+            const duelContainer = document.querySelector('.duel-container');
+            const cineLayer = document.createElement('div');
+            cineLayer.className = 'cinematic-overlay';
+            cineLayer.innerHTML = `
+                <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 40px; opacity: 0.7;">PREPARANDO PISTA</h3>
+                <div class="vs-avatars">
+                    <div class="vs-avatar-box">
+                        <img src="${document.getElementById('duel-my-avatar').src}">
+                        <div style="color: #b388ff; font-weight: bold; font-size: 1.3rem;">TÚ</div>
+                    </div>
+                    <div class="vs-text">VS</div>
+                    <div class="vs-avatar-box" style="animation-delay: 0.2s;">
+                        <img src="${document.getElementById('duel-rival-avatar').src}" style="border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4);">
+                        <div style="color: #ff4a4a; font-weight: bold; font-size: 1.3rem;">${document.getElementById('duel-rival-name').innerText}</div>
+                    </div>
                 </div>
-                <div class="vs-text">VS</div>
-                <div class="vs-avatar-box" style="animation-delay: 0.2s;">
-                    <img src="${rivalAvatarUrl}" style="border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4);">
-                    <div style="color: #ff4a4a; font-weight: bold; font-size: 1.3rem;">${rivalNameStr}</div>
-                </div>
-            </div>
-        `;
-        duelContainer.appendChild(cineLayer);
+            `;
+            duelContainer.appendChild(cineLayer);
 
-        setTimeout(() => {
-            cineLayer.style.animation = 'fadeOut 0.4s forwards';
             setTimeout(() => {
-                cineLayer.remove();
-                
-                const cd = document.getElementById('duel-cd');
-                cd.style.display = 'block';
-                cd.innerText = "3";
-                setTimeout(() => cd.innerText = "2", 1000);
-                setTimeout(() => cd.innerText = "1", 2000);
-                setTimeout(() => { 
-                    cd.innerText = "¡YA!"; 
-                    input.disabled = false;
-                    input.placeholder = "";
-                    input.focus();
-                    window.Multiplayer.startTime = Date.now();
-                    input.oninput = window.Multiplayer.handleInput;
-                    setTimeout(() => cd.style.display = 'none', 1000);
-                }, 3000);
+                cineLayer.style.animation = 'fadeOut 0.4s forwards';
+                setTimeout(() => {
+                    cineLayer.remove();
+                    window.Multiplayer.playCountdown();
+                }, 400);
+            }, 3500);
+        } else {
+            // En Revancha no hay foto vs foto, vamos directo a la carrera
+            window.Multiplayer.playCountdown();
+        }
+    },
 
-            }, 400);
-        }, 3500);
+    playCountdown: () => {
+        const cd = document.getElementById('duel-cd');
+        const input = document.getElementById('duel-input');
+        cd.style.display = 'block';
+        cd.style.fontSize = '8rem';
+        cd.innerHTML = "3";
+        setTimeout(() => cd.innerText = "2", 1000);
+        setTimeout(() => cd.innerText = "1", 2000);
+        setTimeout(() => { 
+            cd.innerText = "¡YA!"; 
+            input.disabled = false;
+            input.placeholder = "";
+            input.focus();
+            window.Multiplayer.startTime = Date.now();
+            input.oninput = window.Multiplayer.handleInput;
+            setTimeout(() => cd.style.display = 'none', 1000);
+        }, 3000);
     },
 
     handleInput: (e) => {
@@ -428,11 +479,9 @@ window.Multiplayer = {
         }
 
         let isCorrectAndFinished = false;
-        
         if (typed.endsWith(' ') && typed.trim() === targetWord) {
             isCorrectAndFinished = true;
-        } 
-        else if (isLastWord && typed === targetWord) {
+        } else if (isLastWord && typed === targetWord) {
             isCorrectAndFinished = true;
         }
 
@@ -464,8 +513,7 @@ window.Multiplayer = {
             } else {
                 document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`).classList.add('active-word');
             }
-        } 
-        else if (typed.endsWith(' ') && typed.trim() !== targetWord) {
+        } else if (typed.endsWith(' ') && typed.trim() !== targetWord) {
             input.value = typed.trim(); 
             window.Multiplayer.errorsCount++;
             wordEl.classList.add('error');
@@ -488,8 +536,10 @@ window.Multiplayer = {
         } catch(e) { console.error("Error sincronizando:", e); }
     },
 
-    // --- CANANTYPER 2.0: GUARDADO VIP DE ESTADÍSTICAS ---
     endDuel: (isWinner, finalCPM_Param) => {
+        if (window.Multiplayer.matchEnded) return; // Evitar que se dispare dos veces
+        window.Multiplayer.matchEnded = true;
+
         const input = document.getElementById('duel-input');
         input.disabled = true;
         input.oninput = null;
@@ -509,12 +559,11 @@ window.Multiplayer = {
         const myAv = document.getElementById('duel-my-avatar').src;
         const rivalAv = document.getElementById('duel-rival-avatar').src;
 
-        // GUARDADO SILENCIOSO DE ESTADÍSTICAS VIP
+        // GUARDADO DE ESTADÍSTICAS VIP + RACHAS
         const saveVIPStats = async () => {
             try {
                 const myHandle = window.Multiplayer.myHandle;
                 let rivalHandle = "";
-                
                 const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
                 if(matchDoc.exists) {
                     const md = matchDoc.data();
@@ -523,42 +572,47 @@ window.Multiplayer = {
 
                 const myRef = window.db.collection('users').doc(myHandle);
                 const dbDoc = await myRef.get();
-                let myMP = dbDoc.data().mp || { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [] };
+                let myMP = dbDoc.data().mp || { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [], streak: 0 };
 
                 myMP.races += 1;
-                if (isWinner) myMP.wins += 1; else myMP.losses += 1;
-                if (finalCPM > myMP.best_cpm) myMP.best_cpm = finalCPM;
+                if (isWinner) {
+                    myMP.wins += 1;
+                    myMP.streak = (myMP.streak || 0) + 1; // Suma racha
+                } else {
+                    myMP.losses += 1;
+                    myMP.streak = 0; // Corta racha
+                }
 
+                if (finalCPM > myMP.best_cpm) myMP.best_cpm = finalCPM;
                 myMP.avg_cpm = Math.round(((myMP.avg_cpm * (myMP.races - 1)) + finalCPM) / myMP.races);
 
                 myMP.history.unshift({ rival: rivalHandle, res: isWinner ? 'win' : 'loss', cpm: finalCPM, date: new Date().toISOString() });
                 if (myMP.history.length > 10) myMP.history.pop();
 
                 await myRef.update({ mp: myMP });
+                
+                // Actualizo mi presencia en el lobby silenciosamente
+                await window.db.collection('mp_lobby').doc(myHandle).update({ streak: myMP.streak });
 
                 if (rivalHandle) {
                     const sortedHandles = [myHandle, rivalHandle].sort();
                     const rivalryId = `${sortedHandles[0]}_${sortedHandles[1]}`;
                     const rivRef = window.db.collection('mp_rivalries').doc(rivalryId);
-
                     await window.db.runTransaction(async (t) => {
                         const rivDoc = await t.get(rivRef);
                         let rivData = { p1: sortedHandles[0], p2: sortedHandles[1], score_p1: 0, score_p2: 0, last_encounter: firebase.firestore.FieldValue.serverTimestamp() };
-
                         if (rivDoc.exists) rivData = rivDoc.data();
-
                         if (isWinner) {
                             if (myHandle === sortedHandles[0]) rivData.score_p1 += 1; else rivData.score_p2 += 1;
                         }
-
                         t.set(rivRef, rivData, { merge: true });
                     });
                 }
             } catch (err) { console.error("Error guardando estadísticas 2.0", err); }
         };
-
         saveVIPStats();
 
+        // CINEMÁTICA CON BOTÓN DE REVANCHA
         const winnerName = isWinner ? myName : rivalName;
         const winnerAv = isWinner ? myAv : rivalAv;
         const winnerColor = isWinner ? '#a6ff00' : '#ff4a4a';
@@ -573,19 +627,49 @@ window.Multiplayer = {
                 <img src="${winnerAv}" style="border-color: ${winnerColor}; box-shadow: 0 0 40px ${winnerColor}80;">
                 <h2 class="winner-title" style="color: ${winnerColor}; text-shadow: 0 0 20px ${winnerColor}80;">${winnerName}</h2>
                 <div class="winner-subtitle">${msg}</div>
-                <div style="margin-top: 20px; font-family: monospace; font-size: 1.5rem; color: #ccc;">
+                <div style="margin-top: 15px; font-family: monospace; font-size: 1.5rem; color: #ccc;">
                     ${isWinner ? finalCPM + ' CPM | ' + acc + '% PREC' : 'RIVAL INALCANZABLE'}
                 </div>
+                
+                <div class="rematch-controls" style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+                    <button id="btn-rematch" class="btn-primary" style="padding: 10px 30px; font-size: 1.1rem; background: #b388ff; color: #000;" onclick="window.Multiplayer.requestRematch()">REVANCHA</button>
+                    <button class="btn-outline" style="border-color: #ff4a4a; color: #ff4a4a;" onclick="window.Multiplayer.quitDuel()">SALIR</button>
+                </div>
+                <div id="rematch-status" style="margin-top: 15px; color: #aaa; font-size: 0.95rem; min-height: 20px;"></div>
             </div>
         `;
         duelContainer.appendChild(cineLayer);
+    },
 
-        setTimeout(() => {
-            if(isWinner && window.Multiplayer.currentMatchId) {
-                window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(e=>{});
-            }
-            window.Multiplayer.quitDuel();
-        }, 5000);
+    requestRematch: async () => {
+        if(!window.Multiplayer.currentMatchId) return;
+        const btn = document.getElementById('btn-rematch');
+        if(btn) {
+            btn.disabled = true;
+            btn.innerText = "ESPERANDO...";
+        }
+        try {
+            const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
+            const d = matchDoc.data();
+            const myKey = (d.p1.h === window.Multiplayer.myHandle) ? 'p1' : 'p2';
+            await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
+                [`${myKey}.rematch`]: true
+            });
+        } catch(e) { console.error(e); }
+    },
+
+    triggerRematchReset: async () => {
+        try {
+            const tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]'));
+            const chosenTrack = tracks[Math.floor(Math.random() * tracks.length)];
+
+            await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
+                track: chosenTrack,
+                'p1.prog': 0, 'p1.cpm': 0, 'p1.done': false, 'p1.rematch': false,
+                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false,
+                status: 'starting'
+            });
+        } catch(e) { console.error("Error reseteando sala:", e); }
     },
 
     quitDuel: async () => {
