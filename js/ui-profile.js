@@ -49,7 +49,6 @@ Object.assign(window.UI, {
         const catalog = window.App.medalsCatalog || [];
         let earnedMedals = [];
 
-        // Estadísticas base para evaluación
         const total = (user.hi || []).length;
         const avgCPM = total ? Math.round((user.hi || []).reduce((a,b)=>a+b, 0)/total) : 0;
         const bestCPM = total ? Math.max(...(user.hi || [])) : 0;
@@ -57,24 +56,39 @@ Object.assign(window.UI, {
         const arenaPts = user.arena_pts || 0;
         const customMedals = user.custom_medals || [];
 
-        // Evaluamos cada medalla del catálogo oficial
-        catalog.forEach(m => {
-            let earned = false;
-            if (m.condition === 'manual' && customMedals.includes(m.id)) earned = true;
-            else if (m.condition === 'cpm_max' && bestCPM >= m.target) earned = true;
-            else if (m.condition === 'cpm_avg' && avgCPM >= m.target) earned = true;
-            else if (m.condition === 'races_total' && total >= m.target) earned = true;
-            else if (m.condition === 'hc_survivals' && hcSurvivals >= m.target) earned = true;
-            else if (m.condition === 'arena_pts' && arenaPts >= m.target) earned = true;
-
-            if (earned) earnedMedals.push(m);
+        // 1. Contamos cuántas de cada una tiene
+        let manualCounts = {};
+        customMedals.forEach(id => {
+            manualCounts[id] = (manualCounts[id] || 0) + 1;
         });
 
-        // Medalla fantasma (Hardcodeada por ser Easter Egg antiguo)
+        // 2. Evaluamos el catálogo
+        catalog.forEach(m => {
+            let earned = false;
+            let count = 1;
+
+            if (m.condition === 'manual') {
+                if (manualCounts[m.id] > 0) {
+                    earned = true;
+                    // Solo multiplicamos si está marcada como stackeable
+                    count = m.isStackable ? manualCounts[m.id] : 1;
+                }
+            } 
+            else {
+                if (m.condition === 'cpm_max' && bestCPM >= m.target) earned = true;
+                else if (m.condition === 'cpm_avg' && avgCPM >= m.target) earned = true;
+                else if (m.condition === 'races_total' && total >= m.target) earned = true;
+                else if (m.condition === 'hc_survivals' && hcSurvivals >= m.target) earned = true;
+                else if (m.condition === 'arena_pts' && arenaPts >= m.target) earned = true;
+            }
+
+            if (earned) {
+                earnedMedals.push({ ...m, count: count });
+            }
+        });
+
         if (!user.createdAt) {
-            earnedMedals.push({
-                id: 'anomalia_cero', icon: '💠', name: 'Anomalía Cero', desc: 'Registros anteriores al sistema'
-            });
+            earnedMedals.push({ id: 'anomalia_cero', icon: '💠', name: 'Anomalía Cero', desc: 'Registros anteriores al sistema', count: 1 });
         }
 
         return earnedMedals;
@@ -210,7 +224,6 @@ Object.assign(window.UI, {
             let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
-            // --- SISTEMA DE MEDALLAS DINÁMICO ---
             const earnedMedals = window.UI.getUserMedals(u);
             const visibleIds = u.visible_medals || [];
             
@@ -218,18 +231,24 @@ Object.assign(window.UI, {
             if (visibleIds.length > 0) {
                 displayMedals = earnedMedals.filter(m => visibleIds.includes(m.id));
             } else {
-                displayMedals = earnedMedals.slice(0, 6); // Mostrar las 6 primeras por defecto
+                displayMedals = earnedMedals.slice(0, 6); 
             }
 
             let medalsHTML = '';
             if (displayMedals.length > 0) {
-                medalsHTML = displayMedals.map(m => `<span class="medal-item" title="${m.name}: ${m.desc}">${m.icon}</span>`).join('');
+                medalsHTML = displayMedals.map(m => {
+                    const countBadge = m.count > 1 ? `<div style="position:absolute; bottom:-8px; right:-8px; background:var(--accent); color:#000; font-size:0.7rem; font-weight:900; padding:2px 6px; border-radius:10px; z-index:5; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">x${m.count}</div>` : '';
+                    return `
+                    <div style="position:relative; display:inline-block;" title="${m.name}: ${m.desc}">
+                        <span class="medal-item">${m.icon}</span>
+                        ${countBadge}
+                    </div>`;
+                }).join('');
             } else {
                 medalsHTML = `<span style="color:var(--text-muted); font-size:0.85rem; font-style:italic;">El medallero está vacío.</span>`;
             }
             document.getElementById('prof-medals').innerHTML = medalsHTML;
 
-            // SISTEMA DE RANKING (BASADO EN ÚLTIMAS 10)
             const allUsers = window.CT.dbLocal('u');
             
             let userAverages = allUsers.map(user => {
@@ -251,7 +270,6 @@ Object.assign(window.UI, {
             let finalRank = Math.min(nRank, hRank);
             let isHcRank = hRank < nRank;
 
-            // PODIOS Y MARCOS
             const avCont = document.getElementById('prof-avatar-container');
             avCont.className = 'avatar-lrg prestige-border-none'; 
             
@@ -292,7 +310,6 @@ Object.assign(window.UI, {
         } catch (error) { console.error("Error en showProfile:", error); }
     },
 
-    // --- NUEVO: FILTRO DE LOGROS OCULTOS ---
     showAllMedals: () => {
         const u = window.CT.dbLocal('u').find(x => x.h === window.CT.activeProfHandle);
         if(!u) return;
@@ -302,20 +319,21 @@ Object.assign(window.UI, {
         
         let html = `<div class="medal-showcase-grid">`;
         
-        // Renderizamos el catálogo
         catalog.forEach(m => {
-            const hasIt = earnedMedals.some(earned => earned.id === m.id);
+            const earnedMatch = earnedMedals.find(earned => earned.id === m.id);
+            const hasIt = !!earnedMatch;
             
-            // LA MAGIA: Si no la tiene y es secreta, saltamos a la siguiente (no la mostramos)
             if (!hasIt && m.isSecret) return; 
 
-            html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}">
+            const countBadge = hasIt && earnedMatch.count > 1 ? `<div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:#000; font-size:0.6rem; font-weight:bold; padding:2px 5px; border-radius:4px; z-index:5;">x${earnedMatch.count}</div>` : '';
+
+            html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}" style="position:relative;">
                         <span class="m-icon">${m.icon}</span>
                         <span class="m-name">${m.name}</span>
+                        ${countBadge}
                      </div>`;
         });
         
-        // Agregar la Anomalía Cero si la tiene (Medalla Easter Egg)
         if (earnedMedals.some(m => m.id === 'anomalia_cero')) {
             html += `<div class="medal-slot unlocked" title="Registros anteriores al sistema">
                         <span class="m-icon">💠</span>
