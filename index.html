@@ -376,6 +376,12 @@
                 <div style="position:relative;">
                     <input type="text" id="duel-input" class="duel-input-box" placeholder="[ PREPARANDO ENLACE ]" disabled autocomplete="off">
                     <div id="duel-cd" class="duel-countdown" style="display:none;">3</div>
+                    
+                    <div class="taunt-controls" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
+                        <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('GG')" title="Atajo: Tecla 1">[1] GG</button>
+                        <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('EZ')" title="Atajo: Tecla 2">[2] EZ</button>
+                        <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('💀')" title="Atajo: Tecla 3">[3] 💀</button>
+                    </div>
                 </div>
             </div>
         </section>
