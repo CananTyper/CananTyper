@@ -1,5 +1,5 @@
 /* ================================================================
-    CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA)
+    CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA + FASE 1 CANANTYPER 2.0)
     Lobby, Matchmaking, Selección de Naves, Sincronización y Cinemáticas
    ================================================================ */
 
@@ -131,10 +131,14 @@ window.Multiplayer = {
 
     goOnline: async (user) => {
         try {
+            // Buscamos a ver si tiene el objeto mp creado, si no, se lo inventamos para que no explote
             const userDoc = window.CT.dbLocal('u').find(x => x.h === user.h) || user;
+            if(!userDoc.mp) userDoc.mp = { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [] };
+
             const presenceData = {
                 h: userDoc.h, n: userDoc.n, a: userDoc.a || '', v: userDoc.v || 0,
                 vh: window.Multiplayer.myVehicle,
+                mp: userDoc.mp, // Enviamos nuestras estadísticas al lobby para el HUD
                 status: 'idle', matchId: null, invite: null,
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -177,10 +181,22 @@ window.Multiplayer = {
 
         if (!me && window.Multiplayer.isOnline) return window.Multiplayer.exitLobby();
 
+        // Si me aceptaron el reto o yo acepté, arranco
         if (me.status === 'in_game' && me.matchId && !window.Multiplayer.currentMatchId) {
             window.Multiplayer.currentMatchId = me.matchId;
             window.Multiplayer.initDuelInterface();
             return;
+        }
+
+        // CARGA DE ESTADÍSTICAS VIP DEL JUGADOR
+        if (me.mp) {
+            const total = me.mp.wins + me.mp.losses;
+            const wr = total > 0 ? Math.round((me.mp.wins / total) * 100) : 0;
+            document.getElementById('mp-stat-winrate').innerText = `${wr}%`;
+            document.getElementById('mp-stat-wins').innerText = me.mp.wins;
+            document.getElementById('mp-stat-losses').innerText = me.mp.losses;
+            document.getElementById('mp-stat-avg').innerText = me.mp.avg_cpm || 0;
+            document.getElementById('mp-stat-best').innerText = me.mp.best_cpm || 0;
         }
 
         document.getElementById('mp-online-count').innerText = `${players.length} ONLINE`;
@@ -276,7 +292,6 @@ window.Multiplayer = {
         } catch(e) { console.error(e); alert("Error creando la sala de duelo."); }
     },
 
-    // --- FASE 4: MOTOR DE COMBATE Y CINEMÁTICAS ---
     initDuelInterface: async () => {
         window.UI.show('duel-screen');
         const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
@@ -308,7 +323,6 @@ window.Multiplayer = {
         window.Multiplayer.errorsCount = 0;
         window.Multiplayer.nextCheckpointIdx = 0;
         
-        // HARD RESET: Apagamos transición, anclamos a cero y forzamos repintado para evitar el "salto" visual
         const myVeh = document.getElementById('duel-my-vehicle');
         const myFill = document.getElementById('duel-my-fill');
         const rivalVeh = document.getElementById('duel-rival-vehicle');
@@ -322,7 +336,7 @@ window.Multiplayer = {
         document.getElementById('duel-my-cpm').innerText = '0 CPM';
         document.getElementById('duel-rival-cpm').innerText = '0 CPM';
         
-        void myVeh.offsetWidth; // Forzar reflow del DOM
+        void myVeh.offsetWidth; 
         
         myVeh.style.transition = 'left 1.5s linear'; myFill.style.transition = 'width 1.5s linear';
         rivalVeh.style.transition = 'left 1.5s linear'; rivalFill.style.transition = 'width 1.5s linear';
@@ -346,11 +360,10 @@ window.Multiplayer = {
 
             const rivalDone = isP1 ? d.p2.done : d.p1.done;
             if (rivalDone && !document.getElementById('duel-input').disabled) {
-                window.Multiplayer.endDuel(false);
+                window.Multiplayer.endDuel(false, finalCPM); // Falso = Perdió. Pero le pasamos el CPM si hace falta
             }
         });
 
-        // CINEMÁTICA VS AL INICIAR
         const duelContainer = document.querySelector('.duel-container');
         const cineLayer = document.createElement('div');
         cineLayer.className = 'cinematic-overlay';
@@ -375,7 +388,6 @@ window.Multiplayer = {
             setTimeout(() => {
                 cineLayer.remove();
                 
-                // Cuenta Regresiva Clásica
                 const cd = document.getElementById('duel-cd');
                 cd.style.display = 'block';
                 cd.innerText = "3";
@@ -402,13 +414,11 @@ window.Multiplayer = {
         const wordEl = document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`);
         const isLastWord = window.Multiplayer.currentWordIndex === window.Multiplayer.duelWords.length - 1;
 
-        // LÍMITE ESTRICTO DE ERRORES (Regla Pro: no podés tipear al infinito si te equivocás)
         if (typed.length > targetWord.length + 5) {
             typed = typed.slice(0, targetWord.length + 5);
             input.value = typed;
         }
 
-        // Iluminación Neon de Aciertos y Errores
         if (targetWord.startsWith(typed.trim())) {
             input.classList.remove('error-shake');
             wordEl.style.color = '#ccc';
@@ -419,11 +429,9 @@ window.Multiplayer = {
 
         let isCorrectAndFinished = false;
         
-        // Condición 1: Dio espacio y la palabra es exacta
         if (typed.endsWith(' ') && typed.trim() === targetWord) {
             isCorrectAndFinished = true;
         } 
-        // Condición 2: Es la ÚLTIMA palabra y el texto coincide exacto (No requiere barra espaciadora)
         else if (isLastWord && typed === targetWord) {
             isCorrectAndFinished = true;
         }
@@ -452,12 +460,11 @@ window.Multiplayer = {
 
             if (window.Multiplayer.currentWordIndex >= window.Multiplayer.duelWords.length) {
                 window.Multiplayer.syncProgress(100, currentCPM, true);
-                window.Multiplayer.endDuel(true);
+                window.Multiplayer.endDuel(true, currentCPM);
             } else {
                 document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`).classList.add('active-word');
             }
         } 
-        // Si apretó espacio pero está mal escrito
         else if (typed.endsWith(' ') && typed.trim() !== targetWord) {
             input.value = typed.trim(); 
             window.Multiplayer.errorsCount++;
@@ -481,14 +488,19 @@ window.Multiplayer = {
         } catch(e) { console.error("Error sincronizando:", e); }
     },
 
-    endDuel: (isWinner) => {
+    // --- CANANTYPER 2.0: GUARDADO VIP DE ESTADÍSTICAS ---
+    endDuel: (isWinner, finalCPM_Param) => {
         const input = document.getElementById('duel-input');
         input.disabled = true;
         input.oninput = null;
         
-        const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
-        const chars = window.Multiplayer.duelWords.join(' ').length;
-        const finalCPM = Math.round(chars / timeMin) || 0;
+        let finalCPM = finalCPM_Param;
+        if (!finalCPM) {
+            const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
+            const chars = window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length;
+            finalCPM = Math.round(chars / timeMin) || 0;
+        }
+
         const acc = Math.max(0, 100 - (window.Multiplayer.errorsCount * 2)); 
 
         const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
@@ -497,7 +509,56 @@ window.Multiplayer = {
         const myAv = document.getElementById('duel-my-avatar').src;
         const rivalAv = document.getElementById('duel-rival-avatar').src;
 
-        // CINEMÁTICA DE GLORIFICACIÓN
+        // GUARDADO SILENCIOSO DE ESTADÍSTICAS VIP
+        const saveVIPStats = async () => {
+            try {
+                const myHandle = window.Multiplayer.myHandle;
+                let rivalHandle = "";
+                
+                const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
+                if(matchDoc.exists) {
+                    const md = matchDoc.data();
+                    rivalHandle = md.p1.h === myHandle ? md.p2.h : md.p1.h;
+                }
+
+                const myRef = window.db.collection('users').doc(myHandle);
+                const dbDoc = await myRef.get();
+                let myMP = dbDoc.data().mp || { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [] };
+
+                myMP.races += 1;
+                if (isWinner) myMP.wins += 1; else myMP.losses += 1;
+                if (finalCPM > myMP.best_cpm) myMP.best_cpm = finalCPM;
+
+                myMP.avg_cpm = Math.round(((myMP.avg_cpm * (myMP.races - 1)) + finalCPM) / myMP.races);
+
+                myMP.history.unshift({ rival: rivalHandle, res: isWinner ? 'win' : 'loss', cpm: finalCPM, date: new Date().toISOString() });
+                if (myMP.history.length > 10) myMP.history.pop();
+
+                await myRef.update({ mp: myMP });
+
+                if (rivalHandle) {
+                    const sortedHandles = [myHandle, rivalHandle].sort();
+                    const rivalryId = `${sortedHandles[0]}_${sortedHandles[1]}`;
+                    const rivRef = window.db.collection('mp_rivalries').doc(rivalryId);
+
+                    await window.db.runTransaction(async (t) => {
+                        const rivDoc = await t.get(rivRef);
+                        let rivData = { p1: sortedHandles[0], p2: sortedHandles[1], score_p1: 0, score_p2: 0, last_encounter: firebase.firestore.FieldValue.serverTimestamp() };
+
+                        if (rivDoc.exists) rivData = rivDoc.data();
+
+                        if (isWinner) {
+                            if (myHandle === sortedHandles[0]) rivData.score_p1 += 1; else rivData.score_p2 += 1;
+                        }
+
+                        t.set(rivRef, rivData, { merge: true });
+                    });
+                }
+            } catch (err) { console.error("Error guardando estadísticas 2.0", err); }
+        };
+
+        saveVIPStats();
+
         const winnerName = isWinner ? myName : rivalName;
         const winnerAv = isWinner ? myAv : rivalAv;
         const winnerColor = isWinner ? '#a6ff00' : '#ff4a4a';
@@ -533,7 +594,6 @@ window.Multiplayer = {
             window.Multiplayer.matchUnsubscribe = null;
         }
         
-        // Limpiamos las cinemáticas si las hay
         const cines = document.querySelectorAll('.cinematic-overlay');
         cines.forEach(c => c.remove());
         
