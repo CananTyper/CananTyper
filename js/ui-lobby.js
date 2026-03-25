@@ -9,6 +9,18 @@ Object.assign(window.UI, {
         window.updateDiscordStatus("En el menú principal", `Piloto: ${u.n}`, false);
         document.getElementById('val-display-name').innerText = u.n; document.getElementById('val-username').innerText = u.h; document.getElementById('lobby-avatar').src = u.a || window.CT.defAvatar;
         
+        // EL GATEKEEPER DEL MULTIJUGADOR: Valida la medalla "duelista"
+        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        const hasDuelista = (userDoc.custom_medals || []).includes('duelista') || u.r === 'admin';
+        const mpBtn = document.getElementById('t_btn_multiplayer');
+        if (mpBtn) {
+            if (hasDuelista) {
+                mpBtn.classList.remove('hidden');
+            } else {
+                mpBtn.classList.add('hidden');
+            }
+        }
+
         window.UI.updateUnitVisuals(window.CT.currentUnit); 
         window.UI.renderGlobal(); 
         window.UI.renderTrainDropdown(); 
@@ -150,7 +162,7 @@ Object.assign(window.UI, {
 
         // Actualizar UI del Gestor de Recompensas
         if (conf.medal) {
-            document.querySelector('#arena-screen h5').innerText = "Medalla Oficial"; // Aquí podríamos mapear nombres de medallas si tuviéramos el catálogo
+            document.querySelector('#arena-screen h5').innerText = "Medalla Oficial"; 
             document.querySelector('#arena-screen .arena-panel:nth-child(2)').style.display = 'flex';
         } else {
             // Si elegiste "🚫 Ninguna", ocultamos el panel de recompensas
@@ -201,7 +213,7 @@ Object.assign(window.UI, {
                 clearInterval(window.UI.arenaTimerInterval);
                 cdBox.innerHTML = `<span style="color:var(--error); font-weight:bold; font-size:1.2rem;">EL EVENTO HA CONCLUIDO</span>`;
                 const playBtn = document.querySelector('.btn-arena-play');
-                if (playBtn) playBtn.style.display = 'none'; // Bloquea que sigan entrando si el tiempo se agotó
+                if (playBtn) playBtn.style.display = 'none'; 
                 return;
             }
 
@@ -219,8 +231,8 @@ Object.assign(window.UI, {
             if (playBtn) playBtn.style.display = 'block';
         };
 
-        updateClock(); // Llamada inicial
-        window.UI.arenaTimerInterval = setInterval(updateClock, 60000); // Se actualiza cada minuto para ahorrar CPU
+        updateClock(); 
+        window.UI.arenaTimerInterval = setInterval(updateClock, 60000); 
     },
 
     loadArenaLeaderboard: async (version, tColor) => {
