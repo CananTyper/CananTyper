@@ -324,12 +324,12 @@ window.App = {
             if(docRef.exists) return alert("Ese usuario ya está en uso"); 
             const role = (handle === '@angel') ? 'admin' : 'usuario'; 
             
-            // CANANTYPER 2.0: Estructura base para el multijugador VIP
+            // CANANTYPER 2.0: Cuentas nuevas nacen con streak y stats
             const newUser = { 
                 h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [],
                 createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: '',
                 visible_medals: [],
-                mp: { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [] } // <-- EL NÚCLEO 2.0
+                mp: { wins: 0, losses: 0, races: 0, avg_cpm: 0, best_cpm: 0, history: [], streak: 0 } 
             }; 
             
             await window.db.collection('users').doc(handle).set(newUser); 
