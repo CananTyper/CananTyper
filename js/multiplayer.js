@@ -1,21 +1,24 @@
 /* ================================================================
-    CANANTYPER - MÓDULO MULTIJUGADOR (FASE 4 - MOTOR DE COMBATE)
-    Lobby, Matchmaking, Selección de Naves y Sincronización
+    CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA)
+    Lobby, Matchmaking, Selección de Naves, Sincronización y Cinemáticas
    ================================================================ */
 
 if (!document.getElementById('mp-custom-styles')) {
     const style = document.createElement('style');
     style.id = 'mp-custom-styles';
     style.innerHTML = `
+        /* Scrollbar VIP */
         #multiplayer-screen .custom-scroll::-webkit-scrollbar-thumb { background: #b388ff; border-radius: 10px; border: 2px solid rgba(10,10,15,1); }
         #multiplayer-screen .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9b59b6; }
         
+        /* Selectores de Naves */
         .vehicle-btn { background: transparent; border: 1px solid rgba(179,136,255,0.3); border-radius: 8px; font-size: 1.8rem; padding: 10px 15px; cursor: pointer; transition: 0.3s; filter: grayscale(1); opacity: 0.6; }
         .vehicle-btn:hover { border-color: #b388ff; opacity: 1; filter: grayscale(0); }
         .vehicle-btn.active { border-color: #b388ff; background: rgba(179,136,255,0.1); filter: grayscale(0); opacity: 1; box-shadow: 0 0 15px rgba(179,136,255,0.4); transform: scale(1.1); }
 
+        /* --- MOTOR VISUAL: EL COLISEO (DUEL SCREEN) --- */
         .duel-mode-bg { background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 80%); }
-        .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; position: relative; }
         
         .duel-hud { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border: 1px solid rgba(179,136,255,0.2); border-radius: 15px; padding: 15px 30px; backdrop-filter: blur(10px); }
         .duel-player-card { display: flex; align-items: center; gap: 15px; width: 40%; }
@@ -29,6 +32,7 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-track-line { position: relative; height: 50px; border-bottom: 2px dashed rgba(179,136,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
         .duel-track-line:last-child { border-bottom: none; margin-bottom: 0; }
         
+        /* Magia fluida (interpolación de 1.5s) */
         .duel-vehicle-icon { position: absolute; font-size: 2.5rem; top: 50%; transform: translateY(-50%); left: 0%; transition: left 1.5s linear; z-index: 5; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
         .duel-progress-glow { position: absolute; height: 4px; background: #b388ff; top: 50%; transform: translateY(-50%); left: 0; width: 0%; transition: width 1.5s linear; box-shadow: 0 0 15px #b388ff; z-index: 1; border-radius: 2px; }
 
@@ -44,6 +48,22 @@ if (!document.getElementById('mp-custom-styles')) {
         
         .duel-countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; font-weight: 900; color: #fff; text-shadow: 0 0 40px #b388ff; z-index: 100; pointer-events: none; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        /* --- CINEMÁTICAS E-SPORTS --- */
+        .cinematic-overlay { position: absolute; inset: -20px; background: rgba(5,5,10,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.4s forwards; border-radius: 15px; }
+        .vs-avatars { display: flex; align-items: center; gap: 40px; margin-bottom: 20px; }
+        .vs-avatar-box { text-align: center; animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .vs-avatar-box img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #b388ff; box-shadow: 0 0 30px rgba(179,136,255,0.5); margin-bottom: 15px; object-fit: cover; }
+        .vs-text { font-size: 4rem; font-weight: 900; color: transparent; -webkit-text-stroke: 2px #b388ff; text-shadow: 0 0 30px rgba(179,136,255,0.7); font-style: italic; margin: 0 20px; animation: popIn 0.5s ease; }
+        .winner-box { text-align: center; animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .winner-box img { width: 150px; height: 150px; border-radius: 50%; border: 4px solid #a6ff00; box-shadow: 0 0 50px rgba(166,255,0,0.6); margin-bottom: 20px; object-fit: cover; }
+        .winner-title { font-size: 3rem; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 2px; }
+        .winner-subtitle { color: #fff; font-size: 1.2rem; margin-top: 10px; opacity: 0.9; letter-spacing: 1px; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideIn { from { transform: translateX(-50px) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
     `;
     document.head.appendChild(style);
 }
@@ -157,7 +177,6 @@ window.Multiplayer = {
 
         if (!me && window.Multiplayer.isOnline) return window.Multiplayer.exitLobby();
 
-        // Si me aceptaron el reto o yo acepté, mi estado cambió a in_game y tengo matchId
         if (me.status === 'in_game' && me.matchId && !window.Multiplayer.currentMatchId) {
             window.Multiplayer.currentMatchId = me.matchId;
             window.Multiplayer.initDuelInterface();
@@ -235,7 +254,6 @@ window.Multiplayer = {
         } catch(e) {}
     },
 
-    // --- CREADOR DE SALA (MATCHMAKING) ---
     acceptChallenge: async (rivalHandle) => {
         try {
             const matchId = `duel_${Date.now()}_${Math.floor(Math.random()*1000)}`;
@@ -243,7 +261,6 @@ window.Multiplayer = {
             const tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]'));
             const chosenTrack = tracks[Math.floor(Math.random() * tracks.length)];
 
-            // Crear documento de combate
             await window.db.collection('mp_matches').doc(matchId).set({
                 track: chosenTrack,
                 p1: { h: rivalHandle, prog: 0, cpm: 0, done: false },
@@ -251,7 +268,6 @@ window.Multiplayer = {
                 status: 'starting'
             });
 
-            // Limpiar mi invitación y mandar a ambos a 'in_game' con el matchId
             const batch = window.db.batch();
             batch.update(window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle), { invite: null, status: 'in_game', matchId: matchId });
             batch.update(window.db.collection('mp_lobby').doc(rivalHandle), { status: 'in_game', matchId: matchId });
@@ -260,7 +276,7 @@ window.Multiplayer = {
         } catch(e) { console.error(e); alert("Error creando la sala de duelo."); }
     },
 
-    // --- FASE 4: MOTOR DE COMBATE Y SINCRONIZACIÓN ---
+    // --- FASE 4: MOTOR DE COMBATE Y CINEMÁTICAS ---
     initDuelInterface: async () => {
         window.UI.show('duel-screen');
         const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
@@ -270,20 +286,23 @@ window.Multiplayer = {
         const isP1 = matchData.p1.h === window.Multiplayer.myHandle;
         const rivalHandle = isP1 ? matchData.p2.h : matchData.p1.h;
 
-        // Obtener datos visuales del rival desde el Lobby
         const rivalLobbyDoc = await window.db.collection('mp_lobby').doc(rivalHandle).get();
         const rivalData = rivalLobbyDoc.exists ? rivalLobbyDoc.data() : { n: rivalHandle, a: '', vh: '🚀' };
         const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
 
-        document.getElementById('duel-my-name').innerText = "TÚ";
-        document.getElementById('duel-my-avatar').src = myUser.a || window.CT.defAvatar;
+        const myNameStr = "TÚ";
+        const rivalNameStr = rivalData.n.toUpperCase();
+        const myAvatarUrl = myUser.a || window.CT.defAvatar;
+        const rivalAvatarUrl = rivalData.a || window.CT.defAvatar;
+
+        document.getElementById('duel-my-name').innerText = myNameStr;
+        document.getElementById('duel-my-avatar').src = myAvatarUrl;
         document.getElementById('duel-my-vehicle').innerText = window.Multiplayer.myVehicle;
         
-        document.getElementById('duel-rival-name').innerText = rivalData.n.toUpperCase();
-        document.getElementById('duel-rival-avatar').src = rivalData.a || window.CT.defAvatar;
+        document.getElementById('duel-rival-name').innerText = rivalNameStr;
+        document.getElementById('duel-rival-avatar').src = rivalAvatarUrl;
         document.getElementById('duel-rival-vehicle').innerText = rivalData.vh || '🚀';
 
-        // Preparar Motor Local
         window.Multiplayer.duelWords = matchData.track.text.split(' ');
         window.Multiplayer.currentWordIndex = 0;
         window.Multiplayer.errorsCount = 0;
@@ -295,54 +314,80 @@ window.Multiplayer = {
         const input = document.getElementById('duel-input');
         input.value = '';
         input.disabled = true;
-        input.placeholder = "[ ESPERANDO SEÑAL ]";
+        input.placeholder = "[ PREPARANDO ENLACE ]";
 
-        // Iniciar Escucha de Pista
         window.Multiplayer.matchUnsubscribe = window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).onSnapshot(snap => {
-            if(!snap.exists) return window.Multiplayer.quitDuel(); // El rival destruyó la sala al irse
+            if(!snap.exists) return window.Multiplayer.quitDuel(); 
             const d = snap.data();
             
-            // Sincronización Visual del Rival (Interpolación fluida)
             const rivalProg = isP1 ? d.p2.prog : d.p1.prog;
             document.getElementById('duel-rival-vehicle').style.left = `${rivalProg}%`;
             document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
             document.getElementById('duel-rival-cpm').innerText = `${isP1 ? d.p2.cpm : d.p1.cpm} CPM`;
 
-            // Ver si el rival terminó
             const rivalDone = isP1 ? d.p2.done : d.p1.done;
             if (rivalDone && !document.getElementById('duel-input').disabled) {
-                // Rival ganó
                 window.Multiplayer.endDuel(false);
             }
         });
 
-        // Cuenta Regresiva
-        const cd = document.getElementById('duel-cd');
-        cd.style.display = 'block';
-        cd.innerText = "3";
-        setTimeout(() => cd.innerText = "2", 1000);
-        setTimeout(() => cd.innerText = "1", 2000);
-        setTimeout(() => { 
-            cd.innerText = "¡YA!"; 
-            input.disabled = false;
-            input.placeholder = "";
-            input.focus();
-            window.Multiplayer.startTime = Date.now();
-            
-            // Listener del teclado
-            input.oninput = window.Multiplayer.handleInput;
-            
-            setTimeout(() => cd.style.display = 'none', 1000);
-        }, 3000);
+        // CINEMÁTICA VS AL INICIAR
+        const duelContainer = document.querySelector('.duel-container');
+        const cineLayer = document.createElement('div');
+        cineLayer.className = 'cinematic-overlay';
+        cineLayer.innerHTML = `
+            <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 40px; opacity: 0.7;">PREPARANDO PISTA</h3>
+            <div class="vs-avatars">
+                <div class="vs-avatar-box">
+                    <img src="${myAvatarUrl}">
+                    <div style="color: #b388ff; font-weight: bold; font-size: 1.3rem;">${myUser.n.toUpperCase()}</div>
+                </div>
+                <div class="vs-text">VS</div>
+                <div class="vs-avatar-box" style="animation-delay: 0.2s;">
+                    <img src="${rivalAvatarUrl}" style="border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4);">
+                    <div style="color: #ff4a4a; font-weight: bold; font-size: 1.3rem;">${rivalNameStr}</div>
+                </div>
+            </div>
+        `;
+        duelContainer.appendChild(cineLayer);
+
+        setTimeout(() => {
+            cineLayer.style.animation = 'fadeOut 0.4s forwards';
+            setTimeout(() => {
+                cineLayer.remove();
+                
+                // Cuenta Regresiva Clásica
+                const cd = document.getElementById('duel-cd');
+                cd.style.display = 'block';
+                cd.innerText = "3";
+                setTimeout(() => cd.innerText = "2", 1000);
+                setTimeout(() => cd.innerText = "1", 2000);
+                setTimeout(() => { 
+                    cd.innerText = "¡YA!"; 
+                    input.disabled = false;
+                    input.placeholder = "";
+                    input.focus();
+                    window.Multiplayer.startTime = Date.now();
+                    input.oninput = window.Multiplayer.handleInput;
+                    setTimeout(() => cd.style.display = 'none', 1000);
+                }, 3000);
+
+            }, 400);
+        }, 3500);
     },
 
     handleInput: (e) => {
         const input = e.target;
-        const typed = input.value;
+        let typed = input.value;
         const targetWord = window.Multiplayer.duelWords[window.Multiplayer.currentWordIndex];
         const wordEl = document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`);
 
-        // Verificando errores en tiempo real
+        // LÍMITE ESTRICTO DE ERRORES (Regla TypeRacer: no podés tipear al infinito si te equivocás)
+        if (typed.length > targetWord.length + 5) {
+            typed = typed.slice(0, targetWord.length + 5);
+            input.value = typed;
+        }
+
         if (targetWord.startsWith(typed.trim())) {
             input.classList.remove('error-shake');
             wordEl.style.color = '#ccc';
@@ -351,26 +396,21 @@ window.Multiplayer = {
             wordEl.style.color = '#ff4a4a';
         }
 
-        // Palabra completada (Presionó Espacio)
         if (typed.endsWith(' ')) {
             if (typed.trim() === targetWord) {
-                // Correcto
                 input.value = '';
                 wordEl.classList.remove('active-word');
                 wordEl.classList.add('correct');
                 window.Multiplayer.currentWordIndex++;
                 
-                // Progreso Local fluido
                 const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
                 document.getElementById('duel-my-vehicle').style.left = `${rawProg}%`;
                 document.getElementById('duel-my-fill').style.width = `${rawProg}%`;
 
-                // CPM Actualizado Localmente
                 const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
                 const currentCPM = Math.round((window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length) / timeMin) || 0;
                 document.getElementById('duel-my-cpm').innerText = `${currentCPM} CPM`;
 
-                // EVALUACIÓN DE CHECKPOINTS A FIREBASE (Ahorro de Cuota)
                 if (window.Multiplayer.nextCheckpointIdx < window.Multiplayer.checkpoints.length) {
                     const targetProg = window.Multiplayer.checkpoints[window.Multiplayer.nextCheckpointIdx];
                     if (rawProg >= targetProg) {
@@ -379,7 +419,6 @@ window.Multiplayer = {
                     }
                 }
 
-                // Fin del Texto
                 if (window.Multiplayer.currentWordIndex >= window.Multiplayer.duelWords.length) {
                     window.Multiplayer.syncProgress(100, currentCPM, true);
                     window.Multiplayer.endDuel(true);
@@ -387,7 +426,6 @@ window.Multiplayer = {
                     document.getElementById(`dw-${window.Multiplayer.currentWordIndex}`).classList.add('active-word');
                 }
             } else {
-                // Error al dar espacio
                 input.value = typed.trim(); 
                 window.Multiplayer.errorsCount++;
                 wordEl.classList.add('error');
@@ -419,16 +457,38 @@ window.Multiplayer = {
         const timeMin = (Date.now() - window.Multiplayer.startTime) / 60000;
         const chars = window.Multiplayer.duelWords.join(' ').length;
         const finalCPM = Math.round(chars / timeMin) || 0;
-        
-        const acc = Math.max(0, 100 - (window.Multiplayer.errorsCount * 2)); // Precisión Beta
+        const acc = Math.max(0, 100 - (window.Multiplayer.errorsCount * 2)); 
 
-        document.getElementById('duel-cd').style.display = 'block';
-        document.getElementById('duel-cd').style.fontSize = '4rem';
-        document.getElementById('duel-cd').innerHTML = isWinner ? `<span style="color:#a6ff00; text-shadow: 0 0 20px #a6ff00;">¡VICTORIA!</span><br><span style="font-size:1.5rem;">${finalCPM} CPM | ${acc}% Precisión</span>` : `<span style="color:#ff4a4a; text-shadow: 0 0 20px #ff4a4a;">DERROTA</span>`;
+        const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
+        const myName = myUser.n.toUpperCase();
+        const rivalName = document.getElementById('duel-rival-name').innerText;
+        const myAv = document.getElementById('duel-my-avatar').src;
+        const rivalAv = document.getElementById('duel-rival-avatar').src;
 
-        // El ganador destruye la sala tras 5 segundos
+        // CINEMÁTICA DE GLORIFICACIÓN
+        const winnerName = isWinner ? myName : rivalName;
+        const winnerAv = isWinner ? myAv : rivalAv;
+        const winnerColor = isWinner ? '#a6ff00' : '#ff4a4a';
+        const msg = isWinner ? '¡TE LLEVAS LA VICTORIA!' : 'HA DOMINADO LA PISTA';
+
+        const duelContainer = document.querySelector('.duel-container');
+        const cineLayer = document.createElement('div');
+        cineLayer.className = 'cinematic-overlay';
+        cineLayer.innerHTML = `
+            <div class="winner-box">
+                <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 20px; opacity: 0.7;">COMBATE FINALIZADO</h3>
+                <img src="${winnerAv}" style="border-color: ${winnerColor}; box-shadow: 0 0 40px ${winnerColor}80;">
+                <h2 class="winner-title" style="color: ${winnerColor}; text-shadow: 0 0 20px ${winnerColor}80;">${winnerName}</h2>
+                <div class="winner-subtitle">${msg}</div>
+                <div style="margin-top: 20px; font-family: monospace; font-size: 1.5rem; color: #ccc;">
+                    ${isWinner ? finalCPM + ' CPM | ' + acc + '% PREC' : 'RIVAL INALCANZABLE'}
+                </div>
+            </div>
+        `;
+        duelContainer.appendChild(cineLayer);
+
         setTimeout(() => {
-            if(isWinner) {
+            if(isWinner && window.Multiplayer.currentMatchId) {
                 window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(e=>{});
             }
             window.Multiplayer.quitDuel();
@@ -441,13 +501,15 @@ window.Multiplayer = {
             window.Multiplayer.matchUnsubscribe = null;
         }
         
-        // Limpiamos la sala si salimos antes de tiempo
+        // Limpiamos las cinemáticas si las hay
+        const cines = document.querySelectorAll('.cinematic-overlay');
+        cines.forEach(c => c.remove());
+        
         if(window.Multiplayer.currentMatchId) {
             window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(e=>{});
             window.Multiplayer.currentMatchId = null;
         }
 
-        // Volver mi estado a idle en el lobby
         if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
             try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle', matchId: null }); } catch(e){}
         }
