@@ -87,7 +87,7 @@ Object.assign(window.UI, {
         });
 
         if (!user.createdAt) {
-            earnedMedals.push({ id: 'anomalia_cero', icon: '💠', name: 'Beta Tester', desc: 'Registros anteriores al sistema', count: 1, isStackable: false });
+            earnedMedals.push({ id: 'anomalia_cero', icon: '🧪', name: 'Beta Tester', desc: 'Registros anteriores al sistema', count: 1, isStackable: false });
         }
 
         return earnedMedals;
