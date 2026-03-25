@@ -284,6 +284,54 @@
             </div>
         </section>
 
+        <section id="multiplayer-screen" class="screen hidden arena-bg" style="padding: 20px;">
+            <header class="top-nav" style="border: none; position: relative; z-index: 2;">
+                <div style="display:flex; align-items:center; gap: 15px;">
+                    <button onclick="window.Multiplayer.exitLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← VOLVER AL MENÚ</button>
+                    <span style="color: #b388ff; font-family: monospace; font-weight: bold; background: rgba(179,136,255,0.1); padding: 5px 10px; border-radius: 5px;">SALA DE ESPERA VIP</span>
+                </div>
+            </header>
+
+            <div class="arena-container custom-scroll" style="overflow-y: auto; max-height: calc(100vh - 100px); padding-bottom: 30px;">
+                
+                <div class="arena-hero" style="padding-bottom: 20px;">
+                    <div style="font-size: 3.5rem; filter: drop-shadow(0 0 15px rgba(179,136,255,0.5)); margin-bottom: 10px;">⚔️</div>
+                    <h2 class="arena-title">Coliseo de Duelos</h2>
+                    <p class="arena-subtitle">Multijugador Privado 1v1</p>
+                    
+                    <div style="margin-top: 15px; margin-bottom: 10px; color: #ccc; font-size: 1rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+                        <p style="margin:0;">Reta a otros duelistas conectados en tiempo real.</p>
+                        <p style="margin:5px 0 0 0; color: #b388ff; font-weight:bold; font-size: 0.85rem;">Las partidas en fase BETA no afectan tu promedio general.</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 10px;">
+                    <div class="arena-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 10px;">
+                            <h4 class="arena-panel-title" style="border: none; padding: 0; margin: 0;">🌐 DUELISTAS CONECTADOS</h4>
+                            <span id="mp-online-count" style="color: #b388ff; font-weight: bold; font-family: monospace; font-size: 1.1rem;">0 ONLINE</span>
+                        </div>
+                        <div class="custom-scroll" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
+                            <ul class="st-list" id="mp-online-list">
+                                <li style="text-align: center; color: #777; padding: 20px;">Escaneando red de la Arena...</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="arena-panel">
+                        <h4 class="arena-panel-title" style="margin-bottom: 15px; border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 10px;">📩 RETOS RECIBIDOS</h4>
+                        <div class="custom-scroll" style="max-height: 350px; overflow-y: auto; padding-right: 5px;" id="mp-invites-list">
+                            <div style="text-align: center; color: #777; padding: 30px 10px; font-size: 0.85rem;">
+                                <div style="font-size: 2rem; opacity: 0.5; margin-bottom: 10px;">🛡️</div>
+                                Ningún desafío pendiente.<br>Estás a salvo por ahora.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
         <section id="info-screen" class="screen hidden">
             <header class="top-nav" style="border-bottom: 1px solid var(--border);">
                 <div>
@@ -674,6 +722,7 @@
     <script src="js/ui-profile.js"></script>
     <script src="js/ui-stats.js"></script>
     
+    <script src="js/multiplayer.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
