@@ -140,6 +140,42 @@
             </div>
         </section>
 
+        <section id="game-screen" class="screen hidden">
+            <div class="game-container" style="max-width: 950px; width: 100%;">
+                
+                <div class="game-hud">
+                    <div class="hud-box"><small id="t_game_time">TIEMPO</small><span id="game-timer">0s</span></div>
+                    <div class="hud-box"><small id="game-unit-label" style="color: var(--p);">CPM</small><span id="game-speed-display" class="val-blurrable">0</span></div>
+                </div>
+
+                <div class="progress-container" style="margin-bottom: 25px; position:relative;">
+                    <div id="race-progress" class="progress-bar"></div>
+                    <div id="ghost-progress" class="ghost-bar hidden"></div>
+                </div>
+
+                <div id="target-text" class="game-text-display"></div>
+                <input type="text" id="game-input" class="game-input-box" placeholder="" autocomplete="off">
+                
+                <div id="in-game-controls" class="game-controls">
+                    <button id="t_btn_back" onclick="App.quitRace()" class="btn-outline">Volver</button>
+                    <button id="t_btn_retry" onclick="App.retryRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Repetir</button>
+                    <button id="t_btn_new" onclick="App.nextRace()" class="btn-outline" style="color: var(--p); border-color: var(--p);">Nueva</button>
+                </div>
+
+                <div id="game-result-modal" class="game-result hidden">
+                    <h2 id="final-speed-display" class="result-score">0 CPM</h2>
+                    
+                    <div id="pb-alert" class="hidden pb-badge"><span id="t_game_pb">👑 ¡NUEVO RÉCORD PERSONAL!</span></div>
+                    
+                    <div class="result-actions" style="margin-top: 25px;">
+                        <button id="t_btn_retry2" onclick="App.retryRace()" class="btn-outline">Repetir</button>
+                        <button id="t_btn_cont" onclick="App.nextRace()" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Continuar</button>
+                        <button id="t_btn_back2" onclick="App.quitRace()" class="btn-outline">Volver</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="arena-screen" class="screen hidden arena-bg" style="padding: 20px;">
             <header class="top-nav" style="border: none; position: relative; z-index: 2;">
                 <div style="display:flex; align-items:center; gap: 15px;">
