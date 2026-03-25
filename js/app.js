@@ -145,7 +145,11 @@ window.App = {
     },
 
     openMultiplayerLobby: () => {
-        alert("Iniciando conexión con el servidor dedicado de Duelos...\n\n[El módulo multiplayer.js está en desarrollo]");
+        if(window.Multiplayer) {
+            window.Multiplayer.initLobby();
+        } else {
+            alert("El módulo multijugador se está inicializando...");
+        }
     },
 
     quitArenaRace: () => {
