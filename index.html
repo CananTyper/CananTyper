@@ -282,14 +282,27 @@
                     <div style="font-size: 3.5rem; filter: drop-shadow(0 0 15px rgba(179,136,255,0.5)); margin-bottom: 10px;">⚔️</div>
                     <h2 class="arena-title">Coliseo de Duelos</h2>
                     <p class="arena-subtitle">Multijugador Privado 1v1</p>
-                    
-                    <div style="margin-top: 15px; margin-bottom: 10px; color: #ccc; font-size: 1rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-                        <p style="margin:0;">Reta a otros duelistas conectados en tiempo real.</p>
-                        <p style="margin:5px 0 0 0; color: #b388ff; font-weight:bold; font-size: 0.85rem;">Las partidas en fase BETA no afectan tu promedio general.</p>
-                    </div>
                 </div>
 
-                <div class="vehicle-selector" style="text-align:center; margin-top: 15px; margin-bottom: 25px;">
+                <div class="arena-info-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 20px;">
+                     <div class="arena-panel" style="text-align: center;">
+                         <h4 class="arena-panel-title" style="justify-content:center;">WINRATE</h4>
+                         <h2 id="mp-stat-winrate" style="color: #a6ff00; font-size: 2.5rem; margin: 10px 0;">0%</h2>
+                         <p style="color: #777; font-size: 0.8rem; margin:0;"><span id="mp-stat-wins">0</span>V - <span id="mp-stat-losses">0</span>D</p>
+                     </div>
+                     <div class="arena-panel" style="text-align: center;">
+                         <h4 class="arena-panel-title" style="justify-content:center;">PROM. DUELOS</h4>
+                         <h2 id="mp-stat-avg" style="color: #b388ff; font-size: 2.5rem; margin: 10px 0;">0</h2>
+                         <p style="color: #777; font-size: 0.8rem; margin:0;">Mejor: <span id="mp-stat-best">0</span> CPM</p>
+                     </div>
+                     <div class="arena-panel" style="text-align: center; border-color: rgba(255,74,74,0.3); background: rgba(255,74,74,0.05);">
+                         <h4 class="arena-panel-title" style="justify-content:center; color: #ff4a4a;">NÉMESIS ACTUAL</h4>
+                         <h2 id="mp-stat-nemesis" style="color: #ff4a4a; font-size: 1.2rem; margin: 15px 0;">Aún sin némesis</h2>
+                         <p id="mp-stat-nemesis-score" style="color: #ff4a4a; font-size: 0.8rem; margin:0; opacity: 0.8;">Juega más duelos para forjar historia</p>
+                     </div>
+                </div>
+
+                <div class="vehicle-selector" style="text-align:center; margin-bottom: 25px;">
                     <h4 style="color:#b388ff; font-size:0.85rem; letter-spacing:2px; margin-bottom:10px; border-bottom: 1px dashed rgba(179,136,255,0.3); display:inline-block; padding-bottom:5px;">ELIGE TU NAVE DE COMBATE</h4>
                     <div id="mp-vehicles" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top: 10px;">
                         </div>
