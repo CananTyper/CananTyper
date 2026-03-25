@@ -95,21 +95,46 @@ Object.assign(window.UI, {
     arenaCurrentConfig: null,
     arenaUnsubScores: null,
     hasArenaPass: false,
+    hasSeenEndPopup: false,
     
     initArenaListener: () => {
-        const u = window.CT.ses();
-        if (u) {
-            const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
-            // Evaluamos si puede participar/ver premios (Podés agregar medallas específicas aquí)
-            window.UI.hasArenaPass = userDoc.r === 'admin' || true; // Por ahora todos pueden ver el pop-up si participan
-        }
-
+        // Escuchamos el maestro de CananStudio
         window.db.collection('config').doc('arena_event').onSnapshot(doc => {
             if (doc.exists) {
                 window.UI.arenaCurrentConfig = doc.data();
+                window.UI.evaluateArenaPass(); // Verificamos credenciales ANTES de renderizar
                 window.UI.processArenaEvent();
             }
         });
+    },
+
+    evaluateArenaPass: () => {
+        const conf = window.UI.arenaCurrentConfig;
+        const u = window.CT.ses();
+        if (!u || !conf) return;
+
+        const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+        let pass = true;
+
+        // 1. Validar CPM Mínimo
+        if (conf.minCpm > 0) {
+            let maxCpm = 0;
+            if (userDoc.hi && userDoc.hi.length > 0) {
+                maxCpm = Math.max(...userDoc.hi.filter(v => typeof v === 'number'));
+            }
+            if (maxCpm < conf.minCpm) pass = false;
+        }
+
+        // 2. Validar Medalla Requerida
+        if (conf.reqMedal && conf.reqMedal.trim() !== '') {
+            let medals = userDoc.custom_medals || []; 
+            if (!medals.includes(conf.reqMedal.trim())) pass = false;
+        }
+
+        // 3. Admins siempre tienen pase
+        if (userDoc.r === 'admin') pass = true;
+
+        window.UI.hasArenaPass = pass;
     },
 
     processArenaEvent: () => {
@@ -126,12 +151,17 @@ Object.assign(window.UI, {
 
         // --- 1. ACTUALIZAR TEXTOS DESDE CANANSTUDIO ---
         const arTitle = document.getElementById('ar-title');
+        const arSub = document.getElementById('ar-subtitle');
         const badge = document.getElementById('arena-status-badge');
         const playBtn = document.getElementById('btn-play-arena');
 
         if(arTitle) {
             arTitle.innerText = conf.title || "Evento Oficial";
             arTitle.style.color = "#fff"; arTitle.style.textShadow = `0 0 20px rgba(179,136,255,0.5)`;
+        }
+        if(arSub) {
+            arSub.innerText = conf.msg || "Conectando con CananStudio";
+            arSub.style.color = tColor;
         }
         
         // --- 2. LÓGICA DE TIEMPO Y ESTADO ---
@@ -150,13 +180,13 @@ Object.assign(window.UI, {
             document.getElementById('ar-cd-m').innerText = "00"; document.getElementById('ar-cd-s').innerText = "00";
             if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
 
-            // DISPARAR POPUP DE VICTORIA (Solo si no lo vio ya para esta versión)
-            const hasSeen = localStorage.getItem(`ct_arena_winner_${conf.version}`);
-            if (!hasSeen && window.UI.hasArenaPass) {
+            // DISPARAR POPUP DE VICTORIA (Solo si no lo vio ya para esta versión y TIENE PASE)
+            const hasSeenWinner = localStorage.getItem(`ct_aw_${conf.version}`);
+            if (!hasSeenWinner && window.UI.hasArenaPass) {
                 window.UI.resolveArenaWinner(conf);
             }
 
-            if(navBtn && !conf.active) navBtn.style.display = 'none'; // Ocultar del lobby si se apagó de CananStudio
+            if(navBtn && !conf.active) navBtn.style.display = 'none'; // Ocultar del lobby si se apagó
 
         } else {
             // EN CURSO
@@ -166,9 +196,26 @@ Object.assign(window.UI, {
                 badge.style.color = tColor; badge.style.borderColor = tColor; badge.style.background = tBg;
             }
             if(playBtn) {
-                playBtn.disabled = false; playBtn.innerText = "INICIAR CARRERA OFICIAL"; playBtn.style.filter = "none"; playBtn.style.boxShadow = `0 0 20px rgba(179,136,255,0.4)`;
+                // Validación visual de botón si tiene el pase
+                if (window.UI.hasArenaPass) {
+                    playBtn.disabled = false; playBtn.innerText = "INICIAR CARRERA OFICIAL"; playBtn.style.filter = "none"; playBtn.style.boxShadow = `0 0 20px rgba(179,136,255,0.4)`;
+                } else {
+                    playBtn.disabled = true; playBtn.innerText = "NO CLASIFICADO"; playBtn.style.filter = "grayscale(1)"; playBtn.style.boxShadow = "none";
+                }
             }
             if (conf.endTime) window.UI.startArenaCountdown(conf.endTime);
+
+            // Disparar Pop-up de Bienvenida SOLO a los clasificados
+            const hasSeenWelcome = localStorage.getItem(`ct_awel_${conf.version}`);
+            if (!hasSeenWelcome && window.UI.hasArenaPass) {
+                const modal = document.getElementById('announcement-modal');
+                document.getElementById('motd-icon').innerText = '🟣';
+                document.getElementById('motd-title').innerText = conf.title;
+                document.getElementById('motd-title').style.color = tColor; 
+                document.getElementById('motd-msg').innerText = "¡Has clasificado a la Arena!\n\n" + conf.msg;
+                modal.classList.remove('hidden');
+                localStorage.setItem(`ct_awel_${conf.version}`, 'true');
+            }
         }
 
         // --- 3. CONEXIÓN A LA TABLA EN VIVO ---
@@ -180,6 +227,12 @@ Object.assign(window.UI, {
             .onSnapshot(snap => {
                 const scores = snap.docs.map(doc => doc.data());
                 window.UI.renderArenaLeaderboard(scores, tColor);
+
+                // Si no tenía pase, pero resulta que está en la tabla (porque jugó antes de que el admin subiera los requisitos), le damos el pase para que pueda ver al ganador
+                const u = window.CT.ses();
+                if (u && !window.UI.hasArenaPass && scores.some(s => s.h === u.h)) {
+                    window.UI.hasArenaPass = true;
+                }
             });
     },
 
@@ -191,7 +244,7 @@ Object.assign(window.UI, {
             const distance = endDate - Date.now();
             if (distance < 0) {
                 clearInterval(window.UI.arenaTimerInterval);
-                window.UI.processArenaEvent(); // Re-evaluar estado (cerrar torneo)
+                window.UI.processArenaEvent(); // Si el tiempo llega a 0, fuerza el recálculo
                 return;
             }
 
@@ -241,7 +294,7 @@ Object.assign(window.UI, {
 
     resolveArenaWinner: async (conf) => {
         try {
-            // Buscamos al Top 1 de la base de datos
+            // Buscamos al Top 1 de la base de datos automáticamente
             const snap = await window.db.collection('arena_scores').where('version', '==', conf.version).orderBy('score', 'desc').limit(1).get();
             if(!snap.empty) {
                 const winner = snap.docs[0].data();
@@ -254,15 +307,17 @@ Object.assign(window.UI, {
                 
                 const medalEl = document.getElementById('aw-medal');
                 if (conf.medal && conf.medal !== '') {
-                    // Si configuraste una medalla en CananStudio (Ej: Obsidiana), la mostramos. Por defecto usamos un trofeo o cristal 🔮
-                    medalEl.innerText = "🔮"; 
+                    // Si el admin puso un emoji en CananStudio, lo muestra
+                    medalEl.innerText = conf.medal; 
                     medalEl.style.display = 'block';
                 } else {
-                    medalEl.style.display = 'none';
+                    // Por defecto un trofeo para que no quede vacío si el admin no puso nada
+                    medalEl.innerText = "🏆";
+                    medalEl.style.display = 'block';
                 }
 
                 document.getElementById('arena-winner-modal').classList.remove('hidden');
-                localStorage.setItem(`ct_arena_winner_${conf.version}`, 'true'); // Marcar como visto
+                localStorage.setItem(`ct_aw_${conf.version}`, 'true'); // Marcar como visto para no spamear
             }
         } catch (e) { console.error("No se pudo calcular el ganador:", e); }
     }
