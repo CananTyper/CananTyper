@@ -168,15 +168,26 @@ Object.assign(window.UI, {
             window.CT.activeProfHandle = u.h;
             const scores = await window.App.getUserScores(u.h);
             
-            // LÓGICA DE VERIFICACIÓN (1: Oficial, 2: Sistema)
+            // --- LÓGICA DE VERIFICACIÓN VISUAL (E-SPORTS DESIGN) ---
             let verifiedSVG = '';
             if (u.v === 1) {
-                verifiedSVG = `<svg title="Verificado Oficial" style="width:20px; height:20px; margin-left:6px; vertical-align:text-bottom; fill:var(--p); filter:drop-shadow(0 0 4px var(--p));" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+                // Sello Dentado Oficial (Color del Tema con Checkmark Negro)
+                verifiedSVG = `<svg title="Verificado Oficial" style="width:24px; height:24px; filter:drop-shadow(0 0 5px var(--p));" viewBox="0 0 24 24">
+                                  <path d="M11.99 2.5l-2.6 1.83-3.13-.53-.88 3.05-2.73 1.63L3.89 12l-1.24 3.52 2.73 1.63.88 3.05 3.13-.53 2.6 1.83 2.6-1.83 3.13.53.88-3.05 2.73-1.63L20.11 12l1.24-3.52-2.73-1.63-.88-3.05-3.13.53-2.6-1.83z" fill="var(--p)"/>
+                                  <path d="M10.5 15.5l-4-4 1.5-1.5 2.5 2.5 6-6 1.5 1.5-7.5 7.5z" fill="#000"/>
+                               </svg>`;
             } else if (u.v === 2) {
-                verifiedSVG = `<svg title="Cuenta del Sistema" style="width:20px; height:20px; margin-left:6px; vertical-align:text-bottom; fill:#90a4ae; filter:drop-shadow(0 0 2px #90a4ae);" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>`;
+                // Sello de Sistema (Hexágono Platino Brillante con Núcleo Tecnológico)
+                verifiedSVG = `<svg title="Cuenta del Sistema" style="width:22px; height:22px; filter:drop-shadow(0 0 6px rgba(226,232,240,0.6));" viewBox="0 0 24 24">
+                                  <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#e2e8f0"/>
+                                  <path d="M12 4.5l-6 3.4v8.2l6 3.4 6-3.4v-8.2l-6-3.4z" fill="#0a0a0c"/>
+                                  <path d="M12 15.5l-3.5-2V9.5L12 7.5l3.5 2v4l-3.5 2z" fill="#e2e8f0"/>
+                               </svg>`;
             }
 
-            document.getElementById('prof-name').innerHTML = `${u.n} ${verifiedSVG}`; 
+            // TÉCNICA QUIRÚRGICA DE ALINEACIÓN: flexbox inline anida el nombre y el SVG perfectamente al centro vertical.
+            document.getElementById('prof-name').innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;">${u.n} ${verifiedSVG}</span>`; 
+            
             document.getElementById('prof-handle').innerText = u.h; 
             document.getElementById('prof-img').src = u.a || window.CT.defAvatar; 
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
