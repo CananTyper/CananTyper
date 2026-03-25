@@ -1,6 +1,6 @@
 /* ================================================================
     CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA + CANANTYPER 2.0)
-    Lobby, Matchmaking, Sincronización, Cinemáticas y Taunts (FIXED)
+    Lobby, Matchmaking, Sincronización, Cinemáticas, Taunts y MUERTE SÚBITA
    ================================================================ */
 
 if (!document.getElementById('mp-custom-styles')) {
@@ -14,18 +14,29 @@ if (!document.getElementById('mp-custom-styles')) {
         .vehicle-btn:hover { border-color: #b388ff; opacity: 1; filter: grayscale(0); }
         .vehicle-btn.active { border-color: #b388ff; background: rgba(179,136,255,0.1); filter: grayscale(0); opacity: 1; box-shadow: 0 0 15px rgba(179,136,255,0.4); transform: scale(1.1); }
 
-        .duel-mode-bg { background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 80%); }
+        .duel-mode-bg { background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 80%); transition: 0.5s; }
+        .duel-mode-bg.hc-active { background: radial-gradient(circle at 50% 0%, #300000 0%, #050000 80%); }
+        
         .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 80vh; justify-content: center;}
         
         .duel-hud { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border: 1px solid rgba(179,136,255,0.2); border-radius: 15px; padding: 15px 30px; backdrop-filter: blur(10px); z-index: 10;}
+        .hc-active .duel-hud { border-color: rgba(255,74,74,0.4); box-shadow: 0 0 20px rgba(255,74,74,0.1); }
+        
         .duel-player-card { display: flex; align-items: center; gap: 15px; width: 40%; position: relative; }
         .duel-player-card.right { flex-direction: row-reverse; text-align: right; }
-        .duel-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b388ff; box-shadow: 0 0 15px rgba(179,136,255,0.3); object-fit: cover; }
+        .duel-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b388ff; box-shadow: 0 0 15px rgba(179,136,255,0.3); object-fit: cover; transition: 0.3s; }
+        .hc-active .duel-avatar { border-color: #ff4a4a; box-shadow: 0 0 15px rgba(255,74,74,0.3); }
+        
         .duel-name { color: #fff; font-size: 1.2rem; font-weight: bold; display: block; }
         .duel-cpm { color: #b388ff; font-family: monospace; font-size: 1.1rem; font-weight: bold; }
-        .duel-vs { font-size: 2rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1px #b388ff; text-shadow: 0 0 15px rgba(179,136,255,0.5); font-style: italic; }
+        .hc-active .duel-cpm { color: #ff4a4a; }
+        
+        .duel-vs { font-size: 2rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1px #b388ff; text-shadow: 0 0 15px rgba(179,136,255,0.5); font-style: italic; transition: 0.3s; }
+        .hc-active .duel-vs { -webkit-text-stroke: 1px #ff4a4a; text-shadow: 0 0 15px rgba(255,74,74,0.5); }
 
-        .duel-tracks-wrapper { background: rgba(0,0,0,0.6); border: 1px solid rgba(179,136,255,0.3); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); z-index: 10;}
+        .duel-tracks-wrapper { background: rgba(0,0,0,0.6); border: 1px solid rgba(179,136,255,0.3); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); z-index: 10; transition: 0.3s;}
+        .hc-active .duel-tracks-wrapper { border-color: rgba(255,74,74,0.3); }
+        
         .duel-track-line { position: relative; height: 50px; border-bottom: 2px dashed rgba(179,136,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
         .duel-track-line:last-child { border-bottom: none; margin-bottom: 0; }
         
@@ -37,19 +48,26 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-text-box .correct { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.4); }
         .duel-text-box .error { color: #ff4a4a; text-decoration: underline; text-shadow: 0 0 8px rgba(255,74,74,0.6); }
         .duel-text-box .active-word { border-bottom: 2px solid #b388ff; color: #ccc; }
+        .hc-active .duel-text-box .active-word { border-bottom-color: #ff4a4a; }
 
         .duel-input-box { width: 100%; background: rgba(0,0,0,0.5); border: 2px solid #b388ff; border-radius: 12px; padding: 20px; color: #fff; font-size: 1.5rem; text-align: center; outline: none; transition: 0.3s; box-shadow: 0 0 20px rgba(179,136,255,0.1); z-index: 10;}
+        .hc-active .duel-input-box { border-color: #ff4a4a; box-shadow: 0 0 20px rgba(255,74,74,0.1); }
         .duel-input-box:focus { box-shadow: 0 0 30px rgba(179,136,255,0.4); background: rgba(179,136,255,0.05); }
+        .hc-active .duel-input-box:focus { box-shadow: 0 0 30px rgba(255,74,74,0.4); background: rgba(255,74,74,0.05); }
         .duel-input-box.error-shake { animation: shake 0.3s; border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4); }
         
         .duel-countdown { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12rem; font-weight: 900; color: #fff; text-shadow: 0 0 50px #b388ff, 0 0 20px #b388ff; z-index: 9999; pointer-events: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .hc-active .duel-countdown { text-shadow: 0 0 50px #ff4a4a, 0 0 20px #ff4a4a; }
+        
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
-        .cinematic-overlay { position: absolute; inset: -20px; background: rgba(5,5,10,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.4s forwards; border-radius: 15px; }
+        .cinematic-overlay { position: absolute; inset: -20px; background: rgba(5,5,10,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.4s forwards; border-radius: 15px; overflow: hidden; }
         .vs-avatars { display: flex; align-items: center; gap: 40px; margin-bottom: 20px; }
         .vs-avatar-box { text-align: center; animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         .vs-avatar-box img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #b388ff; box-shadow: 0 0 30px rgba(179,136,255,0.5); margin-bottom: 15px; object-fit: cover; }
+        .hc-active .vs-avatar-box img { border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.5); }
         .vs-text { font-size: 4rem; font-weight: 900; color: transparent; -webkit-text-stroke: 2px #b388ff; text-shadow: 0 0 30px rgba(179,136,255,0.7); font-style: italic; margin: 0 20px; animation: popIn 0.5s ease; }
+        .hc-active .vs-text { -webkit-text-stroke: 2px #ff4a4a; text-shadow: 0 0 30px rgba(255,74,74,0.7); }
         
         .winner-box { text-align: center; animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; width: 100%; z-index: 1001;}
         .winner-avatar-wrapper { position: relative; display: inline-block; margin-bottom: 20px; }
@@ -59,12 +77,13 @@ if (!document.getElementById('mp-custom-styles')) {
         
         .taunt-btn { background: rgba(0,0,0,0.6); border: 1px solid #b388ff; color: #b388ff; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; font-family: monospace; font-weight: bold;}
         .taunt-btn:hover { background: #b388ff; color: #000; box-shadow: 0 0 10px #b388ff; }
+        .hc-active .taunt-btn { border-color: #ff4a4a; color: #ff4a4a; }
+        .hc-active .taunt-btn:hover { background: #ff4a4a; color: #000; box-shadow: 0 0 10px #ff4a4a; }
         
-        /* Emote Normal (En carrera) */
         .taunt-popup { position: absolute; background: rgba(0,0,0,0.9); color: #fff; font-weight: bold; border: 1px solid #b388ff; padding: 8px 15px; border-radius: 10px; z-index: 2000; animation: floatUp 2.5s forwards; pointer-events: none; white-space: nowrap; font-size: 1.5rem; box-shadow: 0 0 20px rgba(179,136,255,0.6); }
+        .hc-active .taunt-popup { border-color: #ff4a4a; box-shadow: 0 0 20px rgba(255,74,74,0.6); }
         @keyframes floatUp { 0% { opacity: 0; transform: translateY(10px) scale(0.5); } 15% { opacity: 1; transform: translateY(-10px) scale(1.2); } 80% { opacity: 1; transform: translateY(-40px) scale(1); } 100% { opacity: 0; transform: translateY(-60px); } }
 
-        /* Emote Gigante (En Victoria/Derrota) */
         .endgame-taunt { font-size: 4rem !important; background: transparent !important; border: none !important; box-shadow: none !important; animation: floatUpEndgame 3s forwards !important; text-shadow: 0 0 30px rgba(255,255,255,0.5); z-index: 3000; }
         @keyframes floatUpEndgame { 0% { opacity: 0; transform: translate(-50%, 20px) scale(0.5); } 15% { opacity: 1; transform: translate(-50%, -20px) scale(1.5); } 80% { opacity: 1; transform: translate(-50%, -80px) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -120px); } }
 
@@ -89,6 +108,7 @@ window.Multiplayer = {
     currentRound: 1,          
     myMatchKey: null,
     isHost: false,
+    isHardcore: false, // FLAG MUERTE SÚBITA
     matchEnded: false,
     resetting: false,
     duelWords: [],
@@ -99,7 +119,7 @@ window.Multiplayer = {
     nextCheckpointIdx: 0,
     lastTauntT: 0,
     lastMyTauntT: 0,
-    nemesisLoaded: false, // Flag para no quemar lecturas en el lobby
+    nemesisLoaded: false,
     
     initLobby: async () => {
         const u = window.CT.ses();
@@ -151,7 +171,12 @@ window.Multiplayer = {
 
             await window.db.collection('mp_lobby').doc(userDoc.h).set(presenceData);
             window.Multiplayer.isOnline = true;
+            
+            // TRIPLE CANDADO PARA BORRAR FANTASMAS
             window.addEventListener('beforeunload', window.Multiplayer.handleUnload);
+            window.addEventListener('pagehide', window.Multiplayer.handleUnload);
+            window.addEventListener('unload', window.Multiplayer.handleUnload);
+            
             window.Multiplayer.startRadar();
         } catch (e) {
             alert("Los servidores de duelo están inalcanzables.");
@@ -165,13 +190,17 @@ window.Multiplayer = {
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
         window.removeEventListener('keydown', window.Multiplayer.tauntKeyListener);
         window.removeEventListener('beforeunload', window.Multiplayer.handleUnload);
+        window.removeEventListener('pagehide', window.Multiplayer.handleUnload);
+        window.removeEventListener('unload', window.Multiplayer.handleUnload);
         try { if (window.Multiplayer.myHandle) await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete(); } catch (e) {}
     },
 
     handleUnload: () => {
         if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
             window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete();
-            if(window.Multiplayer.currentMatchId) window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete();
+            if(window.Multiplayer.currentMatchId) {
+                window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(()=>{});
+            }
         }
     },
 
@@ -235,7 +264,6 @@ window.Multiplayer = {
             document.getElementById('mp-stat-avg').innerText = me.mp.avg_cpm || 0;
             document.getElementById('mp-stat-best').innerText = me.mp.best_cpm || 0;
 
-            // FIX: Cargar Némesis en el Lobby ($0 Costo, solo lee 1 vez al entrar)
             if (!window.Multiplayer.nemesisLoaded && me.mp.history && me.mp.history.length > 0) {
                 window.Multiplayer.nemesisLoaded = true;
                 window.Multiplayer.updateNemesisDisplay(me.mp.history);
@@ -253,7 +281,14 @@ window.Multiplayer = {
                 if (p.status === 'in_game') actionBtn = `<span style="color: var(--error); font-size: 0.75rem; font-weight:bold;">EN COMBATE</span>`;
                 else if (p.status === 'waiting') actionBtn = `<span style="color: #ffd700; font-size: 0.75rem; font-style:italic;">Ocupado...</span>`;
                 else if (me.status === 'waiting') actionBtn = `<span style="color: #555; font-size: 0.75rem;">Espera...</span>`;
-                else actionBtn = `<button class="btn-outline" style="border-color: #b388ff; color: #b388ff; padding: 6px 12px; font-size: 0.75rem;" onclick="window.Multiplayer.sendChallenge('${p.h}')">RETAR ⚔️</button>`;
+                else {
+                    actionBtn = `
+                        <div style="display:flex; gap:5px; justify-content: flex-end;">
+                            <button class="btn-outline" style="border-color:#ff4a4a; color:#ff4a4a; padding:6px 10px; font-size:0.75rem;" onclick="window.Multiplayer.sendChallenge('${p.h}', true)" title="Muerte Súbita">💀</button>
+                            <button class="btn-outline" style="border-color: #b388ff; color: #b388ff; padding: 6px 12px; font-size: 0.75rem;" onclick="window.Multiplayer.sendChallenge('${p.h}', false)">RETAR ⚔️</button>
+                        </div>
+                    `;
+                }
 
                 let streakBadge = (p.streak && p.streak >= 3) ? `<span style="color:#ff9800; font-size:0.75rem; margin-left:5px; filter:drop-shadow(0 0 3px #ff9800);">🔥 x${p.streak}</span>` : '';
 
@@ -269,7 +304,7 @@ window.Multiplayer = {
                             <span style="color:#777; font-size:0.7rem; font-family:monospace;">${p.h}</span>
                         </div>
                     </div>
-                    <div style="text-align: right;">${actionBtn}</div>
+                    <div style="text-align: right; min-width: 100px;">${actionBtn}</div>
                 </li>`;
             }).join('');
         }
@@ -278,17 +313,31 @@ window.Multiplayer = {
         if (me.status === 'waiting') {
             invitesList.innerHTML = `<div style="text-align: center; padding: 30px 10px;"><div class="pulse" style="width: 20px; height: 20px; background: #ffd700; margin: 0 auto 15px; display: block;"></div><h4 style="color: #ffd700; margin: 0 0 5px 0;">Reto Enviado</h4><p style="color: #aaa; font-size: 0.85rem;">Esperando respuesta...</p><button class="btn-outline" style="border-color: #ff4a4a; color: #ff4a4a; margin-top: 15px;" onclick="window.Multiplayer.cancelChallenge()">CANCELAR</button></div>`;
         } else if (me.invite) {
-            invitesList.innerHTML = `<div style="background: rgba(179,136,255,0.1); border: 1px solid #b388ff; border-radius: 8px; padding: 20px; text-align: center;"><div style="font-size: 2.5rem; margin-bottom: 10px;">🔥</div><h4 style="color: #fff; margin: 0 0 5px 0; font-size: 1.2rem;">¡TE HAN DESAFIADO!</h4><p style="color: #b388ff; font-size: 0.95rem; font-weight: bold; margin-bottom: 20px;">${me.invite.n}</p><div style="display: flex; gap: 10px;"><button class="btn-primary" style="flex: 1; background: #b388ff; color: #000;" onclick="window.Multiplayer.acceptChallenge('${me.invite.h}')">ACEPTAR</button><button class="btn-outline" style="flex: 1; border-color: #ff4a4a; color: #ff4a4a;" onclick="window.Multiplayer.rejectChallenge()">RECHAZAR</button></div></div>`;
+            const isHC = me.invite.hc;
+            const hcStyle = isHC ? 'border-color: #ff4a4a; background: rgba(255,74,74,0.1);' : 'border-color: #b388ff; background: rgba(179,136,255,0.1);';
+            const hcText = isHC ? '<span style="color:var(--error); border: 1px solid var(--error); padding: 2px 5px; font-size:0.7rem; margin-left: 10px; border-radius:4px;">HARDCORE 💀</span>' : '';
+            const colorP = isHC ? '#ff4a4a' : '#b388ff';
+            
+            invitesList.innerHTML = `<div style="${hcStyle} border-width:1px; border-style:solid; border-radius: 8px; padding: 20px; text-align: center;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">${isHC ? '💀' : '🔥'}</div>
+                <h4 style="color: #fff; margin: 0 0 5px 0; font-size: 1.2rem;">¡TE HAN DESAFIADO!</h4>
+                <p style="color: ${colorP}; font-size: 0.95rem; font-weight: bold; margin-bottom: 20px;">${me.invite.n} ${hcText}</p>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" style="flex: 1; background: ${colorP}; color: #000;" onclick="window.Multiplayer.acceptChallenge('${me.invite.h}')">ACEPTAR</button>
+                    <button class="btn-outline" style="flex: 1; border-color: #ff4a4a; color: #ff4a4a;" onclick="window.Multiplayer.rejectChallenge()">RECHAZAR</button>
+                </div>
+            </div>`;
         } else {
             invitesList.innerHTML = `<div style="text-align: center; color: #777; padding: 30px 10px; font-size: 0.85rem;"><div style="font-size: 2rem; opacity: 0.5; margin-bottom: 10px;">🛡️</div>Ningún desafío pendiente.<br>Estás a salvo por ahora.</div>`;
         }
     },
 
-    sendChallenge: async (targetHandle) => {
+    // AÑADIDO PARÁMETRO HC
+    sendChallenge: async (targetHandle, isHardcore = false) => {
         try {
             await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'waiting' });
             const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
-            await window.db.collection('mp_lobby').doc(targetHandle).update({ invite: { h: myUser.h, n: myUser.n, t: Date.now() } });
+            await window.db.collection('mp_lobby').doc(targetHandle).update({ invite: { h: myUser.h, n: myUser.n, t: Date.now(), hc: isHardcore } });
             setTimeout(() => { window.Multiplayer.autoExpireChallenge(targetHandle); }, 15000);
         } catch(e) { window.Multiplayer.cancelChallenge(); }
     },
@@ -317,6 +366,9 @@ window.Multiplayer = {
 
     acceptChallenge: async (rivalHandle) => {
         try {
+            const meDoc = await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).get();
+            const isHardcore = meDoc.data().invite.hc || false;
+            
             const matchId = `duel_${Date.now()}_${Math.floor(Math.random()*1000)}`;
             const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
             const tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]'));
@@ -325,8 +377,9 @@ window.Multiplayer = {
             await window.db.collection('mp_matches').doc(matchId).set({
                 track: chosenTrack,
                 round: 1, 
-                p1: { h: rivalHandle, prog: 0, cpm: 0, done: false, rematch: false, taunt: null },
-                p2: { h: myUser.h, prog: 0, cpm: 0, done: false, rematch: false, taunt: null },
+                hc: isHardcore, // GUARDAMOS LA MODALIDAD EN LA SALA
+                p1: { h: rivalHandle, prog: 0, cpm: 0, done: false, exploded: false, rematch: false, taunt: null },
+                p2: { h: myUser.h, prog: 0, cpm: 0, done: false, exploded: false, rematch: false, taunt: null },
                 status: 'starting'
             });
 
@@ -340,7 +393,6 @@ window.Multiplayer = {
 
     tauntKeyListener: (e) => {
         if (['1','2','3'].includes(e.key)) {
-            // Si el input está enfocado y activo, validamos si la palabra lleva ese número
             if (document.activeElement.id === 'duel-input' && !window.Multiplayer.matchEnded) {
                 const activeWordEl = document.querySelector('.active-word');
                 if (activeWordEl && activeWordEl.innerText.includes(e.key)) return;
@@ -407,7 +459,13 @@ window.Multiplayer = {
         const isP1 = matchData.p1.h === window.Multiplayer.myHandle;
         window.Multiplayer.myMatchKey = isP1 ? 'p1' : 'p2';
         window.Multiplayer.isHost = !isP1; 
+        window.Multiplayer.isHardcore = matchData.hc || false; // DETECTAMOS SI ES HARDCORE
         
+        // ESTILIZAMOS LA ARENA SI ES HC
+        const duelScreen = document.getElementById('duel-screen');
+        if(window.Multiplayer.isHardcore) duelScreen.classList.add('hc-active');
+        else duelScreen.classList.remove('hc-active');
+
         const rivalHandle = isP1 ? matchData.p2.h : matchData.p1.h;
         window.Multiplayer.currentRivalHandle = rivalHandle; 
 
@@ -423,7 +481,6 @@ window.Multiplayer = {
 
         window.addEventListener('keydown', window.Multiplayer.tauntKeyListener);
 
-        // FIX HISTORIAL RIVALIDAD: Await forzado antes de arrancar
         const sortedHandles = [window.Multiplayer.myHandle, rivalHandle].sort();
         const rivalryId = `${sortedHandles[0]}_${sortedHandles[1]}`;
         let myScore = 0; let rivalScore = 0;
@@ -460,8 +517,15 @@ window.Multiplayer = {
                 document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
                 document.getElementById('duel-rival-cpm').innerText = `${d[rivalKey].cpm} CPM`;
 
-                if (d[rivalKey].done && !document.getElementById('duel-input').disabled && !window.Multiplayer.matchEnded) {
-                    window.Multiplayer.endDuel(false, null);
+                // LÓGICA DE EXPLOSIÓN DEL RIVAL
+                if (d[rivalKey].done && !window.Multiplayer.matchEnded) {
+                    if (d[rivalKey].exploded) {
+                        // El rival murió, yo gano.
+                        window.Multiplayer.endDuel(true, null, false, true);
+                    } else {
+                        // El rival llegó a la meta normal, yo pierdo.
+                        window.Multiplayer.endDuel(false, null);
+                    }
                 }
             }
 
@@ -531,15 +595,15 @@ window.Multiplayer = {
         const input = document.getElementById('duel-input');
         input.value = '';
         input.disabled = true;
+        input.style.color = '#fff'; // Reset color if exploded
         input.placeholder = "[ PREPARANDO ENLACE ]";
 
-        // FIX CONTADOR CENTRALIZADO (Se asegura de existir fuera del flujo del HTML relativo)
         let cd = document.getElementById('duel-cd');
         if (!cd) {
             cd = document.createElement('div');
             cd.id = 'duel-cd';
             cd.className = 'duel-countdown';
-            document.body.appendChild(cd); // Lo manda directo al body para el centro absoluto
+            document.body.appendChild(cd); 
         }
         cd.style.display = 'none';
 
@@ -552,13 +616,16 @@ window.Multiplayer = {
                 ? `<div style="color: #ffd700; font-family: monospace; font-size: 1.8rem; margin-bottom: 25px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,215,0,0.6);">HISTORIAL: TÚ ${myScore} - ${rivalScore} RIVAL</div>` 
                 : `<div style="color: #888; font-family: monospace; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 2px;">PRIMER ENCUENTRO</div>`;
 
+            const hcTitle = window.Multiplayer.isHardcore ? '<h2 style="color:#ff4a4a; font-weight:900; letter-spacing:5px; margin-bottom:5px; text-shadow: 0 0 20px rgba(255,74,74,0.8);">MUERTE SÚBITA</h2>' : '';
+
             cineLayer.innerHTML = `
+                ${hcTitle}
                 <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 15px; opacity: 0.7;">PREPARANDO PISTA</h3>
                 ${scoreHtml}
                 <div class="vs-avatars">
                     <div class="vs-avatar-box">
                         <img src="${document.getElementById('duel-my-avatar').src}">
-                        <div style="color: #b388ff; font-weight: bold; font-size: 1.3rem;">TÚ</div>
+                        <div style="color: ${window.Multiplayer.isHardcore ? '#ff4a4a' : '#b388ff'}; font-weight: bold; font-size: 1.3rem;">TÚ</div>
                     </div>
                     <div class="vs-text">VS</div>
                     <div class="vs-avatar-box" style="animation-delay: 0.2s;">
@@ -600,6 +667,28 @@ window.Multiplayer = {
         }, 3000);
     },
 
+    triggerExplosion: async () => {
+        const input = document.getElementById('duel-input');
+        input.disabled = true;
+        input.value = '¡NAVE DESTRUIDA!';
+        input.style.color = '#ff4a4a';
+        input.classList.add('error-shake');
+        
+        const currentCPM = Math.round((window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length) / ((Date.now() - window.Multiplayer.startTime) / 60000)) || 0;
+        const prog = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
+        
+        try {
+            await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
+                [`${window.Multiplayer.myMatchKey}.prog`]: prog, 
+                [`${window.Multiplayer.myMatchKey}.cpm`]: currentCPM, 
+                [`${window.Multiplayer.myMatchKey}.done`]: true,
+                [`${window.Multiplayer.myMatchKey}.exploded`]: true 
+            });
+        } catch(e) {}
+        
+        window.Multiplayer.endDuel(false, currentCPM, true, false);
+    },
+
     handleInput: (e) => {
         const input = e.target;
         let typed = input.value;
@@ -612,12 +701,21 @@ window.Multiplayer = {
             input.value = typed;
         }
 
+        // DETECCIÓN DE ERROR
+        let isError = false;
         if (targetWord.startsWith(typed.trim())) {
             input.classList.remove('error-shake');
             wordEl.style.color = '#ccc';
         } else {
+            isError = true;
             input.classList.add('error-shake');
             wordEl.style.color = '#ff4a4a';
+        }
+
+        // MUERTE SÚBITA
+        if (window.Multiplayer.isHardcore && (isError || (typed.endsWith(' ') && typed.trim() !== targetWord))) {
+            window.Multiplayer.triggerExplosion();
+            return;
         }
 
         let isCorrectAndFinished = false;
@@ -671,10 +769,10 @@ window.Multiplayer = {
             updatePayload[`${window.Multiplayer.myMatchKey}.done`] = done; 
 
             await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update(updatePayload);
-        } catch(e) { console.error("Error sincronizando:", e); }
+        } catch(e) {}
     },
 
-    endDuel: (isWinner, finalCPM_Param) => {
+    endDuel: (isWinner, finalCPM_Param, iExploded = false, rivalExploded = false) => {
         if (window.Multiplayer.matchEnded) return; 
         window.Multiplayer.matchEnded = true;
 
@@ -688,8 +786,11 @@ window.Multiplayer = {
             const chars = window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length;
             finalCPM = Math.round(chars / timeMin) || 0;
             
-            const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
-            window.Multiplayer.syncProgress(rawProg, finalCPM, true);
+            // Solo si yo no explote informo mi progreso final
+            if (!iExploded) {
+                const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
+                window.Multiplayer.syncProgress(rawProg, finalCPM, true);
+            }
         }
 
         const acc = Math.max(0, 100 - (window.Multiplayer.errorsCount * 2)); 
@@ -741,14 +842,18 @@ window.Multiplayer = {
                         t.set(rivRef, rivData, { merge: true });
                     });
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {}
         };
         saveVIPStats();
 
         const winnerName = isWinner ? myName : rivalName;
         const winnerAv = isWinner ? myAv : rivalAv;
         const winnerColor = isWinner ? '#a6ff00' : '#ff4a4a';
-        const msg = isWinner ? '¡TE LLEVAS LA VICTORIA!' : 'HA DOMINADO LA PISTA';
+        
+        // Mensajes dinámicos HC
+        let msg = isWinner ? '¡TE LLEVAS LA VICTORIA!' : 'HA DOMINADO LA PISTA';
+        if (iExploded) msg = '¡NAVE DESTRUIDA! (Muerte Súbita)';
+        if (rivalExploded) msg = '¡RIVAL DESTRUIDO! (Victoria por Supervivencia)';
 
         const duelContainer = document.querySelector('.duel-container');
         const cineLayer = document.createElement('div');
@@ -759,10 +864,10 @@ window.Multiplayer = {
                 <div class="winner-avatar-wrapper" style="position: relative; display: inline-block;">
                     <img src="${winnerAv}" style="border-color: ${winnerColor}; box-shadow: 0 0 40px ${winnerColor}80; width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
                 </div>
-                <h2 class="winner-title" style="color: ${winnerColor}; text-shadow: 0 0 20px ${winnerColor}80;">${winnerName}</h2>
+                <h2 class="winner-title" style="color: ${winnerColor}; text-shadow: 0 0 20px ${winnerColor}80;">${isWinner ? '¡VICTORIA!' : 'DERROTA'}</h2>
                 <div class="winner-subtitle">${msg}</div>
                 <div style="margin-top: 15px; font-family: monospace; font-size: 1.5rem; color: #ccc;">
-                    ${isWinner ? finalCPM + ' CPM | ' + acc + '% PREC' : 'RIVAL INALCANZABLE'}
+                    ${isWinner ? finalCPM + ' CPM | ' + acc + '% PREC' : (iExploded ? 'ELIMINADO' : 'RIVAL INALCANZABLE')}
                 </div>
                 
                 <div class="taunt-controls" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
@@ -803,8 +908,8 @@ window.Multiplayer = {
             await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
                 track: chosenTrack,
                 round: currentRound + 1, 
-                'p1.prog': 0, 'p1.cpm': 0, 'p1.done': false, 'p1.rematch': false, 'p1.taunt': null,
-                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null,
+                'p1.prog': 0, 'p1.cpm': 0, 'p1.done': false, 'p1.rematch': false, 'p1.taunt': null, 'p1.exploded': false,
+                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null, 'p2.exploded': false,
                 status: 'starting'
             });
         } catch(e) { console.error("Error reseteando sala:", e); }
@@ -826,13 +931,21 @@ window.Multiplayer = {
             try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'idle', matchId: null }); } catch(e){}
         }
 
-        window.Multiplayer.nemesisLoaded = false; // Reset para que vuelva a leer el historial al salir
+        window.Multiplayer.nemesisLoaded = false; 
         
         const input = document.getElementById('duel-input');
-        input.disabled = true; input.value = ''; input.classList.remove('error-shake');
+        if (input) {
+             input.disabled = true; 
+             input.value = ''; 
+             input.classList.remove('error-shake');
+             input.style.color = '#fff';
+        }
         
         const cd = document.getElementById('duel-cd');
         if (cd) cd.style.display = 'none';
+
+        // Quitamos la clase HC si estaba
+        document.getElementById('duel-screen').classList.remove('hc-active');
 
         window.UI.show('multiplayer-screen');
     }
