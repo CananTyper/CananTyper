@@ -56,13 +56,11 @@ Object.assign(window.UI, {
         const arenaPts = user.arena_pts || 0;
         const customMedals = user.custom_medals || [];
 
-        // 1. Contamos cuántas de cada una tiene
         let manualCounts = {};
         customMedals.forEach(id => {
             manualCounts[id] = (manualCounts[id] || 0) + 1;
         });
 
-        // 2. Evaluamos el catálogo
         catalog.forEach(m => {
             let earned = false;
             let count = 1;
@@ -85,10 +83,6 @@ Object.assign(window.UI, {
                 earnedMedals.push({ ...m, count: count });
             }
         });
-
-        if (!user.createdAt) {
-            earnedMedals.push({ id: 'anomalia_cero', icon: '🧪', name: 'Beta Tester', desc: 'Registros anteriores al sistema', count: 1, isStackable: false });
-        }
 
         return earnedMedals;
     },
@@ -174,12 +168,25 @@ Object.assign(window.UI, {
             window.CT.activeProfHandle = u.h;
             const scores = await window.App.getUserScores(u.h);
             
-            document.getElementById('prof-name').innerText = u.n; 
+            // LÓGICA DE VERIFICACIÓN (1: Oficial, 2: Sistema)
+            let verifiedSVG = '';
+            if (u.v === 1) {
+                verifiedSVG = `<svg title="Verificado Oficial" style="width:20px; height:20px; margin-left:6px; vertical-align:text-bottom; fill:var(--p); filter:drop-shadow(0 0 4px var(--p));" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+            } else if (u.v === 2) {
+                verifiedSVG = `<svg title="Cuenta del Sistema" style="width:20px; height:20px; margin-left:6px; vertical-align:text-bottom; fill:#90a4ae; filter:drop-shadow(0 0 2px #90a4ae);" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>`;
+            }
+
+            document.getElementById('prof-name').innerHTML = `${u.n} ${verifiedSVG}`; 
             document.getElementById('prof-handle').innerText = u.h; 
             document.getElementById('prof-img').src = u.a || window.CT.defAvatar; 
             document.getElementById('prof-role').innerText = (u.r || 'PILOTO').toUpperCase();
             
-            document.getElementById('prof-member-since').innerText = u.createdAt || 'Indefinido';
+            const earnedMedals = window.UI.getUserMedals(u);
+            
+            // LÓGICA ANOMALÍA CERO (Modifica visualmente la fecha)
+            const hasAnomalia = earnedMedals.some(m => m.id === 'anomalia_cero');
+            document.getElementById('prof-member-since').innerText = hasAnomalia ? 'Indefinido' : (u.createdAt || 'Desconocido');
+            
             document.getElementById('prof-bio').innerText = u.bio ? `${u.bio}` : 'Este piloto aún no ha escrito su historia.';
             
             const cEl = document.getElementById('prof-country');
@@ -223,7 +230,6 @@ Object.assign(window.UI, {
             let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
-            const earnedMedals = window.UI.getUserMedals(u);
             const visibleIds = u.visible_medals || [];
             
             let displayMedals = [];
@@ -239,9 +245,8 @@ Object.assign(window.UI, {
             let medalsHTML = '';
             if (displayMedals.length > 0) {
                 medalsHTML = displayMedals.map(m => {
-                    // Diseño más sutil y pequeño para el perfil
                     const countBadge = (m.isStackable && m.count > 1) 
-                        ? `<div style="position:absolute; bottom:0px; right:-2px; background: var(--p); color: #000; font-size:0.65rem; font-weight:900; line-height:1; padding:2px 5px; border-radius:10px; box-shadow: 0 0 6px var(--p); border: 1.5px solid #111; z-index:5; display:flex; align-items:center; justify-content:center;">x${m.count}</div>` 
+                        ? `<div style="position:absolute; bottom:-4px; right:-4px; background: var(--p); color: #000; font-size:0.65rem; font-weight:900; line-height:1; width:18px; height:18px; border-radius:50%; box-shadow: 0 0 6px var(--p); border: 1.5px solid #111; z-index:5; display:flex; align-items:center; justify-content:center;">${m.count}</div>` 
                         : '';
                     
                     return `
@@ -331,9 +336,8 @@ Object.assign(window.UI, {
             
             if (!hasIt && m.isSecret) return; 
 
-            // Reducido también en la vitrina completa
             const countBadge = (hasIt && m.isStackable && earnedMatch.count > 1) 
-                ? `<div style="position:absolute; bottom:2px; right:0px; background: var(--p); color: #000; font-size:0.65rem; font-weight:900; line-height:1; padding:2px 5px; border-radius:10px; box-shadow: 0 0 6px var(--p); border: 1.5px solid #111; z-index:5; display:flex; align-items:center; justify-content:center;">x${earnedMatch.count}</div>` 
+                ? `<div style="position:absolute; bottom:2px; right:0px; background: var(--p); color: #000; font-size:0.65rem; font-weight:900; line-height:1; width:18px; height:18px; border-radius:50%; box-shadow: 0 0 6px var(--p); border: 1.5px solid #111; z-index:5; display:flex; align-items:center; justify-content:center;">${earnedMatch.count}</div>` 
                 : '';
 
             html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}" style="position:relative;">
@@ -342,13 +346,6 @@ Object.assign(window.UI, {
                         ${countBadge}
                      </div>`;
         });
-        
-        if (earnedMedals.some(m => m.id === 'anomalia_cero')) {
-            html += `<div class="medal-slot unlocked" title="Registros anteriores al sistema">
-                        <span class="m-icon" style="font-size: 2.5rem;">🧪</span>
-                        <span class="m-name">Beta Tester</span>
-                     </div>`;
-        }
         
         html += `</div>`;
         
@@ -369,7 +366,6 @@ Object.assign(window.UI, {
         }
     },
 
-    // --- NUEVO SISTEMA DE EDICIÓN ESTÉTICA Y ORDENADA ---
     openEditProfileModal: () => {
         const u = window.CT.ses(); if(!u) return;
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
@@ -406,7 +402,6 @@ Object.assign(window.UI, {
             const index = window.UI.selectedMedalsOrder.indexOf(m.id);
             const isSelected = index > -1;
             
-            // Badge Numérico achicado a 18px
             const orderBadge = isSelected ? `<div style="position:absolute; top:-4px; right:-4px; background: var(--p); color: #000; font-weight:900; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; box-shadow:0 0 5px var(--p); border:1.5px solid #111; z-index:10; line-height:1;">${index + 1}</div>` : '';
             
             const typeLabel = m.isStackable ? `<span style="color:var(--p); font-size:0.7rem;">📦 Múltiple (x${m.count})</span>` : `<span style="color:#777; font-size:0.7rem;">🔒 Única</span>`;
