@@ -177,54 +177,42 @@
         <section id="arena-screen" class="screen hidden arena-bg" style="padding: 20px;">
             <header class="top-nav" style="border: none; position: relative; z-index: 2;">
                 <div style="display:flex; align-items:center; gap: 15px;">
-                    <button onclick="window.UI.showLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← SALIR DE LA ARENA</button>
-                    <span style="color: #b388ff; font-family: monospace; font-weight: bold; background: rgba(179,136,255,0.1); padding: 5px 10px; border-radius: 5px;">ESTADO: EN CURSO</span>
+                    <button onclick="window.UI.showLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← VOLVER AL INICIO</button>
+                    <span id="arena-status-badge" style="color: #b388ff; font-family: monospace; font-weight: bold; background: rgba(179,136,255,0.1); padding: 5px 10px; border-radius: 5px; border: 1px solid rgba(179,136,255,0.3);">ESTADO: SINCRONIZANDO...</span>
                 </div>
             </header>
 
             <div class="arena-container custom-scroll" style="overflow-y: auto; max-height: calc(100vh - 100px); padding-bottom: 30px;">
-                <div class="arena-hero">
-                    <h2 class="arena-title">Copa Pre-Temporada</h2>
-                    <p class="arena-subtitle">Evento Oficial de CananTyper</p>
-                    <div class="countdown-box">
-                        <div class="cd-item"><span class="cd-val">02</span><span class="cd-lbl">DÍAS</span></div>
-                        <div class="cd-item"><span class="cd-val">14</span><span class="cd-lbl">HORAS</span></div>
-                        <div class="cd-item"><span class="cd-val">45</span><span class="cd-lbl">MIN</span></div>
+                <div class="arena-hero" style="border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 30px; margin-bottom: 20px;">
+                    <h2 class="arena-title" id="ar-title" style="color: #fff; text-shadow: 0 0 20px rgba(179,136,255,0.5);">Cargando Torneo...</h2>
+                    <p class="arena-subtitle" id="ar-subtitle" style="color: #b388ff;">Conectando con CananStudio</p>
+                    
+                    <div class="countdown-box" style="background: rgba(0,0,0,0.5); border: 1px solid #b388ff; box-shadow: 0 0 30px rgba(179,136,255,0.1);">
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-d">00</span><span class="cd-lbl" style="color:#b388ff;">DÍAS</span></div>
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-h">00</span><span class="cd-lbl" style="color:#b388ff;">HORAS</span></div>
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-m">00</span><span class="cd-lbl" style="color:#b388ff;">MIN</span></div>
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-s">00</span><span class="cd-lbl" style="color:#b388ff;">SEG</span></div>
                     </div>
-                    <div style="margin-bottom: 20px; color: #ccc; font-size: 1.1rem;">
-                        <p style="margin:0;">El texto a jugar es un fragmento exclusivo de nivel avanzado.</p>
-                        <p style="margin:5px 0 0 0; color:var(--error); font-weight:bold;">Penalización activa: Los errores restan puntaje final.</p>
+                    
+                    <div style="margin-bottom: 20px; color: #ccc; font-size: 1.1rem; background: rgba(179,136,255,0.05); padding: 15px; border-radius: 10px; display: inline-block;">
+                        <p style="margin:0;">El texto a jugar es clasificado. Dictado por CananStudio.</p>
+                        <p style="margin:5px 0 0 0; color:var(--error); font-weight:bold;">Penalización activa: Los errores restan multiplicador de precisión.</p>
                     </div>
-                    <button class="btn-arena-play" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
+                    <br>
+                    <button id="btn-play-arena" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; box-shadow: 0 0 20px rgba(179,136,255,0.4);" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
                 </div>
-                <div class="arena-info-grid">
-                    <div class="arena-panel">
-                        <h4 class="arena-panel-title">📜 DIRECTIVAS DEL EVENTO</h4>
-                        <p style="color: #aaa; line-height: 1.6; font-size: 0.95rem;">
-                            Bienvenidos al primer torneo de calibración del sistema. <br><br>
-                            <b>SISTEMA DE PUNTUACIÓN:</b> En la Arena, la velocidad no lo es todo. Tu Puntaje Final se calcula multiplicando tu <b>Velocidad Bruta (CPM)</b> por tu porcentaje de <b>Precisión</b>.<br><br>
-                            <span style="color:var(--error);">Cada error te restará precisión y bajará tu multiplicador.</span> Teclear a 100 CPM con 90% de precisión te dará 90 Puntos. ¡Busca la perfección!
-                        </p>
+
+                <div class="arena-panel" style="margin-top: 10px; border-color: rgba(179,136,255,0.3); background: rgba(10,10,15,0.8);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 10px;">
+                        <h4 class="arena-panel-title" style="border: none; padding: 0; margin: 0; color: #fff;">📊 CLASIFICACIÓN EN VIVO</h4>
+                        <span style="color: #b388ff; font-family: monospace; font-size: 0.9rem;">ACTUALIZADO POR CANANSTUDIO</span>
                     </div>
-                    <div class="arena-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                        <h4 class="arena-panel-title" style="width: 100%; justify-content: center;">🏆 BOTÍN DEL VENCEDOR</h4>
-                        <div style="font-size: 4rem; filter: drop-shadow(0 0 20px rgba(179,136,255,0.5)); margin-bottom: 10px;">🔮</div>
-                        <h5 style="color: #fff; margin: 0 0 5px 0; font-size: 1.2rem;">Medalla de Obsidiana</h5>
-                        <p style="color: #aaa; margin: 0; font-size: 0.85rem;">Otorgada exclusivamente al Top 10 del torneo.</p>
-                        <div style="margin-top: 15px; background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); padding: 5px 15px; border-radius: 20px; color: #ffd700; font-size: 0.8rem; font-weight: bold;">El TOP 1 recibe el Título "Pionero Alfa"</div>
-                    </div>
-                </div>
-                <div class="arena-panel" style="margin-top: 10px;">
-                    <h4 class="arena-panel-title">📊 CLASIFICACIÓN EN VIVO</h4>
                     <table class="data-table" style="background: transparent;">
                         <thead>
-                            <tr><th width="15%">RANGO</th><th width="50%">PILOTO</th><th width="35%" style="color:#b388ff;">PUNTOS ARENA</th></tr>
+                            <tr><th width="15%" style="color:#b388ff;">RANGO</th><th width="45%">PILOTO</th><th width="20%">PRECISIÓN</th><th width="20%" style="color:#b388ff;">PUNTOS FINAL</th></tr>
                         </thead>
-                        <tbody>
-                            <tr><td><b style="color:#ffd700;">#1</b></td><td>@canantyper</td><td><b style="color:#fff;">950</b></td></tr>
-                            <tr><td><b style="color:#c0c0c0;">#2</b></td><td>@angel</td><td><b style="color:#fff;">942</b></td></tr>
-                            <tr><td><b style="color:#cd7f32;">#3</b></td><td>@fantasma</td><td><b style="color:#fff;">810</b></td></tr>
-                            <tr><td><b style="color:#aaa;">#4</b></td><td>@novato</td><td><b style="color:#fff;">450</b></td></tr>
+                        <tbody id="arena-live-rank">
+                            <tr><td colspan="4" style="text-align:center; padding:20px; color:#777;">Sincronizando telemetría...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -757,6 +745,29 @@
                     <button onclick="window.UI.closeEditProfileModal()" class="btn-outline" style="flex:1;">Cancelar</button>
                 </div>
                 <button onclick="document.getElementById('img-input').click()" class="btn-outline" style="width:100%; margin-top:15px;">🖼️ Cambiar Foto de Perfil</button>
+            </div>
+        </div>
+
+        <div id="arena-winner-modal" class="crop-overlay hidden" style="z-index: 4000; backdrop-filter: blur(15px);">
+            <div class="auth-card" style="border: 2px solid #b388ff; box-shadow: 0 0 80px rgba(179,136,255,0.3); text-align: center; padding: 40px; max-width: 500px; background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 100%);">
+                <div style="font-size: 3rem; animation: popIn 0.8s ease; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(179,136,255,0.8));">🏆</div>
+                <h3 style="color: #b388ff; letter-spacing: 5px; margin-bottom: 25px; font-weight: 900;">TORNEO FINALIZADO</h3>
+                
+                <div style="position: relative; display: inline-block; margin-bottom: 15px; animation: slideIn 1s ease;">
+                    <img id="aw-avatar" src="" style="width: 130px; height: 130px; border-radius: 50%; border: 3px solid #b388ff; box-shadow: 0 0 40px rgba(179,136,255,0.6); object-fit: cover;">
+                    <div id="aw-medal" style="position: absolute; bottom: -15px; right: -15px; font-size: 3rem; filter: drop-shadow(0 0 15px rgba(0,0,0,0.9));"></div>
+                </div>
+                
+                <h2 id="aw-name" style="color: #fff; font-size: 2.2rem; margin: 0 0 5px 0; text-transform: uppercase; text-shadow: 0 0 10px rgba(255,255,255,0.3);">CARGANDO...</h2>
+                <div style="color: #aaa; font-family: monospace; font-size: 1rem; margin-bottom: 25px; letter-spacing: 2px;">CAMPEÓN DEFINITIVO</div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 30px; background: rgba(0,0,0,0.6); border: 1px solid rgba(179,136,255,0.2); padding: 15px 20px; border-radius: 12px; box-shadow: inset 0 0 20px rgba(179,136,255,0.05);">
+                    <div style="text-align: center;"><small style="color:#888; font-weight:bold; font-size: 0.75rem; letter-spacing: 1px;">PUNTAJE</small><div id="aw-score" style="font-size: 1.8rem; color: #b388ff; font-family: monospace; font-weight:bold; text-shadow: 0 0 10px #b388ff;">0</div></div>
+                    <div style="text-align: center;"><small style="color:#888; font-weight:bold; font-size: 0.75rem; letter-spacing: 1px;">VELOCIDAD</small><div id="aw-cpm" style="font-size: 1.8rem; color: #fff; font-family: monospace; font-weight:bold;">0</div></div>
+                    <div style="text-align: center;"><small style="color:#888; font-weight:bold; font-size: 0.75rem; letter-spacing: 1px;">PRECISIÓN</small><div id="aw-acc" style="font-size: 1.8rem; color: #fff; font-family: monospace; font-weight:bold;">0%</div></div>
+                </div>
+                
+                <button class="btn-primary" onclick="document.getElementById('arena-winner-modal').classList.add('hidden')" style="width: 100%; padding: 15px; font-size: 1.1rem; letter-spacing: 2px;">HONRAR AL CAMPEÓN</button>
             </div>
         </div>
 
