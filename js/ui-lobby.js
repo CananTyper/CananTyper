@@ -1,5 +1,5 @@
 /* ================================================================
-    CANANTYPER - UI LOBBY (INICIO Y CONEXIÓN A E-SPORTS)
+    CANANTYPER - UI LOBBY (INICIO Y CONEXIÓN A E-SPORTS / ARENA)
    ================================================================ */
 
 Object.assign(window.UI, {
@@ -27,7 +27,7 @@ Object.assign(window.UI, {
         window.UI.show('home-screen'); 
         
         window.UI.checkAnnouncements(); 
-        window.UI.initArenaListener(); // CONECTAMOS AL GESTOR DE TORNEOS
+        window.UI.initArenaListener(); // CONECTAMOS AL GESTOR DE TORNEOS (CANANSTUDIO)
     },
 
     showLobby: () => window.UI.initLobby(),
@@ -93,13 +93,24 @@ Object.assign(window.UI, {
     },
 
     // =========================================================
-    // NUEVO: SISTEMA NERVIOSO DE LA ARENA (E-SPORTS)
+    // SISTEMA NERVIOSO DE LA ARENA (E-SPORTS) - VERSIÓN "PRO"
     // =========================================================
     arenaTimerInterval: null,
     arenaCurrentConfig: null,
+    arenaUnsubScores: null,
+    hasArenaPass: false,
+    hasSeenEndPopup: false,
 
     initArenaListener: () => {
-        // Escuchamos los cambios que haces en vivo desde CananStudio
+        // 1. Verificamos los pases/participación del usuario para los popups
+        const u = window.CT.ses();
+        if (u) {
+            const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
+            // Se asume pase si el user es admin o si tu DB le otorgó una medalla/permiso especial
+            window.UI.hasArenaPass = userDoc.r === 'admin' || (userDoc.custom_medals && userDoc.custom_medals.includes('arena_pass'));
+        }
+
+        // 2. Escuchamos el maestro de CananStudio
         window.db.collection('config').doc('arena_event').onSnapshot(doc => {
             if (doc.exists) {
                 window.UI.arenaCurrentConfig = doc.data();
@@ -114,26 +125,22 @@ Object.assign(window.UI, {
 
         const navBtn = document.querySelector('.btn-arena-nav');
         
-        // 1. Apagado y Encendido
+        // --- 1. LÓGICA DE APAGADO ---
         if (!conf.active) {
             if(navBtn) navBtn.style.display = 'none';
-            // Si el jugador está en la sala de la arena mientras la cierras, lo echamos al lobby
-            if(!document.getElementById('arena-screen').classList.contains('hidden')) {
+            // Si estaba en la sala y la cierran de golpe
+            if(document.getElementById('arena-screen') && !document.getElementById('arena-screen').classList.contains('hidden')) {
                 alert("El torneo ha finalizado y la Arena se ha cerrado.");
                 window.UI.show('home-screen');
             }
             return;
         }
 
-        // Si está activo, mostramos el botón
+        // --- 2. LÓGICA DE ENCENDIDO Y ESTÉTICA PÚRPURA ---
         if(navBtn) navBtn.style.display = 'inline-block';
-
-        // 2. Colores y Tema Visual del Torneo
-        let tColor = '#b388ff'; // Galáctico (Por defecto)
-        let tBg = 'rgba(179,136,255,0.1)';
-        
-        if (conf.theme === 'red') { tColor = '#ff4a4a'; tBg = 'rgba(255,74,74,0.1)'; }
-        else if (conf.theme === 'gold') { tColor = '#ffd700'; tBg = 'rgba(255,215,0,0.1)'; }
+        const tColor = '#b388ff'; // Forzamos el neón púrpura (adiós amarillos)
+        const tBg = 'rgba(179,136,255,0.1)';
+        const tShadow = 'rgba(179,136,255,0.5)';
 
         if(navBtn) {
             navBtn.style.borderColor = tColor;
@@ -141,131 +148,158 @@ Object.assign(window.UI, {
             navBtn.style.boxShadow = `0 0 10px ${tBg}`;
         }
 
-        // 3. Actualizar la Interfaz de la Sala de Arena
-        document.querySelector('#arena-screen .arena-title').innerText = conf.title || "Evento Oficial";
-        document.querySelector('#arena-screen .arena-title').style.color = tColor;
-        document.querySelector('#arena-screen .btn-arena-play').style.background = tColor;
-        document.querySelector('#arena-screen .btn-arena-play').style.color = '#000';
-        document.querySelector('#arena-screen .btn-arena-play').style.boxShadow = `0 0 20px ${tBg}`;
+        // Actualizar UI del DOM (Asegurando que existan)
+        const arTitle = document.getElementById('ar-title');
+        const arSub = document.getElementById('ar-subtitle');
+        const badge = document.getElementById('arena-status-badge');
+        const playBtn = document.getElementById('btn-play-arena');
 
-        const exitBtn = document.querySelector('#arena-screen .btn-outline');
-        if(exitBtn) { exitBtn.style.borderColor = tColor; exitBtn.style.color = tColor; }
+        if(arTitle) {
+            arTitle.innerText = conf.title || "Evento Oficial";
+            arTitle.style.color = "#fff";
+            arTitle.style.textShadow = `0 0 20px ${tShadow}`;
+        }
+        if(arSub) {
+            arSub.innerText = conf.subtitle || "Conectando con CananStudio";
+            arSub.style.color = tColor;
+        }
+
+        // --- 3. ESTADO DEL TORNEO (EN CURSO vs FINALIZADO) ---
+        if (conf.status === 'ended') {
+            if(badge) {
+                badge.innerText = "ESTADO: FINALIZADO";
+                badge.style.color = "#ff4a4a"; badge.style.borderColor = "#ff4a4a"; badge.style.background = "rgba(255,74,74,0.1)";
+            }
+            if(playBtn) {
+                playBtn.disabled = true;
+                playBtn.innerText = "TORNEO CERRADO";
+                playBtn.style.filter = "grayscale(1)";
+                playBtn.style.boxShadow = "none";
+            }
+            document.getElementById('ar-cd-d').innerText = "00"; document.getElementById('ar-cd-h').innerText = "00";
+            document.getElementById('ar-cd-m').innerText = "00"; document.getElementById('ar-cd-s').innerText = "00";
+            if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
+
+            // GATILLAR EL POPUP DE VICTORIA (Solo si tiene pase y no lo vió)
+            if (conf.winner && window.UI.hasArenaPass && !window.UI.hasSeenEndPopup) {
+                window.UI.showArenaWinnerPopup(conf.winner, conf.prize_medal_emoji);
+                window.UI.hasSeenEndPopup = true;
+            }
+
+        } else {
+            // EN CURSO
+            window.UI.hasSeenEndPopup = false; // Reset para próximos eventos
+            if(badge) {
+                badge.innerText = "ESTADO: EN CURSO";
+                badge.style.color = tColor; badge.style.borderColor = tColor; badge.style.background = tBg;
+            }
+            if(playBtn) {
+                playBtn.disabled = false;
+                playBtn.innerText = "INICIAR CARRERA OFICIAL";
+                playBtn.style.filter = "none";
+                playBtn.style.boxShadow = `0 0 20px rgba(179,136,255,0.4)`;
+            }
+            if (conf.endTime) window.UI.startArenaCountdown(conf.endTime);
+        }
+
+        // --- 4. CONEXIÓN A LA BASE DE DATOS (LEADERBOARD EN VIVO) ---
+        if (window.UI.arenaUnsubScores) window.UI.arenaUnsubScores(); // Limpiar listener previo
         
-        const statusSpan = document.querySelector('#arena-screen span[style*="ESTADO: EN CURSO"]');
-        if(statusSpan) { statusSpan.style.color = tColor; statusSpan.style.background = tBg; }
-
-        // Mostrar u ocultar penalización visual en base a las reglas
-        const penalMsg = document.querySelector('#arena-screen p[style*="Penalización activa"]');
-        if (penalMsg) {
-            penalMsg.style.display = conf.scoring === 'points' ? 'block' : 'none';
-        }
-
-        // Actualizar UI del Gestor de Recompensas
-        if (conf.medal) {
-            document.querySelector('#arena-screen h5').innerText = "Medalla Oficial"; 
-            document.querySelector('#arena-screen .arena-panel:nth-child(2)').style.display = 'flex';
-        } else {
-            // Si elegiste "🚫 Ninguna", ocultamos el panel de recompensas
-            document.querySelector('#arena-screen .arena-panel:nth-child(2)').style.display = 'none';
-        }
-
-        // 4. El Cronómetro en Vivo
-        if (conf.endTime) {
-            window.UI.startArenaCountdown(conf.endTime);
-        } else {
-            document.querySelector('.countdown-box').style.display = 'none';
-        }
-
-        // 5. El Disparo del Pop-up Automático (Anuncio Obligatorio)
-        const hasSeen = localStorage.getItem('ct_arena_seen_' + conf.version);
-        if (!hasSeen) {
-            const modal = document.getElementById('announcement-modal');
-            document.getElementById('motd-icon').innerText = '🟣';
-            
-            const titleEl = document.getElementById('motd-title');
-            titleEl.innerText = conf.title;
-            titleEl.style.color = tColor; 
-            
-            document.getElementById('motd-msg').innerText = conf.msg;
-            
-            modal.classList.remove('hidden');
-            localStorage.setItem('ct_arena_seen_' + conf.version, 'true');
-        }
-
-        // 6. Carga del Leaderboard en Vivo
-        window.UI.loadArenaLeaderboard(conf.version, tColor);
+        window.UI.arenaUnsubScores = window.db.collection('arena_scores')
+            .where('version', '==', conf.version || 'v1')
+            .orderBy('score', 'desc')
+            .limit(50)
+            .onSnapshot(snap => {
+                const scores = snap.docs.map(doc => doc.data());
+                window.UI.renderArenaLeaderboard(scores, tColor);
+                
+                // Si el torneo sigue activo, pero yo participé en este, me gano el pase al popup final
+                const u = window.CT.ses();
+                if (u && !window.UI.hasArenaPass) {
+                    if (scores.some(s => s.h === u.h)) window.UI.hasArenaPass = true;
+                }
+            });
     },
 
-    startArenaCountdown: (endTimeStr) => {
-        const cdBox = document.querySelector('.countdown-box');
-        if(!cdBox) return;
-        cdBox.style.display = 'flex';
-        
+    startArenaCountdown: (endTimeTimestamp) => {
         if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
+        
+        window.UI.arenaTimerInterval = setInterval(() => {
+            const now = Date.now();
+            const distance = endTimeTimestamp - now;
 
-        const endDate = new Date(endTimeStr).getTime();
-
-        const updateClock = () => {
-            const now = new Date().getTime();
-            const distance = endDate - now;
+            const cdD = document.getElementById('ar-cd-d');
+            const cdH = document.getElementById('ar-cd-h');
+            const cdM = document.getElementById('ar-cd-m');
+            const cdS = document.getElementById('ar-cd-s');
 
             if (distance < 0) {
                 clearInterval(window.UI.arenaTimerInterval);
-                cdBox.innerHTML = `<span style="color:var(--error); font-weight:bold; font-size:1.2rem;">EL EVENTO HA CONCLUIDO</span>`;
-                const playBtn = document.querySelector('.btn-arena-play');
-                if (playBtn) playBtn.style.display = 'none'; 
+                if(cdD) cdD.innerText = "00"; if(cdH) cdH.innerText = "00";
+                if(cdM) cdM.innerText = "00"; if(cdS) cdS.innerText = "00";
                 return;
             }
 
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((distance % (1000 * 60)) / 1000);
 
-            cdBox.innerHTML = `
-                <div class="cd-item"><span class="cd-val">${days < 10 ? '0'+days : days}</span><span class="cd-lbl">DÍAS</span></div>
-                <div class="cd-item"><span class="cd-val">${hours < 10 ? '0'+hours : hours}</span><span class="cd-lbl">HRS</span></div>
-                <div class="cd-item"><span class="cd-val">${minutes < 10 ? '0'+minutes : minutes}</span><span class="cd-lbl">MIN</span></div>
-            `;
-            
-            const playBtn = document.querySelector('.btn-arena-play');
-            if (playBtn) playBtn.style.display = 'block';
-        };
-
-        updateClock(); 
-        window.UI.arenaTimerInterval = setInterval(updateClock, 60000); 
+            if(cdD) cdD.innerText = d.toString().padStart(2, '0');
+            if(cdH) cdH.innerText = h.toString().padStart(2, '0');
+            if(cdM) cdM.innerText = m.toString().padStart(2, '0');
+            if(cdS) cdS.innerText = s.toString().padStart(2, '0');
+        }, 1000);
     },
 
-    loadArenaLeaderboard: async (version, tColor) => {
-        const tbody = document.querySelector('#arena-screen .data-table tbody');
-        if(!tbody) return;
+    renderArenaLeaderboard: (scores, tColor) => {
+        const tbody = document.getElementById('arena-live-rank');
+        if (!tbody) return;
 
-        try {
-            // Buscamos a los pilotos que están corriendo este evento específico
-            const snap = await window.db.collection('arena_scores').where('version', '==', version).orderBy('score', 'desc').limit(50).get();
-            
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#555;">La arena está vacía. ¡Sé el primero en correr!</td></tr>';
-                return;
-            }
-
-            let html = '';
-            snap.docs.forEach((doc, index) => {
-                const s = doc.data();
-                let rankVisual = `#${index + 1}`;
-                if (index === 0) rankVisual = `<b style="color:#ffd700;">#1</b>`;
-                if (index === 1) rankVisual = `<b style="color:#c0c0c0;">#2</b>`;
-                if (index === 2) rankVisual = `<b style="color:#cd7f32;">#3</b>`;
-
-                html += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding:15px 10px;">${rankVisual}</td>
-                    <td style="padding:15px 10px; color:#fff;">${s.n} <span style="color:#666; font-size:0.75rem; font-family:monospace;">${s.h}</span></td>
-                    <td style="padding:15px 10px; color:${tColor}; font-weight:bold; font-family:monospace; font-size:1.1rem;">${s.score}</td>
-                </tr>`;
-            });
-            tbody.innerHTML = html;
-        } catch(e) {
-            console.error("Error cargando Leaderboard de Arena:", e);
+        if (scores.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#777;">Aún no hay tiempos registrados en este evento. ¡Sé el primero!</td></tr>';
+            return;
         }
+
+        tbody.innerHTML = scores.map((s, index) => {
+            let rankVisual = `#${index + 1}`;
+            if (index === 0) rankVisual = `<b style="color:#ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5);">#1</b>`;
+            else if (index === 1) rankVisual = `<b style="color:#c0c0c0;">#2</b>`;
+            else if (index === 2) rankVisual = `<b style="color:#cd7f32;">#3</b>`;
+
+            return `
+            <tr style="border-bottom: 1px solid rgba(179,136,255,0.1);">
+                <td style="padding:15px 10px;">${rankVisual}</td>
+                <td style="padding:15px 10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${s.a || window.CT.defAvatar}" style="width:25px; height:25px; border-radius:50%; border:1px solid ${tColor};">
+                        <span style="color:#fff;">${s.n}</span>
+                    </div>
+                </td>
+                <td style="padding:15px 10px; color:#aaa; font-family:monospace;">${s.acc || 0}%</td>
+                <td style="padding:15px 10px; color:${tColor}; font-weight:bold; font-family:monospace; font-size:1.2rem;">${s.score}</td>
+            </tr>`;
+        }).join('');
+    },
+
+    showArenaWinnerPopup: (winnerObj, prizeEmoji) => {
+        const modal = document.getElementById('arena-winner-modal');
+        if(!modal) return;
+
+        document.getElementById('aw-avatar').src = winnerObj.a || window.CT.defAvatar;
+        document.getElementById('aw-name').innerText = winnerObj.n || "DESCONOCIDO";
+        document.getElementById('aw-score').innerText = winnerObj.score || "0";
+        document.getElementById('aw-cpm').innerText = winnerObj.cpm || "0";
+        document.getElementById('aw-acc').innerText = `${winnerObj.acc || 0}%`;
+        
+        const medalEl = document.getElementById('aw-medal');
+        if (prizeEmoji && medalEl) {
+            medalEl.innerText = prizeEmoji;
+            medalEl.style.display = 'block';
+        } else if (medalEl) {
+            medalEl.style.display = 'none';
+        }
+
+        modal.classList.remove('hidden');
     }
 });
