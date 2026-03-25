@@ -134,11 +134,25 @@ window.App = {
         if(track) { window.App.currentTrack = track; if(window.App.activeEngine) window.App.activeEngine.stop(); window.App.activeEngine = new window.Engine(track, 'normal'); } 
     },
 
+    // NUEVO: startArenaRace conectado a CananStudio
     startArenaRace: () => {
-        window.App.currentRaceContext = { type: 'arena' };
-        let tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]')); 
-        if(!tracks || tracks.length === 0) return alert("No hay textos disponibles para la Arena."); 
-        window.App.currentTrack = tracks[0]; 
+        const conf = window.UI.arenaCurrentConfig;
+        if (!conf || !conf.active) return alert("No hay un torneo activo en este momento.");
+
+        const allTracks = window.CT.dbLocal('p');
+        const arsenalIds = conf.tracks || []; 
+        
+        let validTracks = allTracks.filter(t => arsenalIds.includes(t.id.toString()));
+        
+        if(validTracks.length === 0) {
+            validTracks = allTracks.filter(t => !t.c.startsWith('[TRN]'));
+            if(validTracks.length === 0) return alert("No hay textos disponibles para la Arena.");
+        }
+
+        window.App.currentRaceContext = { type: 'arena', version: conf.version };
+        
+        window.App.currentTrack = validTracks[Math.floor(Math.random() * validTracks.length)]; 
+        
         if(window.App.activeEngine) window.App.activeEngine.stop(); 
         window.App.activeEngine = new window.Engine(window.App.currentTrack, 'arena'); 
     },
