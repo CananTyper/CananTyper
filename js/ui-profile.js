@@ -2,6 +2,18 @@
     CANANTYPER - UI PROFILE (PERFIL, AJUSTES GLOBALES Y BUSCADOR)
    ================================================================ */
 
+// INYECCIÓN DE ESTILOS PARA TOOLTIPS CUSTOMIZADOS (NIVEL PRO)
+if (!document.getElementById('ct-tooltip-styles')) {
+    const style = document.createElement('style');
+    style.id = 'ct-tooltip-styles';
+    style.innerHTML = `
+        .verified-badge { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+        .verified-tooltip { position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%) translateY(5px); background: #0a0a0c; color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; letter-spacing: 0.5px; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s ease; border: 1px solid #333; pointer-events: none; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.8); }
+        .verified-badge:hover .verified-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+    `;
+    document.head.appendChild(style);
+}
+
 Object.assign(window.UI, {
     formatTrackNameFull: (idOrTitle) => {
         if(!idOrTitle || idOrTitle === "-") return "-";
@@ -168,24 +180,29 @@ Object.assign(window.UI, {
             window.CT.activeProfHandle = u.h;
             const scores = await window.App.getUserScores(u.h);
             
-            // --- LÓGICA DE VERIFICACIÓN VISUAL (E-SPORTS DESIGN) ---
+            // --- LÓGICA DE VERIFICACIÓN VISUAL CON TOOLTIPS CUSTOMIZADOS ---
             let verifiedSVG = '';
             if (u.v === 1) {
-                // Sello Dentado Oficial (Color del Tema con Checkmark Negro)
-                verifiedSVG = `<svg title="Verificado Oficial" style="width:24px; height:24px; filter:drop-shadow(0 0 5px var(--p));" viewBox="0 0 24 24">
-                                  <path d="M11.99 2.5l-2.6 1.83-3.13-.53-.88 3.05-2.73 1.63L3.89 12l-1.24 3.52 2.73 1.63.88 3.05 3.13-.53 2.6 1.83 2.6-1.83 3.13.53.88-3.05 2.73-1.63L20.11 12l1.24-3.52-2.73-1.63-.88-3.05-3.13.53-2.6-1.83z" fill="var(--p)"/>
-                                  <path d="M10.5 15.5l-4-4 1.5-1.5 2.5 2.5 6-6 1.5 1.5-7.5 7.5z" fill="#000"/>
-                               </svg>`;
+                verifiedSVG = `
+                <div class="verified-badge">
+                    <svg style="width:24px; height:24px; filter:drop-shadow(0 0 5px var(--p)); margin-left:6px;" viewBox="0 0 24 24">
+                        <path d="M11.99 2.5l-2.6 1.83-3.13-.53-.88 3.05-2.73 1.63L3.89 12l-1.24 3.52 2.73 1.63.88 3.05 3.13-.53 2.6 1.83 2.6-1.83 3.13.53.88-3.05 2.73-1.63L20.11 12l1.24-3.52-2.73-1.63-.88-3.05-3.13.53-2.6-1.83z" fill="var(--p)"/>
+                        <path d="M10.5 15.5l-4-4 1.5-1.5 2.5 2.5 6-6 1.5 1.5-7.5 7.5z" fill="#000"/>
+                    </svg>
+                    <span class="verified-tooltip">Verificado</span>
+                </div>`;
             } else if (u.v === 2) {
-                // Sello de Sistema (Hexágono Platino Brillante con Núcleo Tecnológico)
-                verifiedSVG = `<svg title="Cuenta del Sistema" style="width:22px; height:22px; filter:drop-shadow(0 0 6px rgba(226,232,240,0.6));" viewBox="0 0 24 24">
-                                  <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#e2e8f0"/>
-                                  <path d="M12 4.5l-6 3.4v8.2l6 3.4 6-3.4v-8.2l-6-3.4z" fill="#0a0a0c"/>
-                                  <path d="M12 15.5l-3.5-2V9.5L12 7.5l3.5 2v4l-3.5 2z" fill="#e2e8f0"/>
-                               </svg>`;
+                verifiedSVG = `
+                <div class="verified-badge">
+                    <svg style="width:22px; height:22px; filter:drop-shadow(0 0 6px rgba(226,232,240,0.6)); margin-left:6px;" viewBox="0 0 24 24">
+                        <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#e2e8f0"/>
+                        <path d="M12 4.5l-6 3.4v8.2l6 3.4 6-3.4v-8.2l-6-3.4z" fill="#0a0a0c"/>
+                        <path d="M12 15.5l-3.5-2V9.5L12 7.5l3.5 2v4l-3.5 2z" fill="#e2e8f0"/>
+                    </svg>
+                    <span class="verified-tooltip">Servidor</span>
+                </div>`;
             }
 
-            // TÉCNICA QUIRÚRGICA DE ALINEACIÓN: flexbox inline anida el nombre y el SVG perfectamente al centro vertical.
             document.getElementById('prof-name').innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;">${u.n} ${verifiedSVG}</span>`; 
             
             document.getElementById('prof-handle').innerText = u.h; 
@@ -194,7 +211,6 @@ Object.assign(window.UI, {
             
             const earnedMedals = window.UI.getUserMedals(u);
             
-            // LÓGICA ANOMALÍA CERO (Modifica visualmente la fecha)
             const hasAnomalia = earnedMedals.some(m => m.id === 'anomalia_cero');
             document.getElementById('prof-member-since').innerText = hasAnomalia ? 'Indefinido' : (u.createdAt || 'Desconocido');
             
