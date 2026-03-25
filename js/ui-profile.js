@@ -240,9 +240,9 @@ Object.assign(window.UI, {
             let medalsHTML = '';
             if (displayMedals.length > 0) {
                 medalsHTML = displayMedals.map(m => {
-                    // Diseño PRO para el multiplicador (xN)
+                    // Diseño sutil, adaptado al theme y tamaño adecuado
                     const countBadge = (m.isStackable && m.count > 1) 
-                        ? `<div style="position:absolute; bottom:-5px; right:-8px; background: linear-gradient(45deg, #00e5ff, #0077ff); color:#000; font-size:0.8rem; font-weight:900; padding:2px 7px; border-radius:12px; box-shadow: 0 0 10px rgba(0,229,255,0.6); border: 2px solid #000; z-index:5;">x${m.count}</div>` 
+                        ? `<div style="position:absolute; bottom:-2px; right:-2px; background:var(--accent); color:var(--bg, #000); font-size:0.65rem; font-weight:900; padding:2px 5px; border-radius:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); border: 1px solid #000; z-index:5;">x${m.count}</div>` 
                         : '';
                     
                     return `
@@ -332,9 +332,9 @@ Object.assign(window.UI, {
             
             if (!hasIt && m.isSecret) return; 
 
-            // Multiplicador estético para la vitrina completa
+            // Multiplicador estético adaptado
             const countBadge = (hasIt && m.isStackable && earnedMatch.count > 1) 
-                ? `<div style="position:absolute; bottom:-5px; right:-5px; background: linear-gradient(45deg, #00e5ff, #0077ff); color:#000; font-size:0.75rem; font-weight:900; padding:2px 6px; border-radius:10px; box-shadow: 0 0 8px rgba(0,229,255,0.5); border: 2px solid #000; z-index:5;">x${earnedMatch.count}</div>` 
+                ? `<div style="position:absolute; bottom:5px; right:5px; background:var(--accent); color:var(--bg, #000); font-size:0.65rem; font-weight:900; padding:2px 5px; border-radius:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); border: 1px solid #000; z-index:5;">x${earnedMatch.count}</div>` 
                 : '';
 
             html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}" style="position:relative;">
@@ -409,27 +409,26 @@ Object.assign(window.UI, {
             const index = window.UI.selectedMedalsOrder.indexOf(m.id);
             const isSelected = index > -1;
             
-            // Badge de Orden Numérico (1 al 6)
-            const orderBadge = isSelected ? `<div style="position:absolute; top:-5px; right:-5px; background:var(--accent); color:#000; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; box-shadow:0 0 5px var(--accent); border:2px solid #000; z-index:10;">${index + 1}</div>` : '';
+            // Badge de Orden Numérico respetando el tema
+            const orderBadge = isSelected ? `<div style="position:absolute; top:-5px; right:-5px; background:var(--accent); color:var(--bg, #000); font-weight:900; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; box-shadow:0 0 5px rgba(0,0,0,0.5); border:1px solid #000; z-index:10;">${index + 1}</div>` : '';
             
-            // Etiqueta visual para distinguir
-            const typeLabel = m.isStackable ? `<span style="color:#00e5ff; font-size:0.7rem;">📦 Múltiple (x${m.count})</span>` : `<span style="color:#777; font-size:0.7rem;">🔒 Única</span>`;
+            // Etiqueta visual
+            const typeLabel = m.isStackable ? `<span style="color:var(--accent); font-size:0.7rem;">📦 Múltiple (x${m.count})</span>` : `<span style="color:#777; font-size:0.7rem;">🔒 Única</span>`;
 
             html += `
-            <div onclick="window.UI.toggleMedalSelection('${m.id}')" style="position:relative; display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; background: ${isSelected ? 'rgba(0,229,255,0.05)' : 'var(--surface)'}; border: 1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; transition:0.2s; user-select:none;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${isSelected ? 'var(--accent)' : 'var(--border)'}'">
+            <div onclick="window.UI.toggleMedalSelection('${m.id}')" style="position:relative; display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; background: ${isSelected ? 'var(--surface)' : 'transparent'}; border: 1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; transition:0.2s; user-select:none;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${isSelected ? 'var(--accent)' : 'var(--border)'}'">
                 <div style="font-size:2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
                     ${m.icon}
                 </div>
                 <div style="display:flex; flex-direction:column; overflow:hidden;">
-                    <span style="color:#fff; font-weight:bold; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</span>
+                    <span style="color:var(--text-main); font-weight:bold; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</span>
                     ${typeLabel}
                 </div>
                 ${orderBadge}
             </div>`;
         });
 
-        // ⚠️ TRUCO QUIRÚRGICO: Inyectamos checkboxes invisibles en el orden EXACTO en que el jugador hizo clic.
-        // Así, cuando app.js ejecute `querySelectorAll(':checked')`, los leerá en tu orden preferido.
+        // Checkboxes invisibles para guardar el orden
         html += `<div id="hidden-ordered-checkboxes" style="display:none;">`;
         window.UI.selectedMedalsOrder.forEach(id => {
             html += `<input type="checkbox" value="${id}" checked>`;
@@ -442,12 +441,12 @@ Object.assign(window.UI, {
     toggleMedalSelection: (id) => {
         const idx = window.UI.selectedMedalsOrder.indexOf(id);
         if (idx > -1) {
-            window.UI.selectedMedalsOrder.splice(idx, 1); // La quitamos
+            window.UI.selectedMedalsOrder.splice(idx, 1); 
         } else {
             if (window.UI.selectedMedalsOrder.length >= 6) {
                 return alert("Solo puedes destacar un máximo de 6 medallas en tu perfil.");
             }
-            window.UI.selectedMedalsOrder.push(id); // La añadimos al final de la fila
+            window.UI.selectedMedalsOrder.push(id); 
         }
         window.UI.renderMedalSelector();
     },
