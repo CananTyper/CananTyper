@@ -88,11 +88,11 @@
                 </div>
             </header>
 
-            <div class="mode-selectors" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+            <div class="mode-selectors" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
                 <button id="t_btn_random" onclick="window.App.startRandomRace()" class="btn-primary" style="padding: 15px 10px;">ALEATORIO</button>
                 <button id="t_btn_hardcore" onclick="window.App.startHardcoreRace()" class="btn-primary" style="background:var(--error); color:#fff; padding: 15px 10px; box-shadow: 0 0 15px rgba(244,67,54,0.3);">HARDCORE 💀</button>
                 <button id="t_btn_custom" onclick="window.UI.showTrackSelect()" class="btn-primary btn-alt" style="padding: 15px 10px;">PERSONALIZADO</button>
-                
+                <button id="t_btn_multiplayer" onclick="window.App.openMultiplayerLobby()" class="btn-primary hidden" style="background:var(--p); color:#000; padding: 15px 10px; box-shadow: 0 0 15px var(--p);">DUELOS ⚔️</button>
                 <div style="position: relative;">
                     <button id="t_btn_train_menu" onclick="window.UI.toggleTrainMenu()" class="btn-primary btn-alt" style="width:100%; padding: 15px 10px; border-color:#ffd700; color:#ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);">ENTRENAR 🏋️</button>
                     <div id="train-dropdown" class="edit-dropdown hidden" style="top:110%; right:0; width:100%;"></div>
