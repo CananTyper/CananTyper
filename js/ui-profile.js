@@ -240,9 +240,9 @@ Object.assign(window.UI, {
             let medalsHTML = '';
             if (displayMedals.length > 0) {
                 medalsHTML = displayMedals.map(m => {
-                    // Diseño sutil, adaptado al theme y tamaño adecuado
+                    // Diseño PRO: Fondo color tema, texto NEGRO, borde grueso y brillo
                     const countBadge = (m.isStackable && m.count > 1) 
-                        ? `<div style="position:absolute; bottom:-2px; right:-2px; background:var(--accent); color:var(--bg, #000); font-size:0.65rem; font-weight:900; padding:2px 5px; border-radius:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); border: 1px solid #000; z-index:5;">x${m.count}</div>` 
+                        ? `<div style="position:absolute; bottom:-5px; right:-8px; background: var(--accent, #a6ff00); color: #000; font-size:0.75rem; font-weight:900; padding:2px 6px; border-radius:12px; box-shadow: 0 0 8px var(--accent, #a6ff00); border: 2px solid #111; z-index:5;">x${m.count}</div>` 
                         : '';
                     
                     return `
@@ -332,9 +332,9 @@ Object.assign(window.UI, {
             
             if (!hasIt && m.isSecret) return; 
 
-            // Multiplicador estético adaptado
+            // Multiplicador visualmente coordinado
             const countBadge = (hasIt && m.isStackable && earnedMatch.count > 1) 
-                ? `<div style="position:absolute; bottom:5px; right:5px; background:var(--accent); color:var(--bg, #000); font-size:0.65rem; font-weight:900; padding:2px 5px; border-radius:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); border: 1px solid #000; z-index:5;">x${earnedMatch.count}</div>` 
+                ? `<div style="position:absolute; bottom:0px; right:0px; background: var(--accent, #a6ff00); color: #000; font-size:0.75rem; font-weight:900; padding:2px 6px; border-radius:12px; box-shadow: 0 0 8px var(--accent, #a6ff00); border: 2px solid #111; z-index:5;">x${earnedMatch.count}</div>` 
                 : '';
 
             html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}" style="position:relative;">
@@ -384,11 +384,9 @@ Object.assign(window.UI, {
 
         const earnedMedals = window.UI.getUserMedals(userDoc);
         
-        // Guardamos temporalmente los datos en window.UI para interactuar sin recargar
         window.UI.tempEarnedMedals = earnedMedals; 
         window.UI.selectedMedalsOrder = [...(userDoc.visible_medals || [])]; 
 
-        // Limpiamos medallas que quizá ya no tenga
         window.UI.selectedMedalsOrder = window.UI.selectedMedalsOrder.filter(id => earnedMedals.some(m => m.id === id));
 
         window.UI.renderMedalSelector();
@@ -409,11 +407,10 @@ Object.assign(window.UI, {
             const index = window.UI.selectedMedalsOrder.indexOf(m.id);
             const isSelected = index > -1;
             
-            // Badge de Orden Numérico respetando el tema
-            const orderBadge = isSelected ? `<div style="position:absolute; top:-5px; right:-5px; background:var(--accent); color:var(--bg, #000); font-weight:900; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; box-shadow:0 0 5px rgba(0,0,0,0.5); border:1px solid #000; z-index:10;">${index + 1}</div>` : '';
+            // Badge Numérico con colores dinámicos
+            const orderBadge = isSelected ? `<div style="position:absolute; top:-5px; right:-5px; background: var(--accent, #a6ff00); color: #000; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; box-shadow:0 0 5px var(--accent, #a6ff00); border:2px solid #111; z-index:10;">${index + 1}</div>` : '';
             
-            // Etiqueta visual
-            const typeLabel = m.isStackable ? `<span style="color:var(--accent); font-size:0.7rem;">📦 Múltiple (x${m.count})</span>` : `<span style="color:#777; font-size:0.7rem;">🔒 Única</span>`;
+            const typeLabel = m.isStackable ? `<span style="color:var(--accent, #a6ff00); font-size:0.7rem;">📦 Múltiple (x${m.count})</span>` : `<span style="color:#777; font-size:0.7rem;">🔒 Única</span>`;
 
             html += `
             <div onclick="window.UI.toggleMedalSelection('${m.id}')" style="position:relative; display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px; background: ${isSelected ? 'var(--surface)' : 'transparent'}; border: 1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; transition:0.2s; user-select:none;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${isSelected ? 'var(--accent)' : 'var(--border)'}'">
@@ -428,7 +425,6 @@ Object.assign(window.UI, {
             </div>`;
         });
 
-        // Checkboxes invisibles para guardar el orden
         html += `<div id="hidden-ordered-checkboxes" style="display:none;">`;
         window.UI.selectedMedalsOrder.forEach(id => {
             html += `<input type="checkbox" value="${id}" checked>`;
