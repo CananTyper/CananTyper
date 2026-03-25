@@ -55,7 +55,6 @@ if (!document.getElementById('mp-custom-styles')) {
         .winner-title { font-size: 3rem; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 2px; }
         .winner-subtitle { color: #fff; font-size: 1.2rem; margin-top: 10px; opacity: 0.9; letter-spacing: 1px; }
         
-        /* Taunts / Emotes */
         .taunt-btn { background: rgba(0,0,0,0.6); border: 1px solid #b388ff; color: #b388ff; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; font-family: monospace; font-weight: bold;}
         .taunt-btn:hover { background: #b388ff; color: #000; box-shadow: 0 0 10px #b388ff; }
         .taunt-popup { position: absolute; background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; border: 1px solid #b388ff; padding: 5px 12px; border-radius: 8px; z-index: 100; animation: floatUp 2s forwards; pointer-events: none; white-space: nowrap; box-shadow: 0 0 10px rgba(179,136,255,0.5); }
@@ -77,7 +76,10 @@ window.Multiplayer = {
     myVehicle: localStorage.getItem('ct_mp_vehicle') || '🏎️',
     availableVehicles: ['🏎️', '🚀', '🛸', '🚤', '🦖', '🐉', '🏍️', '🚁'],
     
+    // Motor de Combate Variables
     currentMatchId: null,
+    currentRivalHandle: null, // CACHÉ VITAL: Evita perder al rival si se borra la sala
+    currentRound: 1,          // SISTEMA DE RONDAS: Corrige el bug del reinicio fantasma
     myMatchKey: null,
     isHost: false,
     matchEnded: false,
@@ -282,6 +284,7 @@ window.Multiplayer = {
 
             await window.db.collection('mp_matches').doc(matchId).set({
                 track: chosenTrack,
+                round: 1, // EL CORAZÓN DEL FIX DE REVANCHA
                 p1: { h: rivalHandle, prog: 0, cpm: 0, done: false, rematch: false, taunt: null },
                 p2: { h: myUser.h, prog: 0, cpm: 0, done: false, rematch: false, taunt: null },
                 status: 'starting'
@@ -295,14 +298,10 @@ window.Multiplayer = {
         } catch(e) { console.error(e); alert("Error creando la sala de duelo."); }
     },
 
-    // --- MANEJO DE TAUNTS (EMOTES) ---
     tauntKeyListener: (e) => {
         if (['1','2','3'].includes(e.key)) {
             const activeWordEl = document.querySelector('.active-word');
-            // Si el input está enfocado y la palabra a escribir contiene el número, no hacemos taunt (escribimos normal)
-            if (activeWordEl && activeWordEl.innerText.includes(e.key) && document.activeElement.id === 'duel-input') {
-                return;
-            }
+            if (activeWordEl && activeWordEl.innerText.includes(e.key) && document.activeElement.id === 'duel-input') return;
             e.preventDefault();
             if (e.key === '1') window.Multiplayer.sendTaunt('GG');
             if (e.key === '2') window.Multiplayer.sendTaunt('EZ');
@@ -339,6 +338,7 @@ window.Multiplayer = {
         window.UI.show('duel-screen');
         window.Multiplayer.matchEnded = false;
         window.Multiplayer.resetting = false;
+        window.Multiplayer.currentRound = 1;
 
         const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
         if(!matchDoc.exists) return window.Multiplayer.quitDuel();
@@ -349,25 +349,21 @@ window.Multiplayer = {
         window.Multiplayer.isHost = !isP1; 
         
         const rivalHandle = isP1 ? matchData.p2.h : matchData.p1.h;
+        window.Multiplayer.currentRivalHandle = rivalHandle; // CACHÉ: Arregla el bug de Rivalidad en Cero
 
         const rivalLobbyDoc = await window.db.collection('mp_lobby').doc(rivalHandle).get();
         const rivalData = rivalLobbyDoc.exists ? rivalLobbyDoc.data() : { n: rivalHandle, a: '', vh: '🚀' };
         const myUser = window.CT.dbLocal('u').find(x => x.h === window.Multiplayer.myHandle);
 
-        const myNameStr = "TÚ";
-        const rivalNameStr = rivalData.n.toUpperCase();
-        const myAvatarUrl = myUser.a || window.CT.defAvatar;
-        const rivalAvatarUrl = rivalData.a || window.CT.defAvatar;
-
-        document.getElementById('duel-my-name').innerText = myNameStr;
-        document.getElementById('duel-my-avatar').src = myAvatarUrl;
-        document.getElementById('duel-rival-name').innerText = rivalNameStr;
-        document.getElementById('duel-rival-avatar').src = rivalAvatarUrl;
+        document.getElementById('duel-my-name').innerText = "TÚ";
+        document.getElementById('duel-my-avatar').src = myUser.a || window.CT.defAvatar;
+        document.getElementById('duel-rival-name').innerText = rivalData.n.toUpperCase();
+        document.getElementById('duel-rival-avatar').src = rivalData.a || window.CT.defAvatar;
         document.getElementById('duel-rival-vehicle').innerText = rivalData.vh || '🚀';
 
         window.addEventListener('keydown', window.Multiplayer.tauntKeyListener);
 
-        // BÚSQUEDA DEL NÉMESIS (Marcador Histórico)
+        // BÚSQUEDA DEL NÉMESIS
         const sortedHandles = [window.Multiplayer.myHandle, rivalHandle].sort();
         const rivalryId = `${sortedHandles[0]}_${sortedHandles[1]}`;
         let myScore = 0; let rivalScore = 0;
@@ -388,7 +384,6 @@ window.Multiplayer = {
             const myKey = window.Multiplayer.myMatchKey;
             const rivalKey = myKey === 'p1' ? 'p2' : 'p1';
             
-            // Reflejar Taunts
             if (d[rivalKey].taunt && d[rivalKey].taunt.t !== window.Multiplayer.lastTauntT) {
                 window.Multiplayer.lastTauntT = d[rivalKey].taunt.t;
                 window.Multiplayer.showTaunt(d[rivalKey].taunt.msg, 'rival');
@@ -404,7 +399,6 @@ window.Multiplayer = {
                 document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
                 document.getElementById('duel-rival-cpm').innerText = `${d[rivalKey].cpm} CPM`;
 
-                // Si el rival termina antes que yo, pierdo.
                 if (d[rivalKey].done && !document.getElementById('duel-input').disabled && !window.Multiplayer.matchEnded) {
                     window.Multiplayer.endDuel(false, null);
                 }
@@ -423,7 +417,9 @@ window.Multiplayer = {
                 }
             }
 
-            if (!d.p1.done && !d.p2.done && window.Multiplayer.matchEnded && d.status === 'starting') {
+            // SISTEMA DE RONDAS: El salvador del Bug de Reinicio Fantasma
+            if (d.round > window.Multiplayer.currentRound) {
+                window.Multiplayer.currentRound = d.round;
                 window.Multiplayer.matchEnded = false;
                 window.Multiplayer.resetting = false;
                 window.Multiplayer.startNewRound(d.track, false, 0, 0); 
@@ -473,7 +469,6 @@ window.Multiplayer = {
             const cineLayer = document.createElement('div');
             cineLayer.className = 'cinematic-overlay';
             
-            // INYECCIÓN DEL MARCADOR NÉMESIS
             const scoreHtml = (myScore > 0 || rivalScore > 0) 
                 ? `<div style="color: #ffd700; font-family: monospace; font-size: 1.5rem; margin-bottom: 25px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">HISTORIAL: TÚ ${myScore} - ${rivalScore} RIVAL</div>` 
                 : `<div style="color: #888; font-family: monospace; font-size: 1rem; margin-bottom: 25px; letter-spacing: 2px;">PRIMER ENCUENTRO</div>`;
@@ -576,7 +571,6 @@ window.Multiplayer = {
             }
 
             if (window.Multiplayer.currentWordIndex >= window.Multiplayer.duelWords.length) {
-                // Notificar a Firebase que gané
                 window.Multiplayer.syncProgress(100, currentCPM, true);
                 window.Multiplayer.endDuel(true, currentCPM);
             } else {
@@ -615,7 +609,6 @@ window.Multiplayer = {
             const chars = window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length;
             finalCPM = Math.round(chars / timeMin) || 0;
             
-            // Si perdí, informo mi último progreso y que ya "terminé" para destrabar la revancha
             const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
             window.Multiplayer.syncProgress(rawProg, finalCPM, true);
         }
@@ -631,12 +624,7 @@ window.Multiplayer = {
         const saveVIPStats = async () => {
             try {
                 const myHandle = window.Multiplayer.myHandle;
-                let rivalHandle = "";
-                const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
-                if(matchDoc.exists) {
-                    const md = matchDoc.data();
-                    rivalHandle = md.p1.h === myHandle ? md.p2.h : md.p1.h;
-                }
+                const rivalHandle = window.Multiplayer.currentRivalHandle; // Usamos el Caché vital
 
                 const myRef = window.db.collection('users').doc(myHandle);
                 const dbDoc = await myRef.get();
@@ -719,14 +707,17 @@ window.Multiplayer = {
 
     triggerRematchReset: async () => {
         try {
+            const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
+            const currentRound = matchDoc.exists ? (matchDoc.data().round || 1) : 1;
+            
             const tracks = window.CT.dbLocal('p').filter(t => !t.c.startsWith('[TRN]'));
             const chosenTrack = tracks[Math.floor(Math.random() * tracks.length)];
 
             await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
                 track: chosenTrack,
+                round: currentRound + 1, // EL SALVADOR DEL BUG
                 'p1.prog': 0, 'p1.cpm': 0, 'p1.done': false, 'p1.rematch': false, 'p1.taunt': null,
-                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null,
-                status: 'starting'
+                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null
             });
         } catch(e) { console.error("Error reseteando sala:", e); }
     },
