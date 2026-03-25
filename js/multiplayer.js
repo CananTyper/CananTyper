@@ -15,7 +15,7 @@ if (!document.getElementById('mp-custom-styles')) {
         .vehicle-btn.active { border-color: #b388ff; background: rgba(179,136,255,0.1); filter: grayscale(0); opacity: 1; box-shadow: 0 0 15px rgba(179,136,255,0.4); transform: scale(1.1); }
 
         .duel-mode-bg { background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #050508 80%); }
-        .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; position: relative; }
+        .duel-container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; position: relative; min-height: 80vh; justify-content: center;}
         
         .duel-hud { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border: 1px solid rgba(179,136,255,0.2); border-radius: 15px; padding: 15px 30px; backdrop-filter: blur(10px); z-index: 10;}
         .duel-player-card { display: flex; align-items: center; gap: 15px; width: 40%; position: relative; }
@@ -25,40 +25,43 @@ if (!document.getElementById('mp-custom-styles')) {
         .duel-cpm { color: #b388ff; font-family: monospace; font-size: 1.1rem; font-weight: bold; }
         .duel-vs { font-size: 2rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1px #b388ff; text-shadow: 0 0 15px rgba(179,136,255,0.5); font-style: italic; }
 
-        .duel-tracks-wrapper { background: rgba(0,0,0,0.6); border: 1px solid rgba(179,136,255,0.3); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+        .duel-tracks-wrapper { background: rgba(0,0,0,0.6); border: 1px solid rgba(179,136,255,0.3); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); z-index: 10;}
         .duel-track-line { position: relative; height: 50px; border-bottom: 2px dashed rgba(179,136,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
         .duel-track-line:last-child { border-bottom: none; margin-bottom: 0; }
         
         .duel-vehicle-icon { position: absolute; font-size: 2.5rem; top: 50%; transform: translateY(-50%); left: 0%; transition: left 1.5s linear; z-index: 5; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
         .duel-progress-glow { position: absolute; height: 4px; background: #b388ff; top: 50%; transform: translateY(-50%); left: 0; width: 0%; transition: width 1.5s linear; box-shadow: 0 0 15px #b388ff; z-index: 1; border-radius: 2px; }
 
-        .duel-text-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(179,136,255,0.2); border-radius: 12px; padding: 30px; color: #666; font-size: 1.4rem; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 150px; text-align: justify; backdrop-filter: blur(10px); box-shadow: inset 0 0 20px rgba(179,136,255,0.02); }
+        .duel-text-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(179,136,255,0.2); border-radius: 12px; padding: 30px; color: #666; font-size: 1.4rem; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 150px; text-align: justify; backdrop-filter: blur(10px); box-shadow: inset 0 0 20px rgba(179,136,255,0.02); z-index: 10;}
         .duel-text-box span { transition: color 0.1s; }
         .duel-text-box .correct { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.4); }
         .duel-text-box .error { color: #ff4a4a; text-decoration: underline; text-shadow: 0 0 8px rgba(255,74,74,0.6); }
         .duel-text-box .active-word { border-bottom: 2px solid #b388ff; color: #ccc; }
 
-        .duel-input-box { width: 100%; background: rgba(0,0,0,0.5); border: 2px solid #b388ff; border-radius: 12px; padding: 20px; color: #fff; font-size: 1.5rem; text-align: center; outline: none; transition: 0.3s; box-shadow: 0 0 20px rgba(179,136,255,0.1); }
+        .duel-input-box { width: 100%; background: rgba(0,0,0,0.5); border: 2px solid #b388ff; border-radius: 12px; padding: 20px; color: #fff; font-size: 1.5rem; text-align: center; outline: none; transition: 0.3s; box-shadow: 0 0 20px rgba(179,136,255,0.1); z-index: 10;}
         .duel-input-box:focus { box-shadow: 0 0 30px rgba(179,136,255,0.4); background: rgba(179,136,255,0.05); }
         .duel-input-box.error-shake { animation: shake 0.3s; border-color: #ff4a4a; box-shadow: 0 0 30px rgba(255,74,74,0.4); }
         
-        .duel-countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; font-weight: 900; color: #fff; text-shadow: 0 0 40px #b388ff; z-index: 100; pointer-events: none; }
+        /* FIX CONTADOR CENTRALIZADO */
+        .duel-countdown { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12rem; font-weight: 900; color: #fff; text-shadow: 0 0 50px #b388ff, 0 0 20px #b388ff; z-index: 9999; pointer-events: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
         .cinematic-overlay { position: absolute; inset: -20px; background: rgba(5,5,10,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.4s forwards; border-radius: 15px; }
         .vs-avatars { display: flex; align-items: center; gap: 40px; margin-bottom: 20px; }
-        .vs-avatar-box { text-align: center; animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .vs-avatar-box { text-align: center; animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         .vs-avatar-box img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #b388ff; box-shadow: 0 0 30px rgba(179,136,255,0.5); margin-bottom: 15px; object-fit: cover; }
         .vs-text { font-size: 4rem; font-weight: 900; color: transparent; -webkit-text-stroke: 2px #b388ff; text-shadow: 0 0 30px rgba(179,136,255,0.7); font-style: italic; margin: 0 20px; animation: popIn 0.5s ease; }
-        .winner-box { text-align: center; animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .winner-box { text-align: center; animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; width: 100%; z-index: 1001;}
+        .winner-avatar-wrapper { position: relative; display: inline-block; margin-bottom: 20px; }
         .winner-box img { width: 150px; height: 150px; border-radius: 50%; border: 4px solid #a6ff00; box-shadow: 0 0 50px rgba(166,255,0,0.6); margin-bottom: 20px; object-fit: cover; }
         .winner-title { font-size: 3rem; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 2px; }
         .winner-subtitle { color: #fff; font-size: 1.2rem; margin-top: 10px; opacity: 0.9; letter-spacing: 1px; }
         
         .taunt-btn { background: rgba(0,0,0,0.6); border: 1px solid #b388ff; color: #b388ff; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; font-family: monospace; font-weight: bold;}
         .taunt-btn:hover { background: #b388ff; color: #000; box-shadow: 0 0 10px #b388ff; }
-        .taunt-popup { position: absolute; background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; border: 1px solid #b388ff; padding: 5px 12px; border-radius: 8px; z-index: 100; animation: floatUp 2s forwards; pointer-events: none; white-space: nowrap; box-shadow: 0 0 10px rgba(179,136,255,0.5); }
-        @keyframes floatUp { 0% { opacity: 0; transform: translateY(10px) scale(0.8); } 15% { opacity: 1; transform: translateY(-10px) scale(1.1); } 80% { opacity: 1; transform: translateY(-30px) scale(1); } 100% { opacity: 0; transform: translateY(-50px); } }
+        .taunt-popup { position: absolute; background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; border: 1px solid #b388ff; padding: 5px 12px; border-radius: 8px; z-index: 2000; animation: floatUp 2s forwards; pointer-events: none; white-space: nowrap; font-size: 1.5rem; box-shadow: 0 0 20px rgba(179,136,255,0.6); }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(10px) scale(0.8); } 15% { opacity: 1; transform: translateY(-10px) scale(1.1); } 80% { opacity: 1; transform: translateY(-40px) scale(1); } 100% { opacity: 0; transform: translateY(-60px); } }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -78,8 +81,8 @@ window.Multiplayer = {
     
     // Motor de Combate Variables
     currentMatchId: null,
-    currentRivalHandle: null, // CACHÉ VITAL: Evita perder al rival si se borra la sala
-    currentRound: 1,          // SISTEMA DE RONDAS: Corrige el bug del reinicio fantasma
+    currentRivalHandle: null, 
+    currentRound: 1,          
     myMatchKey: null,
     isHost: false,
     matchEnded: false,
@@ -284,7 +287,7 @@ window.Multiplayer = {
 
             await window.db.collection('mp_matches').doc(matchId).set({
                 track: chosenTrack,
-                round: 1, // EL CORAZÓN DEL FIX DE REVANCHA
+                round: 1, 
                 p1: { h: rivalHandle, prog: 0, cpm: 0, done: false, rematch: false, taunt: null },
                 p2: { h: myUser.h, prog: 0, cpm: 0, done: false, rematch: false, taunt: null },
                 status: 'starting'
@@ -319,18 +322,30 @@ window.Multiplayer = {
     },
 
     showTaunt: (msg, who) => {
-        const card = who === 'me' ? document.querySelector('.duel-player-card:not(.right)') : document.querySelector('.duel-player-card.right');
-        if(!card) return;
+        const cinematic = document.querySelector('.cinematic-overlay');
+        let target;
+        
+        if (cinematic && window.Multiplayer.matchEnded) {
+            // Si el duelo terminó, buscamos la foto del ganador en el medio
+            const winnerBox = cinematic.querySelector('.winner-avatar-wrapper');
+            if (winnerBox) target = winnerBox;
+        } else {
+            // Si estamos en carrera, sale de las fotos de arriba
+            target = who === 'me' ? document.querySelector('.duel-player-card:not(.right)') : document.querySelector('.duel-player-card.right');
+        }
+
+        if(!target) return;
         
         const popup = document.createElement('div');
         popup.className = 'taunt-popup';
         popup.innerText = msg;
         
-        popup.style.top = '-20px';
-        if (who === 'me') popup.style.left = '60px';
-        else popup.style.right = '60px';
+        // Ajustamos la posición para que se vea bien centrado arriba
+        popup.style.top = '-10px';
+        popup.style.left = '50%';
+        popup.style.transform = 'translateX(-50%)';
         
-        card.appendChild(popup);
+        target.appendChild(popup);
         setTimeout(() => popup.remove(), 2500);
     },
 
@@ -349,7 +364,7 @@ window.Multiplayer = {
         window.Multiplayer.isHost = !isP1; 
         
         const rivalHandle = isP1 ? matchData.p2.h : matchData.p1.h;
-        window.Multiplayer.currentRivalHandle = rivalHandle; // CACHÉ: Arregla el bug de Rivalidad en Cero
+        window.Multiplayer.currentRivalHandle = rivalHandle; 
 
         const rivalLobbyDoc = await window.db.collection('mp_lobby').doc(rivalHandle).get();
         const rivalData = rivalLobbyDoc.exists ? rivalLobbyDoc.data() : { n: rivalHandle, a: '', vh: '🚀' };
@@ -363,19 +378,22 @@ window.Multiplayer = {
 
         window.addEventListener('keydown', window.Multiplayer.tauntKeyListener);
 
-        // BÚSQUEDA DEL NÉMESIS
+        // FIX HISTORIAL RIVALIDAD: Await forzado antes de arrancar
         const sortedHandles = [window.Multiplayer.myHandle, rivalHandle].sort();
         const rivalryId = `${sortedHandles[0]}_${sortedHandles[1]}`;
         let myScore = 0; let rivalScore = 0;
+        
         try {
+            // Buscamos estrictamente en la base de datos la rivalidad
             const rivDoc = await window.db.collection('mp_rivalries').doc(rivalryId).get();
             if (rivDoc.exists) {
                 const rData = rivDoc.data();
                 myScore = (window.Multiplayer.myHandle === sortedHandles[0]) ? rData.score_p1 : rData.score_p2;
                 rivalScore = (rivalHandle === sortedHandles[0]) ? rData.score_p1 : rData.score_p2;
             }
-        } catch(e) {}
+        } catch(e) { console.log("Error buscando rivalidad: ", e); }
 
+        // Iniciamos la ronda pasando los scores validados
         window.Multiplayer.startNewRound(matchData.track, true, myScore, rivalScore);
 
         window.Multiplayer.matchUnsubscribe = window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).onSnapshot(snap => {
@@ -417,12 +435,21 @@ window.Multiplayer = {
                 }
             }
 
-            // SISTEMA DE RONDAS: El salvador del Bug de Reinicio Fantasma
             if (d.round > window.Multiplayer.currentRound) {
                 window.Multiplayer.currentRound = d.round;
                 window.Multiplayer.matchEnded = false;
                 window.Multiplayer.resetting = false;
-                window.Multiplayer.startNewRound(d.track, false, 0, 0); 
+                
+                // En la revancha, recalculamos el score de la base de datos para mostrar el punto nuevo
+                window.db.collection('mp_rivalries').doc(rivalryId).get().then(doc => {
+                     let mS = 0, rS = 0;
+                     if(doc.exists) {
+                         const rData = doc.data();
+                         mS = (window.Multiplayer.myHandle === sortedHandles[0]) ? rData.score_p1 : rData.score_p2;
+                         rS = (rivalHandle === sortedHandles[0]) ? rData.score_p1 : rData.score_p2;
+                     }
+                     window.Multiplayer.startNewRound(d.track, true, mS, rS); 
+                });
             }
         });
     },
@@ -464,14 +491,24 @@ window.Multiplayer = {
         input.disabled = true;
         input.placeholder = "[ PREPARANDO ENLACE ]";
 
+        // Creamos la capa para el contador (Aseguramos que esté lista y vacía)
+        let cd = document.getElementById('duel-cd');
+        if (!cd) {
+            cd = document.createElement('div');
+            cd.id = 'duel-cd';
+            cd.className = 'duel-countdown';
+            document.querySelector('.duel-container').appendChild(cd);
+        }
+        cd.style.display = 'none';
+
         if (showCinematic) {
             const duelContainer = document.querySelector('.duel-container');
             const cineLayer = document.createElement('div');
             cineLayer.className = 'cinematic-overlay';
             
             const scoreHtml = (myScore > 0 || rivalScore > 0) 
-                ? `<div style="color: #ffd700; font-family: monospace; font-size: 1.5rem; margin-bottom: 25px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">HISTORIAL: TÚ ${myScore} - ${rivalScore} RIVAL</div>` 
-                : `<div style="color: #888; font-family: monospace; font-size: 1rem; margin-bottom: 25px; letter-spacing: 2px;">PRIMER ENCUENTRO</div>`;
+                ? `<div style="color: #ffd700; font-family: monospace; font-size: 1.8rem; margin-bottom: 25px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,215,0,0.6);">HISTORIAL: TÚ ${myScore} - ${rivalScore} RIVAL</div>` 
+                : `<div style="color: #888; font-family: monospace; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 2px;">PRIMER ENCUENTRO</div>`;
 
             cineLayer.innerHTML = `
                 <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 15px; opacity: 0.7;">PREPARANDO PISTA</h3>
@@ -506,7 +543,7 @@ window.Multiplayer = {
         const cd = document.getElementById('duel-cd');
         const input = document.getElementById('duel-input');
         cd.style.display = 'block';
-        cd.style.fontSize = '8rem';
+        
         cd.innerHTML = "3";
         setTimeout(() => cd.innerText = "2", 1000);
         setTimeout(() => cd.innerText = "1", 2000);
@@ -624,7 +661,7 @@ window.Multiplayer = {
         const saveVIPStats = async () => {
             try {
                 const myHandle = window.Multiplayer.myHandle;
-                const rivalHandle = window.Multiplayer.currentRivalHandle; // Usamos el Caché vital
+                const rivalHandle = window.Multiplayer.currentRivalHandle; 
 
                 const myRef = window.db.collection('users').doc(myHandle);
                 const dbDoc = await myRef.get();
@@ -677,14 +714,22 @@ window.Multiplayer = {
         cineLayer.innerHTML = `
             <div class="winner-box">
                 <h3 style="color: #fff; letter-spacing: 5px; margin-bottom: 20px; opacity: 0.7;">COMBATE FINALIZADO</h3>
-                <img src="${winnerAv}" style="border-color: ${winnerColor}; box-shadow: 0 0 40px ${winnerColor}80;">
+                <div class="winner-avatar-wrapper" style="position: relative; display: inline-block;">
+                    <img src="${winnerAv}" style="border-color: ${winnerColor}; box-shadow: 0 0 40px ${winnerColor}80; width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
+                </div>
                 <h2 class="winner-title" style="color: ${winnerColor}; text-shadow: 0 0 20px ${winnerColor}80;">${winnerName}</h2>
                 <div class="winner-subtitle">${msg}</div>
                 <div style="margin-top: 15px; font-family: monospace; font-size: 1.5rem; color: #ccc;">
                     ${isWinner ? finalCPM + ' CPM | ' + acc + '% PREC' : 'RIVAL INALCANZABLE'}
                 </div>
                 
-                <div class="rematch-controls" style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+                <div class="taunt-controls" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
+                    <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('GG')" title="Atajo: Tecla 1">[1] GG</button>
+                    <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('EZ')" title="Atajo: Tecla 2">[2] EZ</button>
+                    <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('💀')" title="Atajo: Tecla 3">[3] 💀</button>
+                </div>
+
+                <div class="rematch-controls" style="margin-top: 20px; display: flex; gap: 15px; justify-content: center;">
                     <button id="btn-rematch" class="btn-primary" style="padding: 10px 30px; font-size: 1.1rem; background: #b388ff; color: #000;" onclick="window.Multiplayer.requestRematch()">REVANCHA</button>
                     <button class="btn-outline" style="border-color: #ff4a4a; color: #ff4a4a;" onclick="window.Multiplayer.quitDuel()">SALIR</button>
                 </div>
@@ -715,9 +760,10 @@ window.Multiplayer = {
 
             await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
                 track: chosenTrack,
-                round: currentRound + 1, // EL SALVADOR DEL BUG
+                round: currentRound + 1, 
                 'p1.prog': 0, 'p1.cpm': 0, 'p1.done': false, 'p1.rematch': false, 'p1.taunt': null,
-                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null
+                'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null,
+                status: 'starting'
             });
         } catch(e) { console.error("Error reseteando sala:", e); }
     },
@@ -740,7 +786,11 @@ window.Multiplayer = {
 
         const input = document.getElementById('duel-input');
         input.disabled = true; input.value = ''; input.classList.remove('error-shake');
-        document.getElementById('duel-cd').style.display = 'none';
+        
+        // Nos aseguramos de ocultar el contador al salir
+        const cd = document.getElementById('duel-cd');
+        if (cd) cd.style.display = 'none';
+
         window.UI.show('multiplayer-screen');
     }
 };
