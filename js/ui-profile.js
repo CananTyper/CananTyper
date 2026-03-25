@@ -44,7 +44,7 @@ Object.assign(window.UI, {
     },
     closeTrackPreview: () => { document.getElementById('track-preview-modal').classList.add('hidden'); },
 
-    // --- NUEVO: MOTOR DE EVALUACIÓN DE MEDALLAS ---
+    // --- MOTOR DE EVALUACIÓN DE MEDALLAS ---
     getUserMedals: (user) => {
         const catalog = window.App.medalsCatalog || [];
         let earnedMedals = [];
@@ -210,11 +210,10 @@ Object.assign(window.UI, {
             let realTrack = allMatches.find(t => t.c !== 'General') || allMatches[0];
             document.getElementById('prof-fav-track').innerText = window.UI.formatTrackNameFull(realTrack ? realTrack.title : favTrackVal);
             
-            // --- NUEVO: SISTEMA DE MEDALLAS DINÁMICO ---
+            // --- SISTEMA DE MEDALLAS DINÁMICO ---
             const earnedMedals = window.UI.getUserMedals(u);
             const visibleIds = u.visible_medals || [];
             
-            // Filtramos para mostrar solo las elegidas, o todas si no ha configurado nada y tiene menos de 6
             let displayMedals = [];
             if (visibleIds.length > 0) {
                 displayMedals = earnedMedals.filter(m => visibleIds.includes(m.id));
@@ -293,6 +292,7 @@ Object.assign(window.UI, {
         } catch (error) { console.error("Error en showProfile:", error); }
     },
 
+    // --- NUEVO: FILTRO DE LOGROS OCULTOS ---
     showAllMedals: () => {
         const u = window.CT.dbLocal('u').find(x => x.h === window.CT.activeProfHandle);
         if(!u) return;
@@ -302,16 +302,20 @@ Object.assign(window.UI, {
         
         let html = `<div class="medal-showcase-grid">`;
         
-        // Renderizamos todo el catálogo, marcando cuáles están desbloqueadas
+        // Renderizamos el catálogo
         catalog.forEach(m => {
             const hasIt = earnedMedals.some(earned => earned.id === m.id);
+            
+            // LA MAGIA: Si no la tiene y es secreta, saltamos a la siguiente (no la mostramos)
+            if (!hasIt && m.isSecret) return; 
+
             html += `<div class="medal-slot ${hasIt ? 'unlocked' : 'locked'}" title="${hasIt ? m.desc : 'Requisito desconocido'}">
                         <span class="m-icon">${m.icon}</span>
                         <span class="m-name">${m.name}</span>
                      </div>`;
         });
         
-        // Agregar la Anomalía Cero si la tiene (ya que no está en el catálogo oficial)
+        // Agregar la Anomalía Cero si la tiene (Medalla Easter Egg)
         if (earnedMedals.some(m => m.id === 'anomalia_cero')) {
             html += `<div class="medal-slot unlocked" title="Registros anteriores al sistema">
                         <span class="m-icon">💠</span>
@@ -349,7 +353,6 @@ Object.assign(window.UI, {
         document.getElementById('ep-switches').value = userDoc.switches || '';
         document.getElementById('ep-discord').value = userDoc.discord || '';
 
-        // NUEVO: Panel de selección de medallas visibles
         const earnedMedals = window.UI.getUserMedals(userDoc);
         const visibleIds = userDoc.visible_medals || [];
         const medalsGrid = document.getElementById('ep-medals-grid');
