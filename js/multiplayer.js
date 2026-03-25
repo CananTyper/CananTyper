@@ -1,6 +1,6 @@
 /* ================================================================
     CANANTYPER - MÓDULO MULTIJUGADOR (FASE BETA + CANANTYPER 2.0)
-    Lobby, Matchmaking, Sincronización, Cinemáticas, Taunts y MUERTE SÚBITA
+    Lobby, Matchmaking, Sincronización, Cinemáticas, Taunts y HC
    ================================================================ */
 
 if (!document.getElementById('mp-custom-styles')) {
@@ -91,6 +91,10 @@ if (!document.getElementById('mp-custom-styles')) {
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideIn { from { transform: translateX(-50px) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* Estilo para la caja del Némesis en la cinemática */
+        .nemesis-box { background: rgba(0,0,0,0.6); border: 2px solid #ffd700; border-radius: 12px; padding: 10px 25px; margin-bottom: 30px; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
+        .nemesis-box.first { border-color: #888; box-shadow: none; border-style: dashed; }
     `;
     document.head.appendChild(style);
 }
@@ -108,7 +112,7 @@ window.Multiplayer = {
     currentRound: 1,          
     myMatchKey: null,
     isHost: false,
-    isHardcore: false, // FLAG MUERTE SÚBITA
+    isHardcore: false, 
     matchEnded: false,
     resetting: false,
     duelWords: [],
@@ -120,6 +124,7 @@ window.Multiplayer = {
     lastTauntT: 0,
     lastMyTauntT: 0,
     nemesisLoaded: false,
+    pingInterval: null, // NUEVO: Sistema de latidos para evitar fantasmas
     
     initLobby: async () => {
         const u = window.CT.ses();
@@ -145,7 +150,7 @@ window.Multiplayer = {
         window.Multiplayer.renderVehicleSelector();
         if (window.Multiplayer.isOnline && window.Multiplayer.myHandle) {
             try { await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ vh: v }); } 
-            catch (e) { console.error(e); }
+            catch (e) {}
         }
     },
 
@@ -166,13 +171,22 @@ window.Multiplayer = {
                 vh: window.Multiplayer.myVehicle,
                 mp: userDoc.mp, streak: userDoc.mp.streak || 0,
                 status: 'idle', matchId: null, invite: null,
+                lastPing: Date.now(), // NUEVO: Primer latido
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             await window.db.collection('mp_lobby').doc(userDoc.h).set(presenceData);
             window.Multiplayer.isOnline = true;
             
-            // TRIPLE CANDADO PARA BORRAR FANTASMAS
+            // Iniciar Latido (Ping) cada 15 segundos
+            if (window.Multiplayer.pingInterval) clearInterval(window.Multiplayer.pingInterval);
+            window.Multiplayer.pingInterval = setInterval(() => {
+                if (window.Multiplayer.isOnline && window.Multiplayer.myHandle) {
+                    window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ lastPing: Date.now() }).catch(()=>{});
+                }
+            }, 15000);
+
+            // Triple candado por si recargan/cierran
             window.addEventListener('beforeunload', window.Multiplayer.handleUnload);
             window.addEventListener('pagehide', window.Multiplayer.handleUnload);
             window.addEventListener('unload', window.Multiplayer.handleUnload);
@@ -186,6 +200,7 @@ window.Multiplayer = {
 
     goOffline: async () => {
         window.Multiplayer.isOnline = false;
+        if (window.Multiplayer.pingInterval) { clearInterval(window.Multiplayer.pingInterval); window.Multiplayer.pingInterval = null; }
         if (window.Multiplayer.lobbyUnsubscribe) { window.Multiplayer.lobbyUnsubscribe(); window.Multiplayer.lobbyUnsubscribe = null; }
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
         window.removeEventListener('keydown', window.Multiplayer.tauntKeyListener);
@@ -197,7 +212,8 @@ window.Multiplayer = {
 
     handleUnload: () => {
         if (window.Multiplayer.myHandle && window.Multiplayer.isOnline) {
-            window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete();
+            // Se usa sendBeacon si es posible para asegurar que llegue, o un simple delete
+            window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).delete().catch(()=>{});
             if(window.Multiplayer.currentMatchId) {
                 window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(()=>{});
             }
@@ -229,14 +245,26 @@ window.Multiplayer = {
                 const nEl = document.getElementById('mp-stat-nemesis');
                 const sEl = document.getElementById('mp-stat-nemesis-score');
                 if(nEl) nEl.innerText = nemesis.toUpperCase();
-                if(sEl) sEl.innerText = `Historial: Tú ${mS} - ${rS} Rival`;
+                // FIX ESTÉTICA: Sin la palabra "Historial"
+                if(sEl) sEl.innerText = `Tú ${mS} - ${rS} Rival`;
             }
         }).catch(()=>{});
     },
 
     startRadar: () => {
         window.Multiplayer.lobbyUnsubscribe = window.db.collection('mp_lobby').onSnapshot(snap => {
-            const players = snap.docs.map(doc => doc.data());
+            let rawPlayers = snap.docs.map(doc => doc.data());
+            const now = Date.now();
+            
+            // LA BARREDORA DE FANTASMAS (Borra a los que no laten hace más de 45 segs)
+            rawPlayers.forEach(p => {
+                if (p.h !== window.Multiplayer.myHandle && p.lastPing && (now - p.lastPing > 45000)) {
+                    window.db.collection('mp_lobby').doc(p.h).delete().catch(()=>{});
+                }
+            });
+
+            // Solo renderizamos a los vivos
+            const players = rawPlayers.filter(p => !p.lastPing || (now - p.lastPing <= 45000));
             window.Multiplayer.renderLobbyState(players);
         });
     },
@@ -332,7 +360,6 @@ window.Multiplayer = {
         }
     },
 
-    // AÑADIDO PARÁMETRO HC
     sendChallenge: async (targetHandle, isHardcore = false) => {
         try {
             await window.db.collection('mp_lobby').doc(window.Multiplayer.myHandle).update({ status: 'waiting' });
@@ -377,7 +404,7 @@ window.Multiplayer = {
             await window.db.collection('mp_matches').doc(matchId).set({
                 track: chosenTrack,
                 round: 1, 
-                hc: isHardcore, // GUARDAMOS LA MODALIDAD EN LA SALA
+                hc: isHardcore,
                 p1: { h: rivalHandle, prog: 0, cpm: 0, done: false, exploded: false, rematch: false, taunt: null },
                 p2: { h: myUser.h, prog: 0, cpm: 0, done: false, exploded: false, rematch: false, taunt: null },
                 status: 'starting'
@@ -459,9 +486,8 @@ window.Multiplayer = {
         const isP1 = matchData.p1.h === window.Multiplayer.myHandle;
         window.Multiplayer.myMatchKey = isP1 ? 'p1' : 'p2';
         window.Multiplayer.isHost = !isP1; 
-        window.Multiplayer.isHardcore = matchData.hc || false; // DETECTAMOS SI ES HARDCORE
+        window.Multiplayer.isHardcore = matchData.hc || false; 
         
-        // ESTILIZAMOS LA ARENA SI ES HC
         const duelScreen = document.getElementById('duel-screen');
         if(window.Multiplayer.isHardcore) duelScreen.classList.add('hc-active');
         else duelScreen.classList.remove('hc-active');
@@ -492,7 +518,7 @@ window.Multiplayer = {
                 myScore = (window.Multiplayer.myHandle === sortedHandles[0]) ? rData.score_p1 : rData.score_p2;
                 rivalScore = (rivalHandle === sortedHandles[0]) ? rData.score_p1 : rData.score_p2;
             }
-        } catch(e) { console.log("Error buscando rivalidad: ", e); }
+        } catch(e) {}
 
         window.Multiplayer.startNewRound(matchData.track, true, myScore, rivalScore);
 
@@ -517,13 +543,10 @@ window.Multiplayer = {
                 document.getElementById('duel-rival-fill').style.width = `${rivalProg}%`;
                 document.getElementById('duel-rival-cpm').innerText = `${d[rivalKey].cpm} CPM`;
 
-                // LÓGICA DE EXPLOSIÓN DEL RIVAL
                 if (d[rivalKey].done && !window.Multiplayer.matchEnded) {
                     if (d[rivalKey].exploded) {
-                        // El rival murió, yo gano.
                         window.Multiplayer.endDuel(true, null, false, true);
                     } else {
-                        // El rival llegó a la meta normal, yo pierdo.
                         window.Multiplayer.endDuel(false, null);
                     }
                 }
@@ -595,7 +618,7 @@ window.Multiplayer = {
         const input = document.getElementById('duel-input');
         input.value = '';
         input.disabled = true;
-        input.style.color = '#fff'; // Reset color if exploded
+        input.style.color = '#fff'; 
         input.placeholder = "[ PREPARANDO ENLACE ]";
 
         let cd = document.getElementById('duel-cd');
@@ -612,9 +635,20 @@ window.Multiplayer = {
             const cineLayer = document.createElement('div');
             cineLayer.className = 'cinematic-overlay';
             
-            const scoreHtml = (myScore > 0 || rivalScore > 0) 
-                ? `<div style="color: #ffd700; font-family: monospace; font-size: 1.8rem; margin-bottom: 25px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,215,0,0.6);">HISTORIAL: TÚ ${myScore} - ${rivalScore} RIVAL</div>` 
-                : `<div style="color: #888; font-family: monospace; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 2px;">PRIMER ENCUENTRO</div>`;
+            // FIX ESTÉTICO: Caja de Némesis
+            let scoreHtml = '';
+            if (myScore > 0 || rivalScore > 0) {
+                scoreHtml = `
+                <div class="nemesis-box">
+                    <span style="color: #aaa; font-size: 0.85rem; font-weight: bold; letter-spacing: 2px; display: block; text-align: center; margin-bottom: 5px;">MARCADOR HISTÓRICO</span>
+                    <div style="color: #ffd700; font-family: monospace; font-size: 2rem; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">TÚ ${myScore} - ${rivalScore} RIVAL</div>
+                </div>`;
+            } else {
+                scoreHtml = `
+                <div class="nemesis-box first">
+                    <span style="color: #888; font-family: monospace; font-size: 1.2rem; letter-spacing: 2px;">PRIMER ENCUENTRO</span>
+                </div>`;
+            }
 
             const hcTitle = window.Multiplayer.isHardcore ? '<h2 style="color:#ff4a4a; font-weight:900; letter-spacing:5px; margin-bottom:5px; text-shadow: 0 0 20px rgba(255,74,74,0.8);">MUERTE SÚBITA</h2>' : '';
 
@@ -701,7 +735,6 @@ window.Multiplayer = {
             input.value = typed;
         }
 
-        // DETECCIÓN DE ERROR
         let isError = false;
         if (targetWord.startsWith(typed.trim())) {
             input.classList.remove('error-shake');
@@ -712,7 +745,6 @@ window.Multiplayer = {
             wordEl.style.color = '#ff4a4a';
         }
 
-        // MUERTE SÚBITA
         if (window.Multiplayer.isHardcore && (isError || (typed.endsWith(' ') && typed.trim() !== targetWord))) {
             window.Multiplayer.triggerExplosion();
             return;
@@ -786,7 +818,6 @@ window.Multiplayer = {
             const chars = window.Multiplayer.duelWords.slice(0, window.Multiplayer.currentWordIndex).join(' ').length;
             finalCPM = Math.round(chars / timeMin) || 0;
             
-            // Solo si yo no explote informo mi progreso final
             if (!iExploded) {
                 const rawProg = (window.Multiplayer.currentWordIndex / window.Multiplayer.duelWords.length) * 100;
                 window.Multiplayer.syncProgress(rawProg, finalCPM, true);
@@ -850,7 +881,6 @@ window.Multiplayer = {
         const winnerAv = isWinner ? myAv : rivalAv;
         const winnerColor = isWinner ? '#a6ff00' : '#ff4a4a';
         
-        // Mensajes dinámicos HC
         let msg = isWinner ? '¡TE LLEVAS LA VICTORIA!' : 'HA DOMINADO LA PISTA';
         if (iExploded) msg = '¡NAVE DESTRUIDA! (Muerte Súbita)';
         if (rivalExploded) msg = '¡RIVAL DESTRUIDO! (Victoria por Supervivencia)';
@@ -894,7 +924,7 @@ window.Multiplayer = {
             await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).update({
                 [`${window.Multiplayer.myMatchKey}.rematch`]: true
             });
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     },
 
     triggerRematchReset: async () => {
@@ -912,10 +942,11 @@ window.Multiplayer = {
                 'p2.prog': 0, 'p2.cpm': 0, 'p2.done': false, 'p2.rematch': false, 'p2.taunt': null, 'p2.exploded': false,
                 status: 'starting'
             });
-        } catch(e) { console.error("Error reseteando sala:", e); }
+        } catch(e) {}
     },
 
     quitDuel: async () => {
+        if (window.Multiplayer.pingInterval) { clearInterval(window.Multiplayer.pingInterval); window.Multiplayer.pingInterval = null; }
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
         window.removeEventListener('keydown', window.Multiplayer.tauntKeyListener);
         
@@ -923,7 +954,7 @@ window.Multiplayer = {
         cines.forEach(c => c.remove());
         
         if(window.Multiplayer.currentMatchId) {
-            window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(e=>{});
+            window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).delete().catch(()=>{});
             window.Multiplayer.currentMatchId = null;
         }
 
@@ -944,7 +975,6 @@ window.Multiplayer = {
         const cd = document.getElementById('duel-cd');
         if (cd) cd.style.display = 'none';
 
-        // Quitamos la clase HC si estaba
         document.getElementById('duel-screen').classList.remove('hc-active');
 
         window.UI.show('multiplayer-screen');
