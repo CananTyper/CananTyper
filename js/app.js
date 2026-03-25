@@ -134,7 +134,9 @@ window.App = {
         if(track) { window.App.currentTrack = track; if(window.App.activeEngine) window.App.activeEngine.stop(); window.App.activeEngine = new window.Engine(track, 'normal'); } 
     },
 
-    // NUEVO: startArenaRace conectado a CananStudio
+    // =========================================================
+    // ARENA (E-SPORTS) - CONEXIÓN CON CANANSTUDIO
+    // =========================================================
     startArenaRace: () => {
         const conf = window.UI.arenaCurrentConfig;
         if (!conf || !conf.active) return alert("No hay un torneo activo en este momento.");
@@ -156,6 +158,41 @@ window.App = {
         if(window.App.activeEngine) window.App.activeEngine.stop(); 
         window.App.activeEngine = new window.Engine(window.App.currentTrack, 'arena'); 
     },
+
+    saveArenaScore: async (cpm, acc) => {
+        const conf = window.UI.arenaCurrentConfig;
+        const u = window.CT.ses();
+        if (!conf || !conf.active || !u) return;
+
+        let finalScore = cpm;
+        if (conf.scoring === 'points') {
+            finalScore = Math.round(cpm * (acc / 100)); 
+        }
+
+        const docId = `${u.h}_${conf.version}`;
+        const docRef = window.db.collection('arena_scores').doc(docId);
+        
+        try {
+            const docSnap = await docRef.get();
+            if (docSnap.exists) {
+                const existing = docSnap.data();
+                if (finalScore <= existing.score) return;
+            }
+
+            await docRef.set({
+                h: u.h,
+                n: u.n,
+                a: u.a || window.CT.defAvatar,
+                cpm: cpm,
+                acc: acc,
+                score: finalScore,
+                version: conf.version,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("Puntaje de Arena guardado con éxito:", finalScore);
+        } catch(e) { console.error("Error guardando puntaje de arena:", e); }
+    },
+    // =========================================================
 
     openMultiplayerLobby: () => {
         if(window.Multiplayer) {
