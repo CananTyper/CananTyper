@@ -271,8 +271,8 @@
         <section id="multiplayer-screen" class="screen hidden arena-bg" style="padding: 20px;">
             <header class="top-nav" style="border: none; position: relative; z-index: 2;">
                 <div style="display:flex; align-items:center; gap: 15px;">
-                    <button onclick="window.Multiplayer.exitLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← VOLVER AL MENÚ</button>
-                    <span style="color: #b388ff; font-family: monospace; font-weight: bold; background: rgba(179,136,255,0.1); padding: 5px 10px; border-radius: 5px;">SALA DE ESPERA VIP</span>
+                    <button onclick="window.Multiplayer.exitLobby()" class="btn-outline" style="border-color: #b388ff; color: #b388ff;">← VOLVER</button>
+                    <span style="color: #b388ff; font-family: monospace; font-weight: bold; background: rgba(179,136,255,0.1); padding: 5px 10px; border-radius: 5px;">SALA DE ESPERA</span>
                 </div>
             </header>
 
@@ -281,7 +281,7 @@
                 <div class="arena-hero" style="padding-bottom: 20px;">
                     <div style="font-size: 3.5rem; filter: drop-shadow(0 0 15px rgba(179,136,255,0.5)); margin-bottom: 10px;">⚔️</div>
                     <h2 class="arena-title">Coliseo de Duelos</h2>
-                    <p class="arena-subtitle">Multijugador Privado 1v1</p>
+                    <p class="arena-subtitle">Multijugador 1v1</p>
                 </div>
 
                 <div class="arena-info-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 20px;">
@@ -297,13 +297,13 @@
                      </div>
                      <div class="arena-panel" style="text-align: center; border-color: rgba(255,74,74,0.3); background: rgba(255,74,74,0.05);">
                          <h4 class="arena-panel-title" style="justify-content:center; color: #ff4a4a;">NÉMESIS ACTUAL</h4>
-                         <h2 id="mp-stat-nemesis" style="color: #ff4a4a; font-size: 1.2rem; margin: 15px 0;">Aún sin némesis</h2>
-                         <p id="mp-stat-nemesis-score" style="color: #ff4a4a; font-size: 0.8rem; margin:0; opacity: 0.8;">Juega más duelos para forjar historia</p>
+                         <h2 id="mp-stat-nemesis" style="color: #ff4a4a; font-size: 1.2rem; margin: 15px 0;">Ninguno</h2>
+                         <p id="mp-stat-nemesis-score" style="color: #ff4a4a; font-size: 0.8rem; margin:0; opacity: 0.8;">Juega más duelos</p>
                      </div>
                 </div>
 
                 <div class="vehicle-selector" style="text-align:center; margin-bottom: 25px;">
-                    <h4 style="color:#b388ff; font-size:0.85rem; letter-spacing:2px; margin-bottom:10px; border-bottom: 1px dashed rgba(179,136,255,0.3); display:inline-block; padding-bottom:5px;">ELIGE TU NAVE DE COMBATE</h4>
+                    <h4 style="color:#b388ff; font-size:0.85rem; letter-spacing:2px; margin-bottom:10px; border-bottom: 1px dashed rgba(179,136,255,0.3); display:inline-block; padding-bottom:5px;">ELIGE TU ÍCONO</h4>
                     <div id="mp-vehicles" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top: 10px;">
                         </div>
                 </div>
@@ -312,7 +312,7 @@
                     <div class="arena-panel">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 10px;">
                             <h4 class="arena-panel-title" style="border: none; padding: 0; margin: 0;">🌐 DUELISTAS CONECTADOS</h4>
-                            <span id="mp-online-count" style="color: #b388ff; font-weight: bold; font-family: monospace; font-size: 1.1rem;">0 ONLINE</span>
+                            <span id="mp-online-count" style="color: #b388ff; font-weight: bold; font-family: monospace; font-size: 1.1rem;">0 EN LÍNEA</span>
                         </div>
                         <div class="custom-scroll" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
                             <ul class="st-list" id="mp-online-list">
