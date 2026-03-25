@@ -92,8 +92,9 @@ if (!document.getElementById('mp-custom-styles')) {
         @keyframes slideIn { from { transform: translateX(-50px) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         
-        .nemesis-box { background: rgba(0,0,0,0.6); border: 2px solid #ffd700; border-radius: 12px; padding: 10px 25px; margin-bottom: 30px; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
-        .nemesis-box.first { border-color: #888; box-shadow: none; border-style: dashed; }
+        /* ESTÉTICA MINIMALISTA DEL MARCADOR NÉMESIS */
+        .nemesis-box { background: rgba(179, 136, 255, 0.05); border: 1px solid rgba(179, 136, 255, 0.3); border-radius: 30px; padding: 8px 25px; margin-bottom: 30px; backdrop-filter: blur(5px); box-shadow: inset 0 0 15px rgba(179,136,255,0.05); display: inline-block; }
+        .nemesis-box.first { border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.02); }
     `;
     document.head.appendChild(style);
 }
@@ -113,6 +114,7 @@ window.Multiplayer = {
     isHost: false,
     isHardcore: false, 
     matchEnded: false,
+    amIWinner: false, // FLAG PARA PRIVILEGIO DE EMOTES
     resetting: false,
     duelWords: [],
     currentWordIndex: 0,
@@ -124,7 +126,7 @@ window.Multiplayer = {
     lastMyTauntT: 0,
     nemesisLoaded: false,
     pingInterval: null, 
-    afkTimeout: null, // NUEVO: Detector de inactividad AFK
+    afkTimeout: null, 
     
     initLobby: async () => {
         const u = window.CT.ses();
@@ -178,7 +180,6 @@ window.Multiplayer = {
             await window.db.collection('mp_lobby').doc(userDoc.h).set(presenceData);
             window.Multiplayer.isOnline = true;
             
-            // Latido (Ping) CADA 60 SEGUNDOS para ahorrar cuota
             if (window.Multiplayer.pingInterval) clearInterval(window.Multiplayer.pingInterval);
             window.Multiplayer.pingInterval = setInterval(() => {
                 if (window.Multiplayer.isOnline && window.Multiplayer.myHandle) {
@@ -186,7 +187,6 @@ window.Multiplayer = {
                 }
             }, 60000);
 
-            // INICIAR DETECTOR AFK (5 Minutos)
             window.Multiplayer.startAfkTimer();
 
             window.addEventListener('beforeunload', window.Multiplayer.handleUnload);
@@ -202,7 +202,7 @@ window.Multiplayer = {
 
     goOffline: async () => {
         window.Multiplayer.isOnline = false;
-        window.Multiplayer.stopAfkTimer(); // Frenar AFK
+        window.Multiplayer.stopAfkTimer(); 
         if (window.Multiplayer.pingInterval) { clearInterval(window.Multiplayer.pingInterval); window.Multiplayer.pingInterval = null; }
         if (window.Multiplayer.lobbyUnsubscribe) { window.Multiplayer.lobbyUnsubscribe(); window.Multiplayer.lobbyUnsubscribe = null; }
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
@@ -222,7 +222,6 @@ window.Multiplayer = {
         }
     },
 
-    // --- SISTEMA AFK (Away From Keyboard) ---
     startAfkTimer: () => {
         window.Multiplayer.stopAfkTimer();
         document.addEventListener('mousemove', window.Multiplayer.resetAfkTimer);
@@ -240,7 +239,6 @@ window.Multiplayer = {
 
     resetAfkTimer: () => {
         if (window.Multiplayer.afkTimeout) clearTimeout(window.Multiplayer.afkTimeout);
-        // Timeout de 5 minutos (300,000 ms)
         window.Multiplayer.afkTimeout = setTimeout(() => {
             if (window.Multiplayer.isOnline && !window.Multiplayer.currentMatchId) {
                 alert("Fuiste desconectado del Coliseo por inactividad (AFK) para ahorrar energía del servidor.");
@@ -248,7 +246,6 @@ window.Multiplayer = {
             }
         }, 300000);
     },
-    // ------------------------------------------
 
     updateNemesisDisplay: (history) => {
         if (!history || history.length === 0) return;
@@ -275,7 +272,7 @@ window.Multiplayer = {
                 const nEl = document.getElementById('mp-stat-nemesis');
                 const sEl = document.getElementById('mp-stat-nemesis-score');
                 if(nEl) nEl.innerText = nemesis.toUpperCase();
-                if(sEl) sEl.innerText = `Tú ${mS} - ${rS} Rival`; // TEXTO LIMPIO SIN "Historial:"
+                if(sEl) sEl.innerText = `Tú ${mS} - ${rS} Rival`;
             }
         }).catch(()=>{});
     },
@@ -285,14 +282,12 @@ window.Multiplayer = {
             let rawPlayers = snap.docs.map(doc => doc.data());
             const now = Date.now();
             
-            // LA BARREDORA (Purga a los fantasmas de 120 segundos)
             rawPlayers.forEach(p => {
                 if (p.h !== window.Multiplayer.myHandle && p.lastPing && (now - p.lastPing > 120000)) {
                     window.db.collection('mp_lobby').doc(p.h).delete().catch(()=>{});
                 }
             });
 
-            // Solo mostrar los que laten
             const players = rawPlayers.filter(p => !p.lastPing || (now - p.lastPing <= 120000));
             window.Multiplayer.renderLobbyState(players);
         });
@@ -449,6 +444,9 @@ window.Multiplayer = {
 
     tauntKeyListener: (e) => {
         if (['1','2','3'].includes(e.key)) {
+            // Si la partida terminó y YO NO GANÉ, bloqueo el teclado para los emotes
+            if (window.Multiplayer.matchEnded && !window.Multiplayer.amIWinner) return;
+
             if (document.activeElement.id === 'duel-input' && !window.Multiplayer.matchEnded) {
                 const activeWordEl = document.querySelector('.active-word');
                 if (activeWordEl && activeWordEl.innerText.includes(e.key)) return;
@@ -505,9 +503,10 @@ window.Multiplayer = {
     initDuelInterface: async () => {
         window.UI.show('duel-screen');
         window.Multiplayer.matchEnded = false;
+        window.Multiplayer.amIWinner = false; // Reset de privilegio
         window.Multiplayer.resetting = false;
         window.Multiplayer.currentRound = 1;
-        window.Multiplayer.stopAfkTimer(); // Desactiva AFK al estar en carrera
+        window.Multiplayer.stopAfkTimer(); 
 
         const matchDoc = await window.db.collection('mp_matches').doc(window.Multiplayer.currentMatchId).get();
         if(!matchDoc.exists) return window.Multiplayer.quitDuel();
@@ -598,6 +597,7 @@ window.Multiplayer = {
             if (d.round > window.Multiplayer.currentRound) {
                 window.Multiplayer.currentRound = d.round;
                 window.Multiplayer.matchEnded = false;
+                window.Multiplayer.amIWinner = false; // Reset al reiniciar ronda
                 window.Multiplayer.resetting = false;
                 
                 window.db.collection('mp_rivalries').doc(rivalryId).get().then(doc => {
@@ -621,6 +621,7 @@ window.Multiplayer = {
         window.Multiplayer.currentWordIndex = 0;
         window.Multiplayer.errorsCount = 0;
         window.Multiplayer.nextCheckpointIdx = 0;
+        window.Multiplayer.amIWinner = false; // Prevención extra
         
         const myVeh = document.getElementById('duel-my-vehicle');
         const myFill = document.getElementById('duel-my-fill');
@@ -665,16 +666,17 @@ window.Multiplayer = {
             const cineLayer = document.createElement('div');
             cineLayer.className = 'cinematic-overlay';
             
+            // ESTÉTICA MINIMALISTA DEL MARCADOR
             let scoreHtml = '';
             if (myScore > 0 || rivalScore > 0) {
                 scoreHtml = `
                 <div class="nemesis-box">
-                    <div style="color: #ffd700; font-family: monospace; font-size: 2rem; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">TÚ ${myScore} - ${rivalScore} RIVAL</div>
+                    <div style="color: #ccc; font-family: monospace; font-size: 1.2rem; font-weight: bold; letter-spacing: 3px;">TÚ <span style="color:#b388ff; font-size: 1.5rem; margin: 0 10px;">${myScore} - ${rivalScore}</span> RIVAL</div>
                 </div>`;
             } else {
                 scoreHtml = `
                 <div class="nemesis-box first">
-                    <span style="color: #888; font-family: monospace; font-size: 1.2rem; letter-spacing: 2px;">PRIMER ENCUENTRO</span>
+                    <span style="color: #666; font-family: monospace; font-size: 1rem; letter-spacing: 2px;">PRIMER ENCUENTRO</span>
                 </div>`;
             }
 
@@ -835,6 +837,7 @@ window.Multiplayer = {
     endDuel: (isWinner, finalCPM_Param, iExploded = false, rivalExploded = false) => {
         if (window.Multiplayer.matchEnded) return; 
         window.Multiplayer.matchEnded = true;
+        window.Multiplayer.amIWinner = isWinner; // GUARDAMOS SI GANÓ PARA LOS EMOTES
 
         const input = document.getElementById('duel-input');
         input.disabled = true;
@@ -913,6 +916,15 @@ window.Multiplayer = {
         if (iExploded) msg = '¡NAVE DESTRUIDA! (Muerte Súbita)';
         if (rivalExploded) msg = '¡RIVAL DESTRUIDO! (Victoria por Supervivencia)';
 
+        // RENDERIZAMOS BOTONES DE EMOTES SOLO SI GANAMOS
+        const tauntsHtml = isWinner ? `
+            <div class="taunt-controls" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
+                <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('GG')" title="Atajo: Tecla 1">[1] GG</button>
+                <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('EZ')" title="Atajo: Tecla 2">[2] EZ</button>
+                <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('💀')" title="Atajo: Tecla 3">[3] 💀</button>
+            </div>
+        ` : '';
+
         const duelContainer = document.querySelector('.duel-container');
         const cineLayer = document.createElement('div');
         cineLayer.className = 'cinematic-overlay';
@@ -928,11 +940,7 @@ window.Multiplayer = {
                     ${isWinner ? finalCPM + ' CPM | ' + acc + '% PREC' : (iExploded ? 'ELIMINADO' : 'RIVAL INALCANZABLE')}
                 </div>
                 
-                <div class="taunt-controls" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-                    <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('GG')" title="Atajo: Tecla 1">[1] GG</button>
-                    <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('EZ')" title="Atajo: Tecla 2">[2] EZ</button>
-                    <button class="taunt-btn" onclick="window.Multiplayer.sendTaunt('💀')" title="Atajo: Tecla 3">[3] 💀</button>
-                </div>
+                ${tauntsHtml}
 
                 <div class="rematch-controls" style="margin-top: 20px; display: flex; gap: 15px; justify-content: center;">
                     <button id="btn-rematch" class="btn-primary" style="padding: 10px 30px; font-size: 1.1rem; background: #b388ff; color: #000;" onclick="window.Multiplayer.requestRematch()">REVANCHA</button>
@@ -974,7 +982,7 @@ window.Multiplayer = {
     },
 
     quitDuel: async () => {
-        window.Multiplayer.stopAfkTimer(); // Activa el stop AFK manual
+        window.Multiplayer.stopAfkTimer(); 
         if (window.Multiplayer.pingInterval) { clearInterval(window.Multiplayer.pingInterval); window.Multiplayer.pingInterval = null; }
         if (window.Multiplayer.matchUnsubscribe) { window.Multiplayer.matchUnsubscribe(); window.Multiplayer.matchUnsubscribe = null; }
         window.removeEventListener('keydown', window.Multiplayer.tauntKeyListener);
@@ -1008,7 +1016,6 @@ window.Multiplayer = {
 
         window.UI.show('multiplayer-screen');
         
-        // Reiniciamos AFK al volver al lobby
         window.Multiplayer.startAfkTimer();
     }
 };
