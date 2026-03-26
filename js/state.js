@@ -57,9 +57,6 @@ window.CT = {
             if(window.UI && window.UI.checkMaintenance) window.UI.checkMaintenance();
         });
 
-        // ==========================================
-        // ESQUEMA DINÁMICO DE WIDGETS
-        // ==========================================
         window.db.collection('config').doc('stats_layout').onSnapshot(snap => {
             const defLayout = {
                 personal: [{id:'w-p-summary', v:true, s:3}, {id:'w-p-recent', v:true, s:3}, {id:'w-p-record', v:true, s:3}, {id:'w-p-specialty', v:true, s:3}, {id:'w-p-graph', v:true, s:8}, {id:'w-p-dist', v:true, s:4}, {id:'w-p-donut', v:true, s:4}, {id:'w-p-trend', v:true, s:4}, {id:'w-p-heat', v:true, s:8}, {id:'w-p-top', v:true, s:6}, {id:'w-p-worst', v:true, s:6}, {id:'w-p-words', v:true, s:6}],
@@ -106,7 +103,6 @@ window.CT = {
             if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
         });
         
-        // PARCHE DE CARGA DINÁMICA: Carga datos y LUEGO repinta el Lobby.
         if(window.App && window.App.loadDashboardData) {
             window.App.loadDashboardData().then(() => {
                 if(window.UI && window.UI.renderGlobal) window.UI.renderGlobal();
@@ -117,7 +113,6 @@ window.CT = {
             this.data.c = snap.docs.map(d => d.data()); 
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); 
             
-            // Re-evaluar los textos cuando cambien las categorías (por si se activó/desactivó un filtro)
             if(this.data.p && this.data.p.length > 0) {
                 this._filterTextsByQuota();
             }
@@ -128,8 +123,8 @@ window.CT = {
         });
 
         window.db.collection('phrases').onSnapshot(snap => { 
-            this._rawPhrases = snap.docs.map(d => d.data()); // Guardamos la data cruda primero
-            this._filterTextsByQuota(); // Aplicamos el filtro de longitud estricto
+            this._rawPhrases = snap.docs.map(d => d.data()); 
+            this._filterTextsByQuota(); 
         });
         
         window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { 
@@ -244,30 +239,27 @@ window.CT = {
         });
     },
     
-    // FILTRADO ESTRICTO DE LONGITUD (OPTIMIZACIÓN DE CUOTA)
+    // FILTRADO ESTRICTO DE LONGITUD DINÁMICO
     _filterTextsByQuota: function() {
         if(!this._rawPhrases || !this.data.c) return;
 
-        // Armamos un diccionario rápido para saber qué categorías tienen el filtro estricto prendido
         const catFilters = {};
         this.data.c.forEach(cat => {
-            catFilters[cat.name] = cat.filterLong === true;
+            catFilters[cat.name] = { active: cat.filterLong === true, max: cat.maxWords || 50 };
         });
 
-        // Filtramos la lista cruda antes de guardarla en memoria local y dársela al cliente
         this.data.p = this._rawPhrases.filter(t => {
             const catName = (t.c || 'General').trim();
-            const isCatStrict = catFilters[catName] || false;
+            const filter = catFilters[catName];
             
-            // Si la categoría ES estricta, pero el texto NO es corto (is_short = false)... lo ocultamos
-            if (isCatStrict && t.is_short === false) {
-                return false; 
+            if (filter && filter.active) {
+                const wc = t.wc !== undefined ? t.wc : (t.text ? t.text.trim().split(/\s+/).length : 0);
+                if (wc > filter.max) return false; 
             }
-            return true; // En cualquier otro caso (cat no estricta, o texto corto), lo dejamos pasar
+            return true; 
         });
 
         localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
-        
         if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
     },
 
