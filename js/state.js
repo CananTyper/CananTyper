@@ -113,18 +113,23 @@ window.CT = {
             });
         }
 
-        window.db.collection('phrases').onSnapshot(snap => { 
-            this.data.p = snap.docs.map(d => d.data()); 
-            localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p)); 
-            if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
-        });
-        
         window.db.collection('categories').onSnapshot(snap => { 
             this.data.c = snap.docs.map(d => d.data()); 
             localStorage.setItem('ct_cache_c', JSON.stringify(this.data.c)); 
+            
+            // Re-evaluar los textos cuando cambien las categorías (por si se activó/desactivó un filtro)
+            if(this.data.p && this.data.p.length > 0) {
+                this._filterTextsByQuota();
+            }
+
             if(window.UI && window.UI.updateCategorySelects) window.UI.updateCategorySelects(); 
             if(window.UI && window.UI.renderTrainDropdown) window.UI.renderTrainDropdown(); 
             if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
+        });
+
+        window.db.collection('phrases').onSnapshot(snap => { 
+            this._rawPhrases = snap.docs.map(d => d.data()); // Guardamos la data cruda primero
+            this._filterTextsByQuota(); // Aplicamos el filtro de longitud estricto
         });
         
         window.db.collection('announcements').orderBy('id', 'desc').onSnapshot(snap => { 
@@ -239,6 +244,33 @@ window.CT = {
         });
     },
     
+    // FILTRADO ESTRICTO DE LONGITUD (OPTIMIZACIÓN DE CUOTA)
+    _filterTextsByQuota: function() {
+        if(!this._rawPhrases || !this.data.c) return;
+
+        // Armamos un diccionario rápido para saber qué categorías tienen el filtro estricto prendido
+        const catFilters = {};
+        this.data.c.forEach(cat => {
+            catFilters[cat.name] = cat.filterLong === true;
+        });
+
+        // Filtramos la lista cruda antes de guardarla en memoria local y dársela al cliente
+        this.data.p = this._rawPhrases.filter(t => {
+            const catName = (t.c || 'General').trim();
+            const isCatStrict = catFilters[catName] || false;
+            
+            // Si la categoría ES estricta, pero el texto NO es corto (is_short = false)... lo ocultamos
+            if (isCatStrict && t.is_short === false) {
+                return false; 
+            }
+            return true; // En cualquier otro caso (cat no estricta, o texto corto), lo dejamos pasar
+        });
+
+        localStorage.setItem('ct_cache_p', JSON.stringify(this.data.p));
+        
+        if(window.UI && window.UI.refreshActiveViews) window.UI.refreshActiveViews(); 
+    },
+
     ses: () => { 
         const s = JSON.parse(localStorage.getItem('ct_ses')); 
         if(!s) return null;
@@ -246,3 +278,8 @@ window.CT = {
         return found || { h: s.h, n: s.h, r: 'usuario' }; 
     }
 };
+
+// Disparador principal aislado (solo se ejecuta aquí)
+document.addEventListener('DOMContentLoaded', () => { 
+    if(window.CT && window.CT.init) window.CT.init(); 
+});
