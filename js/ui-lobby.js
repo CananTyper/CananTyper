@@ -88,9 +88,6 @@ Object.assign(window.UI, {
         document.getElementById('motd-title').style.color = ''; 
     },
 
-    // =========================================================
-    // SISTEMA NERVIOSO DE LA ARENA (E-SPORTS)
-    // =========================================================
     arenaTimerInterval: null,
     arenaCurrentConfig: null,
     arenaUnsubScores: null,
@@ -154,7 +151,6 @@ Object.assign(window.UI, {
         if(arTitle) { arTitle.innerText = conf.title || "Evento Oficial"; arTitle.style.color = "#fff"; arTitle.style.textShadow = `0 0 20px ${tShadow}`; }
         if(arSub) { arSub.innerText = conf.msg || "Conectando con CananStudio"; arSub.style.color = tColor; }
 
-        // Búsqueda Inteligente del Emoji y Nombre en el Catálogo
         let actualMedalName = conf.medal;
         let actualMedalIcon = "🏆";
 
@@ -168,7 +164,6 @@ Object.assign(window.UI, {
             }
         }
 
-        // Exhibición del Podio Estético
         if (prizeBox && prizeName) {
             if (conf.medal && conf.medal.trim() !== '') {
                 prizeBox.classList.remove('hidden');
@@ -213,10 +208,15 @@ Object.assign(window.UI, {
             document.getElementById('ar-cd-m').innerText = "00"; document.getElementById('ar-cd-s').innerText = "00";
             if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
 
-            // NUEVA LÓGICA DE NOTIFICACIÓN: Leemos directo de CananStudio sin interrogar a la BDD
+            // NUEVA LÓGICA: CADUCIDAD 24HS PARA JUGADORES INACTIVOS
             const hasSeenWinner = localStorage.getItem(`ct_aw_${conf.version}`);
             if (!hasSeenWinner && window.UI.hasArenaPass && conf.winner) {
-                window.UI.showWinnerFromConf(conf.winner, conf.version, tColor, actualMedalIcon);
+                const eventAgeMs = Date.now() - new Date(conf.updatedAt).getTime();
+                if (eventAgeMs > 86400000) { // Mayor a 24 Horas
+                    localStorage.setItem(`ct_aw_${conf.version}`, 'true'); 
+                } else {
+                    window.UI.showWinnerFromConf(conf.winner, conf.version, tColor, actualMedalIcon);
+                }
             }
             if(navBtn && !conf.active) navBtn.style.display = 'none'; 
         } else {
@@ -334,12 +334,17 @@ Object.assign(window.UI, {
         try {
             document.getElementById('aw-avatar').src = winner.a || window.CT.defAvatar;
             document.getElementById('aw-avatar').style.borderColor = tColor;
-            document.getElementById('aw-avatar').style.boxShadow = `0 0 40px ${tColor}80`;
-
+            
             document.getElementById('aw-name').innerText = winner.n;
+            
+            const handleEl = document.getElementById('aw-handle');
+            if(handleEl) {
+                handleEl.innerText = winner.h || '@piloto';
+                handleEl.style.color = tColor;
+            }
+
             document.getElementById('aw-score').innerText = winner.score;
             document.getElementById('aw-score').style.color = tColor;
-            document.getElementById('aw-score').style.textShadow = `0 0 10px ${tColor}`;
 
             document.getElementById('aw-cpm').innerText = winner.cpm;
             document.getElementById('aw-acc').innerText = `${winner.acc}%`;
@@ -351,13 +356,6 @@ Object.assign(window.UI, {
             } else {
                 medalEl.innerText = "🏆";
                 medalEl.style.display = 'block';
-            }
-
-            const modalCard = document.querySelector('#arena-winner-modal .auth-card');
-            if(modalCard) {
-                modalCard.style.borderColor = tColor;
-                modalCard.style.boxShadow = `0 0 80px ${tColor}40`;
-                document.querySelector('#arena-winner-modal h3').style.color = tColor;
             }
 
             document.getElementById('arena-winner-modal').classList.remove('hidden');
