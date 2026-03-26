@@ -149,18 +149,31 @@ Object.assign(window.UI, {
         const playBtn = document.getElementById('btn-play-arena');
         const prizeBox = document.getElementById('arena-prize-display');
         const prizeName = document.getElementById('arena-prize-name');
+        const prizeTarget = document.getElementById('arena-prize-target-lbl');
 
         if(arTitle) { arTitle.innerText = conf.title || "Evento Oficial"; arTitle.style.color = "#fff"; arTitle.style.textShadow = `0 0 20px ${tShadow}`; }
         if(arSub) { arSub.innerText = conf.msg || "Conectando con CananStudio"; arSub.style.color = tColor; }
 
-        // Exhibición de Medalla en Lobby
+        // Exhibición de Medalla Dinámica
         if (prizeBox && prizeName) {
             if (conf.medal && conf.medal.trim() !== '') {
                 prizeBox.classList.remove('hidden');
                 prizeBox.style.borderColor = tColor;
-                prizeBox.style.boxShadow = `0 0 15px ${tBg}`;
-                prizeName.innerText = conf.medal; // Muestra el ID de la medalla o el texto que hayas puesto en CananStudio
-                prizeName.style.color = tColor;
+                prizeBox.style.boxShadow = `0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px ${tBg}`;
+                prizeName.innerText = conf.medal; 
+                prizeName.style.color = "#fff";
+                document.getElementById('arena-prize-circle').style.borderColor = tColor;
+                document.getElementById('arena-prize-circle').style.boxShadow = `0 0 25px ${tShadow}`;
+                document.getElementById('arena-prize-icon').style.filter = `drop-shadow(0 0 15px ${tColor})`;
+
+                if(prizeTarget) {
+                    if(conf.target === 'top1') prizeTarget.innerText = "🏆 EXCLUSIVO PARA EL TOP 1";
+                    else if(conf.target === 'top10') prizeTarget.innerText = "🎖️ PREMIO AL TOP 10";
+                    else prizeTarget.innerText = "🎁 PARA TODOS LOS CLASIFICADOS";
+                    prizeTarget.style.background = tColor;
+                    prizeTarget.style.color = "#000";
+                    prizeTarget.style.boxShadow = `0 0 15px ${tShadow}`;
+                }
             } else {
                 prizeBox.classList.add('hidden');
             }
@@ -200,21 +213,29 @@ Object.assign(window.UI, {
             }
         }
 
-        // CONEXIÓN A LA TABLA EN VIVO (Precisa y Dinámica)
+        // CONEXIÓN A LA TABLA EN VIVO (Bypass Índice Firebase)
         if (window.UI.arenaUnsubScores) window.UI.arenaUnsubScores(); 
         window.UI.arenaUnsubScores = window.db.collection('arena_scores')
             .where('version', '==', conf.version || 'v1')
-            .orderBy('score', 'desc')
-            .limit(50)
             .onSnapshot(snap => {
-                const scores = snap.docs.map(doc => doc.data());
+                let scores = snap.docs.map(doc => doc.data());
+                
+                // Ordenamos en RAM para burlar la restricción de Índices
+                scores.sort((a, b) => b.score - a.score);
+                scores = scores.slice(0, 50);
+
                 window.UI.renderArenaLeaderboard(scores, tColor, conf);
+
+                const u = window.CT.ses();
+                if (u && !window.UI.hasArenaPass && scores.some(s => s.h === u.h)) {
+                    window.UI.hasArenaPass = true;
+                }
             });
     },
 
-    startArenaCountdown: (endTimeTimestamp) => {
+    startArenaCountdown: (endTimeStr) => {
         if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
-        const endDate = new Date(endTimeTimestamp).getTime();
+        const endDate = new Date(endTimeStr).getTime();
 
         const updateClock = () => {
             const distance = endDate - Date.now();
@@ -290,9 +311,12 @@ Object.assign(window.UI, {
 
     resolveAndShowWinner: async (conf, tColor) => {
         try {
-            const snap = await window.db.collection('arena_scores').where('version', '==', conf.version).orderBy('score', 'desc').limit(1).get();
+            // Bypass de Índice Firebase
+            const snap = await window.db.collection('arena_scores').where('version', '==', conf.version).get();
             if(!snap.empty) {
-                const winner = snap.docs[0].data();
+                let scores = snap.docs.map(doc => doc.data());
+                scores.sort((a, b) => b.score - a.score);
+                const winner = scores[0]; 
                 
                 document.getElementById('aw-avatar').src = winner.a || window.CT.defAvatar;
                 document.getElementById('aw-avatar').style.borderColor = tColor;
@@ -308,17 +332,18 @@ Object.assign(window.UI, {
                 
                 const medalEl = document.getElementById('aw-medal');
                 if (conf.medal && conf.medal.trim() !== '') {
-                    medalEl.innerText = "🏆"; // Icono de victoria
+                    medalEl.innerText = "🏆"; 
                     medalEl.style.display = 'block';
                 } else {
                     medalEl.style.display = 'none';
                 }
 
-                // Ajustamos el modal al tema actual
                 const modalCard = document.querySelector('#arena-winner-modal .auth-card');
-                modalCard.style.borderColor = tColor;
-                modalCard.style.boxShadow = `0 0 80px ${tColor}40`;
-                document.querySelector('#arena-winner-modal h3').style.color = tColor;
+                if(modalCard) {
+                    modalCard.style.borderColor = tColor;
+                    modalCard.style.boxShadow = `0 0 80px ${tColor}40`;
+                    document.querySelector('#arena-winner-modal h3').style.color = tColor;
+                }
 
                 document.getElementById('arena-winner-modal').classList.remove('hidden');
                 localStorage.setItem(`ct_aw_${conf.version}`, 'true'); 
