@@ -183,34 +183,39 @@
             </header>
 
             <div class="arena-container custom-scroll" style="overflow-y: auto; max-height: calc(100vh - 100px); padding-bottom: 30px;">
-                <div class="arena-hero" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 30px; margin-bottom: 20px;">
+                
+                <div class="arena-hero" style="border-bottom: none; padding-bottom: 10px; margin-bottom: 10px;">
                     <h2 class="arena-title" id="ar-title" style="color: #fff;">Cargando Torneo...</h2>
                     <p class="arena-subtitle" id="ar-subtitle" style="color: #b388ff; margin-bottom: 20px;">Conectando con CananStudio</p>
                     
-                    <div class="countdown-box" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 30px rgba(0,0,0,0.5);">
+                    <div class="countdown-box" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 30px rgba(0,0,0,0.5); margin: 0 auto;">
                         <div class="cd-item"><span class="cd-val" id="ar-cd-d">00</span><span class="cd-lbl">DÍAS</span></div>
                         <div class="cd-item"><span class="cd-val" id="ar-cd-h">00</span><span class="cd-lbl">HORAS</span></div>
                         <div class="cd-item"><span class="cd-val" id="ar-cd-m">00</span><span class="cd-lbl">MIN</span></div>
                         <div class="cd-item"><span class="cd-val" id="ar-cd-s">00</span><span class="cd-lbl">SEG</span></div>
                     </div>
                     
-                    <div style="margin-bottom: 20px; margin-top: 20px; color: #ccc; font-size: 1.1rem; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block;">
+                    <div style="margin: 20px 0; color: #ccc; font-size: 1.1rem; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block;">
                         <p style="margin:0;">El texto a jugar es clasificado. Dictado por CananStudio.</p>
                         <p style="margin:5px 0 0 0; color:var(--error); font-weight:bold;">Penalización activa: Los errores restan multiplicador de precisión.</p>
                     </div>
                     <br>
-                    <button id="btn-play-arena" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; margin-bottom: 30px;" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
+                    <button id="btn-play-arena" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; margin-bottom: 10px;" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
+                </div>
+
+                <div id="arena-prize-display" class="hidden" style="margin: 30px auto; max-width: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, rgba(179,136,255,0.15) 0%, rgba(10,10,15,0.9) 70%); border: 1px solid rgba(179,136,255,0.3); border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(179,136,255,0.05); position: relative;">
                     
-                    <div id="arena-prize-display" class="hidden" style="margin: 0 auto; width: 100%; max-width: 600px; display: flex; flex-direction: column; align-items: center;">
-                        <div style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 20px 40px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); width: 100%;">
-                            <span id="arena-prize-target" style="display: block; color: #ffd700; font-size: 0.8rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px;">RECOMPENSA EXCLUSIVA PARA EL TOP 1</span>
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                                <span id="arena-prize-icon" style="font-size: 3rem; filter: drop-shadow(0 0 15px rgba(255,255,255,0.2));">🏆</span>
-                                <div id="arena-prize-name" style="color: #fff; font-weight: bold; font-size: 1.4rem; text-transform: uppercase; text-shadow: 0 0 10px rgba(255,255,255,0.3);">Medalla Oficial</div>
-                            </div>
+                    <span id="arena-prize-target-lbl" style="position: absolute; top: -12px; background: #b388ff; color: #000; font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; padding: 5px 15px; border-radius: 20px; text-transform: uppercase; box-shadow: 0 0 15px rgba(179,136,255,0.6);">🏆 EXCLUSIVO PARA EL TOP 1</span>
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 10px;">
+                        <div id="arena-prize-circle" style="width: 90px; height: 90px; background: rgba(0,0,0,0.8); border: 2px solid #b388ff; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 25px rgba(179,136,255,0.5);">
+                            <span id="arena-prize-icon" style="font-size: 3.5rem; filter: drop-shadow(0 0 15px rgba(179,136,255,0.8));">🏆</span>
+                        </div>
+                        <div style="text-align: center;">
+                            <h3 style="margin: 0; color: #fff; font-size: 1.6rem; text-shadow: 0 0 15px rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px;" id="arena-prize-name">Medalla Oficial</h3>
+                            <p style="margin: 8px 0 0 0; color: #aaa; font-size: 0.9rem;">Los clasificados que alcancen el objetivo obtendrán este botín en su perfil.</p>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="arena-panel" style="margin-top: 10px; border-color: rgba(255,255,255,0.1); background: rgba(10,10,15,0.8);">
