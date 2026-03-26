@@ -15,7 +15,6 @@ Object.assign(window.UI, {
         document.getElementById('track-list-view').classList.add('hidden'); 
         document.getElementById('track-category-view').classList.remove('hidden');
         
-        // Obtenemos la lista ya filtrada por el State Manager (Ahorro de cuota)
         const tracks = window.CT.dbLocal('p'); 
         let cats = window.CT.dbLocal('c'); 
         let catCounts = {}; 
@@ -28,8 +27,8 @@ Object.assign(window.UI, {
         
         html += cats.map(cat => {
             const count = catCounts[cat.name] || 0;
-            // Indicador visual para que el jugador sepa que esta categoría está optimizada
-            const badgeHtml = cat.filterLong ? `<span style="font-size:0.6rem; background:rgba(166,255,0,0.1); color:var(--accent); padding:2px 6px; border-radius:4px; border:1px solid rgba(166,255,0,0.3); margin-top:5px; display:inline-block;">⚡ MODO RÁPIDO</span>` : '';
+            // Límite dinámico (Lee el maxWords de la categoría o usa 50 por defecto)
+            const badgeHtml = cat.filterLong ? `<span style="font-size:0.6rem; background:rgba(166,255,0,0.1); color:var(--accent); padding:2px 6px; border-radius:4px; border:1px solid rgba(166,255,0,0.3); margin-top:5px; display:inline-block;">⚡ MÁX ${cat.maxWords || 50} PAL.</span>` : '';
             
             return `
             <div class="cat-card" onclick="window.UI.selectTrackCategory('${cat.name}')">
@@ -62,7 +61,7 @@ Object.assign(window.UI, {
     
     renderTrackList: () => {
         const query = (document.getElementById('track-search').value || "").toLowerCase(); 
-        let tracks = window.CT.dbLocal('p'); // Lista limpia y filtrada
+        let tracks = window.CT.dbLocal('p'); 
         const u = window.CT.ses(); 
         let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         let favs = userDoc.favs || [];
@@ -96,8 +95,7 @@ Object.assign(window.UI, {
             let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
             let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
 
-            // Mostramos cuántas palabras tiene el texto en la UI del jugador
-            const wc = t.wc || (t.text ? t.text.trim().split(/\s+/).length : 0);
+            const wc = t.wc !== undefined ? t.wc : (t.text ? t.text.trim().split(/\s+/).length : 0);
 
             return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}"><div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">${window.UI.formatTrackName(t.title)}<button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>${reorderFavHtml}</div><div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${wc} PALABRAS | [${(t.c || 'General').trim()}]</span></div></div>`;
         }).join('');
@@ -143,7 +141,7 @@ Object.assign(window.UI, {
         const track = window.CT.dbLocal('p').find(t => (t.id && t.id.toString() === trackId.toString()) || (t.title && t.title.toString() === trackId.toString()));
         if(!track) return;
         
-        const wc = track.wc || (track.text ? track.text.trim().split(/\s+/).length : 0);
+        const wc = track.wc !== undefined ? track.wc : (track.text ? track.text.trim().split(/\s+/).length : 0);
         
         document.getElementById('tp-title').innerText = window.UI.formatTrackNameFull(track.title);
         document.getElementById('tp-cat').innerText = (track.c || 'General').trim();
