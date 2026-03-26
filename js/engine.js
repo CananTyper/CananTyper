@@ -292,16 +292,25 @@ window.Engine = class Engine {
             document.getElementById('arena-final-score').innerText = runScore;
 
             if(userDoc && conf) {
-                // Guardar Errores para Entrenamiento
+                // 1. Guardar Errores para Entrenamiento
                 let bk = userDoc.bad_keys || {}; let bw = userDoc.bad_words || {};
                 for(let k in this.errKeys) bk[k] = (bk[k] || 0) + this.errKeys[k];
                 for(let w in this.errWords) bw[w] = (bw[w] || 0) + this.errWords[w];
                 let sortedWords = Object.keys(bw).sort((a,b) => bw[b] - bw[a]); let prunedBw = {};
                 sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
                 
-                window.db.collection('users').doc(userDoc.h).update({ bad_keys: bk, bad_words: prunedBw });
+                // 2. GUARDADO SILENCIOSO GLOBAL (El que alimenta CananStudio a largo plazo)
+                let total_arena_pts = (userDoc.arena_pts || 0) + runScore;
+                let total_arena_races = (userDoc.arena_races || 0) + 1;
 
-                // LÓGICA DE REGISTRO OFICIAL (LEADERBOARD)
+                window.db.collection('users').doc(userDoc.h).update({ 
+                    bad_keys: bk, 
+                    bad_words: prunedBw,
+                    arena_pts: total_arena_pts,
+                    arena_races: total_arena_races
+                });
+
+                // 3. LÓGICA DE REGISTRO OFICIAL (LEADERBOARD DEL TORNEO ACTUAL)
                 const docId = `${u.h}_${conf.version}`;
                 const docRef = window.db.collection('arena_scores').doc(docId);
                 
@@ -336,7 +345,7 @@ window.Engine = class Engine {
                         cpm: finalCPM, acc: recordAcc, score: recordScore, races: recordRaces,
                         version: conf.version, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    console.log(`[E-SPORTS] Score Guardado. Torneo: ${conf.version} | Pts: ${recordScore}`);
+                    console.log(`[E-SPORTS] Score Torneo Guardado: ${recordScore} | Puntos Globales Acumulados: ${total_arena_pts}`);
 
                 } catch(e) { console.error("Error guardando score Arena", e); }
             }
