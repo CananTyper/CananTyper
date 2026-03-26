@@ -89,7 +89,7 @@ Object.assign(window.UI, {
     },
 
     // =========================================================
-    // SISTEMA NERVIOSO DE LA ARENA (E-SPORTS) - VERSIÓN DINÁMICA
+    // SISTEMA NERVIOSO DE LA ARENA (E-SPORTS)
     // =========================================================
     arenaTimerInterval: null,
     arenaCurrentConfig: null,
@@ -136,7 +136,6 @@ Object.assign(window.UI, {
 
         const navBtn = document.querySelector('.btn-arena-nav');
         
-        // 1. DINAMISMO DE TEMAS (Colores)
         let tColor = '#b388ff'; let tBg = 'rgba(179,136,255,0.1)'; let tShadow = 'rgba(179,136,255,0.5)';
         if (conf.theme === 'red') { tColor = '#ff4a4a'; tBg = 'rgba(255,74,74,0.1)'; tShadow = 'rgba(255,74,74,0.5)'; }
         if (conf.theme === 'gold') { tColor = '#ffd700'; tBg = 'rgba(255,215,0,0.1)'; tShadow = 'rgba(255,215,0,0.5)'; }
@@ -147,6 +146,7 @@ Object.assign(window.UI, {
         const arSub = document.getElementById('ar-subtitle');
         const badge = document.getElementById('arena-status-badge');
         const playBtn = document.getElementById('btn-play-arena');
+        
         const prizeBox = document.getElementById('arena-prize-display');
         const prizeName = document.getElementById('arena-prize-name');
         const prizeTarget = document.getElementById('arena-prize-target-lbl');
@@ -154,17 +154,41 @@ Object.assign(window.UI, {
         if(arTitle) { arTitle.innerText = conf.title || "Evento Oficial"; arTitle.style.color = "#fff"; arTitle.style.textShadow = `0 0 20px ${tShadow}`; }
         if(arSub) { arSub.innerText = conf.msg || "Conectando con CananStudio"; arSub.style.color = tColor; }
 
-        // Exhibición de Medalla Dinámica
+        // Búsqueda Inteligente del Emoji y Nombre en el Catálogo
+        let actualMedalName = conf.medal;
+        let actualMedalIcon = "🏆";
+
+        if (conf.medal && conf.medal.trim() !== '') {
+            if (window.App && window.App.medalsCatalog) {
+                const foundMedal = window.App.medalsCatalog.find(m => m.id === conf.medal.trim());
+                if (foundMedal) {
+                    actualMedalName = foundMedal.name || conf.medal;
+                    actualMedalIcon = foundMedal.icon || "🏆";
+                }
+            }
+        }
+
+        // Exhibición del Podio Estético
         if (prizeBox && prizeName) {
             if (conf.medal && conf.medal.trim() !== '') {
                 prizeBox.classList.remove('hidden');
                 prizeBox.style.borderColor = tColor;
                 prizeBox.style.boxShadow = `0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px ${tBg}`;
-                prizeName.innerText = conf.medal; 
+                
+                prizeName.innerText = actualMedalName; 
                 prizeName.style.color = "#fff";
-                document.getElementById('arena-prize-circle').style.borderColor = tColor;
-                document.getElementById('arena-prize-circle').style.boxShadow = `0 0 25px ${tShadow}`;
-                document.getElementById('arena-prize-icon').style.filter = `drop-shadow(0 0 15px ${tColor})`;
+                
+                const circleIcon = document.getElementById('arena-prize-circle');
+                if (circleIcon) {
+                    circleIcon.style.borderColor = tColor;
+                    circleIcon.style.boxShadow = `0 0 25px ${tShadow}`;
+                }
+                
+                const emojiIcon = document.getElementById('arena-prize-icon');
+                if (emojiIcon) {
+                    emojiIcon.innerText = actualMedalIcon;
+                    emojiIcon.style.filter = `drop-shadow(0 0 15px ${tColor})`;
+                }
 
                 if(prizeTarget) {
                     if(conf.target === 'top1') prizeTarget.innerText = "🏆 EXCLUSIVO PARA EL TOP 1";
@@ -189,8 +213,11 @@ Object.assign(window.UI, {
             document.getElementById('ar-cd-m').innerText = "00"; document.getElementById('ar-cd-s').innerText = "00";
             if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
 
+            // NUEVA LÓGICA DE NOTIFICACIÓN: Leemos directo de CananStudio sin interrogar a la BDD
             const hasSeenWinner = localStorage.getItem(`ct_aw_${conf.version}`);
-            if (!hasSeenWinner && window.UI.hasArenaPass) window.UI.resolveAndShowWinner(conf, tColor);
+            if (!hasSeenWinner && window.UI.hasArenaPass && conf.winner) {
+                window.UI.showWinnerFromConf(conf.winner, conf.version, tColor, actualMedalIcon);
+            }
             if(navBtn && !conf.active) navBtn.style.display = 'none'; 
         } else {
             if(navBtn) navBtn.style.display = 'inline-block';
@@ -213,14 +240,11 @@ Object.assign(window.UI, {
             }
         }
 
-        // CONEXIÓN A LA TABLA EN VIVO (Bypass Índice Firebase)
         if (window.UI.arenaUnsubScores) window.UI.arenaUnsubScores(); 
         window.UI.arenaUnsubScores = window.db.collection('arena_scores')
             .where('version', '==', conf.version || 'v1')
             .onSnapshot(snap => {
                 let scores = snap.docs.map(doc => doc.data());
-                
-                // Ordenamos en RAM para burlar la restricción de Índices
                 scores.sort((a, b) => b.score - a.score);
                 scores = scores.slice(0, 50);
 
@@ -259,13 +283,11 @@ Object.assign(window.UI, {
         window.UI.arenaTimerInterval = setInterval(updateClock, 1000);
     },
 
-    // 2. TABLA INTELIGENTE (Cambia las columnas según el modo)
     renderArenaLeaderboard: (scores, tColor, conf) => {
         const thead = document.querySelector('#arena-screen .data-table thead');
         const tbody = document.getElementById('arena-live-rank');
         if (!tbody || !thead) return;
 
-        // Títulos Dinámicos de Columnas
         let col3Name = "PRECISIÓN";
         let col4Name = "PUNTAJE FINAL";
         
@@ -290,7 +312,6 @@ Object.assign(window.UI, {
             else if (index === 1) rankVisual = `<b style="color:#c0c0c0;">#2</b>`;
             else if (index === 2) rankVisual = `<b style="color:#cd7f32;">#3</b>`;
 
-            // Valores Dinámicos
             let col3Value = `${s.acc || 0}%`;
             if (conf.mode === 'league') col3Value = `${s.races || 1} 🏁`;
 
@@ -309,45 +330,38 @@ Object.assign(window.UI, {
         }).join('');
     },
 
-    resolveAndShowWinner: async (conf, tColor) => {
+    showWinnerFromConf: (winner, version, tColor, actualMedalIcon) => {
         try {
-            // Bypass de Índice Firebase
-            const snap = await window.db.collection('arena_scores').where('version', '==', conf.version).get();
-            if(!snap.empty) {
-                let scores = snap.docs.map(doc => doc.data());
-                scores.sort((a, b) => b.score - a.score);
-                const winner = scores[0]; 
-                
-                document.getElementById('aw-avatar').src = winner.a || window.CT.defAvatar;
-                document.getElementById('aw-avatar').style.borderColor = tColor;
-                document.getElementById('aw-avatar').style.boxShadow = `0 0 40px ${tColor}80`;
+            document.getElementById('aw-avatar').src = winner.a || window.CT.defAvatar;
+            document.getElementById('aw-avatar').style.borderColor = tColor;
+            document.getElementById('aw-avatar').style.boxShadow = `0 0 40px ${tColor}80`;
 
-                document.getElementById('aw-name').innerText = winner.n;
-                document.getElementById('aw-score').innerText = winner.score;
-                document.getElementById('aw-score').style.color = tColor;
-                document.getElementById('aw-score').style.textShadow = `0 0 10px ${tColor}`;
+            document.getElementById('aw-name').innerText = winner.n;
+            document.getElementById('aw-score').innerText = winner.score;
+            document.getElementById('aw-score').style.color = tColor;
+            document.getElementById('aw-score').style.textShadow = `0 0 10px ${tColor}`;
 
-                document.getElementById('aw-cpm').innerText = winner.cpm;
-                document.getElementById('aw-acc').innerText = `${winner.acc}%`;
-                
-                const medalEl = document.getElementById('aw-medal');
-                if (conf.medal && conf.medal.trim() !== '') {
-                    medalEl.innerText = "🏆"; 
-                    medalEl.style.display = 'block';
-                } else {
-                    medalEl.style.display = 'none';
-                }
-
-                const modalCard = document.querySelector('#arena-winner-modal .auth-card');
-                if(modalCard) {
-                    modalCard.style.borderColor = tColor;
-                    modalCard.style.boxShadow = `0 0 80px ${tColor}40`;
-                    document.querySelector('#arena-winner-modal h3').style.color = tColor;
-                }
-
-                document.getElementById('arena-winner-modal').classList.remove('hidden');
-                localStorage.setItem(`ct_aw_${conf.version}`, 'true'); 
+            document.getElementById('aw-cpm').innerText = winner.cpm;
+            document.getElementById('aw-acc').innerText = `${winner.acc}%`;
+            
+            const medalEl = document.getElementById('aw-medal');
+            if (actualMedalIcon && actualMedalIcon !== '🏆') {
+                medalEl.innerText = actualMedalIcon; 
+                medalEl.style.display = 'block';
+            } else {
+                medalEl.innerText = "🏆";
+                medalEl.style.display = 'block';
             }
-        } catch (e) { console.error("Error resolviendo ganador de la Arena:", e); }
+
+            const modalCard = document.querySelector('#arena-winner-modal .auth-card');
+            if(modalCard) {
+                modalCard.style.borderColor = tColor;
+                modalCard.style.boxShadow = `0 0 80px ${tColor}40`;
+                document.querySelector('#arena-winner-modal h3').style.color = tColor;
+            }
+
+            document.getElementById('arena-winner-modal').classList.remove('hidden');
+            localStorage.setItem(`ct_aw_${version}`, 'true'); 
+        } catch (e) { console.error("Error mostrando ganador de la Arena:", e); }
     }
 });
