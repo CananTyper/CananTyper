@@ -183,33 +183,33 @@
             </header>
 
             <div class="arena-container custom-scroll" style="overflow-y: auto; max-height: calc(100vh - 100px); padding-bottom: 30px;">
-                <div class="arena-hero" style="border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 30px; margin-bottom: 20px;">
-                    <h2 class="arena-title" id="ar-title" style="color: #fff; text-shadow: 0 0 20px rgba(179,136,255,0.5);">Cargando Torneo...</h2>
+                <div class="arena-hero" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 30px; margin-bottom: 20px;">
+                    <h2 class="arena-title" id="ar-title" style="color: #fff;">Cargando Torneo...</h2>
                     <p class="arena-subtitle" id="ar-subtitle" style="color: #b388ff;">Conectando con CananStudio</p>
                     
-                    <div class="countdown-box" style="background: rgba(0,0,0,0.5); border: 1px solid #b388ff; box-shadow: 0 0 30px rgba(179,136,255,0.1);">
-                        <div class="cd-item"><span class="cd-val" id="ar-cd-d">00</span><span class="cd-lbl" style="color:#b388ff;">DÍAS</span></div>
-                        <div class="cd-item"><span class="cd-val" id="ar-cd-h">00</span><span class="cd-lbl" style="color:#b388ff;">HORAS</span></div>
-                        <div class="cd-item"><span class="cd-val" id="ar-cd-m">00</span><span class="cd-lbl" style="color:#b388ff;">MIN</span></div>
-                        <div class="cd-item"><span class="cd-val" id="ar-cd-s">00</span><span class="cd-lbl" style="color:#b388ff;">SEG</span></div>
+                    <div class="countdown-box" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 30px rgba(0,0,0,0.5);">
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-d">00</span><span class="cd-lbl">DÍAS</span></div>
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-h">00</span><span class="cd-lbl">HORAS</span></div>
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-m">00</span><span class="cd-lbl">MIN</span></div>
+                        <div class="cd-item"><span class="cd-val" id="ar-cd-s">00</span><span class="cd-lbl">SEG</span></div>
                     </div>
                     
-                    <div style="margin-bottom: 20px; color: #ccc; font-size: 1.1rem; background: rgba(179,136,255,0.05); padding: 15px; border-radius: 10px; display: inline-block;">
+                    <div style="margin-bottom: 20px; color: #ccc; font-size: 1.1rem; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block;">
                         <p style="margin:0;">El texto a jugar es clasificado. Dictado por CananStudio.</p>
                         <p style="margin:5px 0 0 0; color:var(--error); font-weight:bold;">Penalización activa: Los errores restan multiplicador de precisión.</p>
                     </div>
                     <br>
-                    <button id="btn-play-arena" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem; box-shadow: 0 0 20px rgba(179,136,255,0.4);" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
+                    <button id="btn-play-arena" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem;" onclick="window.App.startArenaRace()">INICIAR CARRERA OFICIAL</button>
                 </div>
 
-                <div class="arena-panel" style="margin-top: 10px; border-color: rgba(179,136,255,0.3); background: rgba(10,10,15,0.8);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(179,136,255,0.2); padding-bottom: 10px;">
+                <div class="arena-panel" style="margin-top: 10px; border-color: rgba(255,255,255,0.1); background: rgba(10,10,15,0.8);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
                         <h4 class="arena-panel-title" style="border: none; padding: 0; margin: 0; color: #fff;">📊 CLASIFICACIÓN EN VIVO</h4>
-                        <span style="color: #b388ff; font-family: monospace; font-size: 0.9rem;">ACTUALIZADO POR CANANSTUDIO</span>
+                        <span style="color: #888; font-family: monospace; font-size: 0.9rem;">ACTUALIZADO POR CANANSTUDIO</span>
                     </div>
                     <table class="data-table" style="background: transparent;">
                         <thead>
-                            <tr><th width="15%" style="color:#b388ff;">RANGO</th><th width="45%">PILOTO</th><th width="20%">PRECISIÓN</th><th width="20%" style="color:#b388ff;">PUNTOS FINAL</th></tr>
+                            <tr><th width="15%" style="color:#888;">RANGO</th><th width="45%">PILOTO</th><th width="20%">PRECISIÓN</th><th width="20%" style="color:#888;">PUNTOS FINAL</th></tr>
                         </thead>
                         <tbody id="arena-live-rank">
                             <tr><td colspan="4" style="text-align:center; padding:20px; color:#777;">Sincronizando telemetría...</td></tr>
@@ -230,7 +230,7 @@
                     <div class="arena-hud-box"><small>PRECISIÓN</small><span id="arena-acc-display">100%</span></div>
                     <div class="arena-hud-box" id="arena-penalty-box"><small>MULTIPLICADOR</small><span id="arena-mult-display">x1.00</span></div>
                 </div>
-                <div class="progress-container" style="margin-bottom: 25px; border-color: rgba(179,136,255,0.2); background: rgba(0,0,0,0.5);">
+                <div class="progress-container" style="margin-bottom: 25px; border-color: rgba(255,255,255,0.1); background: rgba(0,0,0,0.5);">
                     <div id="arena-race-progress" class="progress-bar arena-progress"></div>
                 </div>
                 <div id="arena-target-text" class="arena-text-display"></div>
@@ -238,19 +238,19 @@
                 <div id="arena-in-game-controls" class="game-controls" style="justify-content: center; opacity: 0;">
                     <button onclick="window.App.quitArenaRace()" class="btn-outline" style="border-color: var(--error); color: var(--error); padding: 10px 30px;">RENDIRSE (0 PUNTOS)</button>
                 </div>
-                <div id="arena-result-modal" class="game-result hidden" style="border-color: #b388ff; box-shadow: 0 15px 50px rgba(179,136,255,0.15); background: rgba(10,10,15,0.95); backdrop-filter: blur(10px);">
-                    <h3 style="color: #b388ff; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">Resultados Homologados</h3>
+                <div id="arena-result-modal" class="game-result hidden" style="background: rgba(10,10,15,0.95); backdrop-filter: blur(10px);">
+                    <h3 style="margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">Resultados Homologados</h3>
                     <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 20px;">
                         <div><small style="color:#aaa; font-size:0.8rem; font-weight:bold;">VEL. BRUTA</small><div id="arena-final-cpm" style="font-size: 2.5rem; color: #fff; font-family: monospace; font-weight:bold;">0</div></div>
                         <div style="color: #555; font-size: 2.5rem; line-height: 1.2;">×</div>
                         <div><small style="color:#aaa; font-size:0.8rem; font-weight:bold;">PRECISIÓN</small><div id="arena-final-acc" style="font-size: 2.5rem; color: #fff; font-family: monospace; font-weight:bold;">0%</div></div>
                     </div>
-                    <div style="border-top: 1px solid rgba(179,136,255,0.3); padding-top: 20px; margin-bottom: 30px;">
-                        <small style="color:#b388ff; font-weight: bold; letter-spacing: 3px;">PUNTAJE DE TORNEO</small>
-                        <h2 id="arena-final-score" style="font-size: 6rem; color: #b388ff; margin: 0; text-shadow: 0 0 30px rgba(179,136,255,0.6); font-family: monospace; line-height: 1;">0</h2>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-bottom: 30px;">
+                        <small style="font-weight: bold; letter-spacing: 3px;">PUNTAJE DE TORNEO</small>
+                        <h2 id="arena-final-score" style="font-size: 6rem; margin: 0; font-family: monospace; line-height: 1;">0</h2>
                     </div>
                     <div class="result-actions" style="margin-top: 25px; justify-content: center;">
-                        <button onclick="window.UI.show('arena-screen')" class="btn-primary" style="background: #b388ff; color: #000; padding: 15px 40px; font-size: 1.1rem; box-shadow: 0 0 20px rgba(179,136,255,0.4);">Volver a la Sala</button>
+                        <button onclick="window.UI.show('arena-screen')" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Volver a la Sala</button>
                     </div>
                 </div>
             </div>
