@@ -183,7 +183,6 @@
             </header>
 
             <div class="arena-container custom-scroll" style="overflow-y: auto; max-height: calc(100vh - 100px); padding-bottom: 30px;">
-                
                 <div class="arena-hero" style="border-bottom: none; padding-bottom: 10px; margin-bottom: 10px;">
                     <h2 class="arena-title" id="ar-title" style="color: #fff;">Cargando Torneo...</h2>
                     <p class="arena-subtitle" id="ar-subtitle" style="color: #b388ff; margin-bottom: 20px;">Conectando con CananStudio</p>
@@ -204,9 +203,7 @@
                 </div>
 
                 <div id="arena-prize-display" class="hidden" style="margin: 30px auto; max-width: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, rgba(179,136,255,0.15) 0%, rgba(10,10,15,0.9) 70%); border: 1px solid rgba(179,136,255,0.3); border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(179,136,255,0.05); position: relative;">
-                    
                     <span id="arena-prize-target-lbl" style="position: absolute; top: -12px; background: #b388ff; color: #000; font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; padding: 5px 15px; border-radius: 20px; text-transform: uppercase; box-shadow: 0 0 15px rgba(179,136,255,0.6);">🏆 EXCLUSIVO PARA EL TOP 1</span>
-                    
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 10px;">
                         <div id="arena-prize-circle" style="width: 90px; height: 90px; background: rgba(0,0,0,0.8); border: 2px solid #b388ff; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 25px rgba(179,136,255,0.5);">
                             <span id="arena-prize-icon" style="font-size: 3.5rem; filter: drop-shadow(0 0 15px rgba(179,136,255,0.8));">🏆</span>
@@ -761,6 +758,29 @@
                     <button onclick="window.UI.closeEditProfileModal()" class="btn-outline" style="flex:1;">Cancelar</button>
                 </div>
                 <button onclick="document.getElementById('img-input').click()" class="btn-outline" style="width:100%; margin-top:15px;">🖼️ Cambiar Foto de Perfil</button>
+            </div>
+        </div>
+
+        <div id="arena-winner-modal" class="crop-overlay hidden" style="z-index: 4000; backdrop-filter: blur(5px); background: rgba(0,0,0,0.8);">
+            <div class="auth-card" style="border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; padding: 30px; max-width: 400px; background: var(--surface); border-radius: 16px;">
+                <div style="font-size: 2rem; margin-bottom: 10px;">👑</div>
+                <h3 style="color: var(--text-main); letter-spacing: 2px; margin-bottom: 20px; font-weight: 600; font-size: 1rem; text-transform: uppercase;">Resultados del Torneo</h3>
+                
+                <div style="position: relative; display: inline-block; margin-bottom: 15px;">
+                    <img id="aw-avatar" src="" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--p); object-fit: cover;">
+                    <div id="aw-medal" style="position: absolute; bottom: -5px; right: -5px; font-size: 2rem; background: var(--bg); border-radius: 50%; padding: 2px;"></div>
+                </div>
+                
+                <h2 id="aw-name" style="color: #fff; font-size: 1.8rem; margin: 0; text-transform: capitalize;">-</h2>
+                <div id="aw-handle" style="color: var(--p); font-family: monospace; font-size: 0.9rem; margin-bottom: 20px;">@-</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 25px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 15px; border-radius: 12px;">
+                    <div style="text-align: center;"><small style="color:#777; font-weight:bold; font-size: 0.7rem;">PUNTOS</small><div id="aw-score" style="font-size: 1.4rem; color: #fff; font-family: monospace; font-weight:bold;">0</div></div>
+                    <div style="text-align: center;"><small style="color:#777; font-weight:bold; font-size: 0.7rem;">VELOCIDAD</small><div id="aw-cpm" style="font-size: 1.4rem; color: #fff; font-family: monospace; font-weight:bold;">0</div></div>
+                    <div style="text-align: center;"><small style="color:#777; font-weight:bold; font-size: 0.7rem;">PRECISIÓN</small><div id="aw-acc" style="font-size: 1.4rem; color: #fff; font-family: monospace; font-weight:bold;">0%</div></div>
+                </div>
+                
+                <button class="btn-outline" onclick="document.getElementById('arena-winner-modal').classList.add('hidden')" style="width: 100%; border-color: var(--border); color: var(--text-main);">Cerrar</button>
             </div>
         </div>
 
