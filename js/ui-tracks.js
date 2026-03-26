@@ -28,7 +28,7 @@ Object.assign(window.UI, {
         html += cats.map(cat => {
             const count = catCounts[cat.name] || 0;
             // Límite dinámico (Lee el maxWords de la categoría o usa 50 por defecto)
-            const badgeHtml = cat.filterLong ? `<span style="font-size:0.6rem; background:rgba(166,255,0,0.1); color:var(--accent); padding:2px 6px; border-radius:4px; border:1px solid rgba(166,255,0,0.3); margin-top:5px; display:inline-block;">⚡ MÁX ${cat.maxWords || 50} PAL.</span>` : '';
+            const badgeHtml = cat.filterLong ? `<span style="font-size:0.6rem; background:rgba(166,255,0,0.1); color:var(--accent); padding:2px 6px; border-radius:4px; border:1px solid rgba(166,255,0,0.3); margin-top:5px; display:inline-block;">⚡ MÁX ${cat.maxWords || 50} PALABRAS.</span>` : '';
             
             return `
             <div class="cat-card" onclick="window.UI.selectTrackCategory('${cat.name}')">
