@@ -23,7 +23,7 @@ Object.assign(window.UI, {
         window.UI.show('home-screen'); 
         
         window.UI.checkAnnouncements(); 
-        window.UI.initArenaListener(); // CONECTAMOS AL GESTOR DE TORNEOS (CANANSTUDIO)
+        window.UI.initArenaListener(); // CONECTAMOS AL GESTOR DE TORNEOS
     },
 
     showLobby: () => window.UI.initLobby(),
@@ -89,21 +89,19 @@ Object.assign(window.UI, {
     },
 
     // =========================================================
-    // SISTEMA DE ARENA (CONECTADO A CANANSTUDIO)
+    // SISTEMA NERVIOSO DE LA ARENA (E-SPORTS) - VERSIÓN DINÁMICA
     // =========================================================
     arenaTimerInterval: null,
     arenaCurrentConfig: null,
     arenaUnsubScores: null,
     hasArenaPass: false,
-    hasSeenEndPopup: false,
-    
+
     initArenaListener: () => {
-        // Escuchamos el maestro de CananStudio
         window.db.collection('config').doc('arena_event').onSnapshot(doc => {
             if (doc.exists) {
                 window.UI.arenaCurrentConfig = doc.data();
-                window.UI.evaluateArenaPass(); // Verificamos credenciales ANTES de renderizar
-                window.UI.processArenaEvent();
+                window.UI.evaluateArenaPass(); 
+                window.UI.processArenaEvent(); 
             }
         });
     },
@@ -116,22 +114,17 @@ Object.assign(window.UI, {
         const userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         let pass = true;
 
-        // 1. Validar CPM Mínimo
         if (conf.minCpm > 0) {
             let maxCpm = 0;
-            if (userDoc.hi && userDoc.hi.length > 0) {
-                maxCpm = Math.max(...userDoc.hi.filter(v => typeof v === 'number'));
-            }
+            if (userDoc.hi && userDoc.hi.length > 0) maxCpm = Math.max(...userDoc.hi.filter(v => typeof v === 'number'));
             if (maxCpm < conf.minCpm) pass = false;
         }
 
-        // 2. Validar Medalla Requerida
         if (conf.reqMedal && conf.reqMedal.trim() !== '') {
             let medals = userDoc.custom_medals || []; 
             if (!medals.includes(conf.reqMedal.trim())) pass = false;
         }
 
-        // 3. Admins siempre tienen pase
         if (userDoc.r === 'admin') pass = true;
 
         window.UI.hasArenaPass = pass;
@@ -142,83 +135,72 @@ Object.assign(window.UI, {
         if (!conf) return;
 
         const navBtn = document.querySelector('.btn-arena-nav');
-        const tColor = '#b388ff'; // Forzamos estética violeta pro
-        const tBg = 'rgba(179,136,255,0.1)';
+        
+        // 1. DINAMISMO DE TEMAS (Colores)
+        let tColor = '#b388ff'; let tBg = 'rgba(179,136,255,0.1)'; let tShadow = 'rgba(179,136,255,0.5)';
+        if (conf.theme === 'red') { tColor = '#ff4a4a'; tBg = 'rgba(255,74,74,0.1)'; tShadow = 'rgba(255,74,74,0.5)'; }
+        if (conf.theme === 'gold') { tColor = '#ffd700'; tBg = 'rgba(255,215,0,0.1)'; tShadow = 'rgba(255,215,0,0.5)'; }
 
-        if(navBtn) {
-            navBtn.style.borderColor = tColor; navBtn.style.color = tColor; navBtn.style.boxShadow = `0 0 10px ${tBg}`;
-        }
+        if(navBtn) { navBtn.style.borderColor = tColor; navBtn.style.color = tColor; navBtn.style.boxShadow = `0 0 10px ${tBg}`; }
 
-        // --- 1. ACTUALIZAR TEXTOS DESDE CANANSTUDIO ---
         const arTitle = document.getElementById('ar-title');
         const arSub = document.getElementById('ar-subtitle');
         const badge = document.getElementById('arena-status-badge');
         const playBtn = document.getElementById('btn-play-arena');
+        const prizeBox = document.getElementById('arena-prize-display');
+        const prizeName = document.getElementById('arena-prize-name');
 
-        if(arTitle) {
-            arTitle.innerText = conf.title || "Evento Oficial";
-            arTitle.style.color = "#fff"; arTitle.style.textShadow = `0 0 20px rgba(179,136,255,0.5)`;
+        if(arTitle) { arTitle.innerText = conf.title || "Evento Oficial"; arTitle.style.color = "#fff"; arTitle.style.textShadow = `0 0 20px ${tShadow}`; }
+        if(arSub) { arSub.innerText = conf.msg || "Conectando con CananStudio"; arSub.style.color = tColor; }
+
+        // Exhibición de Medalla en Lobby
+        if (prizeBox && prizeName) {
+            if (conf.medal && conf.medal.trim() !== '') {
+                prizeBox.classList.remove('hidden');
+                prizeBox.style.borderColor = tColor;
+                prizeBox.style.boxShadow = `0 0 15px ${tBg}`;
+                prizeName.innerText = conf.medal; // Muestra el ID de la medalla o el texto que hayas puesto en CananStudio
+                prizeName.style.color = tColor;
+            } else {
+                prizeBox.classList.add('hidden');
+            }
         }
-        if(arSub) {
-            arSub.innerText = conf.msg || "Conectando con CananStudio";
-            arSub.style.color = tColor;
-        }
-        
-        // --- 2. LÓGICA DE TIEMPO Y ESTADO ---
+
         const isTimeExpired = conf.endTime ? (new Date(conf.endTime).getTime() - Date.now() < 0) : false;
         const isEnded = !conf.active || isTimeExpired;
 
         if (isEnded) {
-            if(badge) {
-                badge.innerText = "ESTADO: FINALIZADO";
-                badge.style.color = "#ff4a4a"; badge.style.borderColor = "#ff4a4a"; badge.style.background = "rgba(255,74,74,0.1)";
-            }
-            if(playBtn) {
-                playBtn.disabled = true; playBtn.innerText = "TORNEO CERRADO"; playBtn.style.filter = "grayscale(1)"; playBtn.style.boxShadow = "none";
-            }
+            if(badge) { badge.innerText = "ESTADO: FINALIZADO"; badge.style.color = "#ff4a4a"; badge.style.borderColor = "#ff4a4a"; badge.style.background = "rgba(255,74,74,0.1)"; }
+            if(playBtn) { playBtn.disabled = true; playBtn.innerText = "TORNEO CERRADO"; playBtn.style.filter = "grayscale(1)"; playBtn.style.boxShadow = "none"; }
             document.getElementById('ar-cd-d').innerText = "00"; document.getElementById('ar-cd-h').innerText = "00";
             document.getElementById('ar-cd-m').innerText = "00"; document.getElementById('ar-cd-s').innerText = "00";
             if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
 
-            // DISPARAR POPUP DE VICTORIA (Solo si no lo vio ya para esta versión y TIENE PASE)
             const hasSeenWinner = localStorage.getItem(`ct_aw_${conf.version}`);
-            if (!hasSeenWinner && window.UI.hasArenaPass) {
-                window.UI.resolveArenaWinner(conf);
-            }
-
-            if(navBtn && !conf.active) navBtn.style.display = 'none'; // Ocultar del lobby si se apagó
-
+            if (!hasSeenWinner && window.UI.hasArenaPass) window.UI.resolveAndShowWinner(conf, tColor);
+            if(navBtn && !conf.active) navBtn.style.display = 'none'; 
         } else {
-            // EN CURSO
             if(navBtn) navBtn.style.display = 'inline-block';
-            if(badge) {
-                badge.innerText = "ESTADO: EN CURSO";
-                badge.style.color = tColor; badge.style.borderColor = tColor; badge.style.background = tBg;
-            }
+            if(badge) { badge.innerText = "ESTADO: EN CURSO"; badge.style.color = tColor; badge.style.borderColor = tColor; badge.style.background = tBg; }
             if(playBtn) {
-                // Validación visual de botón si tiene el pase
-                if (window.UI.hasArenaPass) {
-                    playBtn.disabled = false; playBtn.innerText = "INICIAR CARRERA OFICIAL"; playBtn.style.filter = "none"; playBtn.style.boxShadow = `0 0 20px rgba(179,136,255,0.4)`;
-                } else {
-                    playBtn.disabled = true; playBtn.innerText = "NO CLASIFICADO"; playBtn.style.filter = "grayscale(1)"; playBtn.style.boxShadow = "none";
-                }
+                if (window.UI.hasArenaPass) { playBtn.disabled = false; playBtn.innerText = "INICIAR CARRERA OFICIAL"; playBtn.style.filter = "none"; playBtn.style.boxShadow = `0 0 20px ${tShadow}`; playBtn.style.background = tColor; playBtn.style.color = "#000"; } 
+                else { playBtn.disabled = true; playBtn.innerText = "NO CLASIFICADO"; playBtn.style.filter = "grayscale(1)"; playBtn.style.background = "transparent"; playBtn.style.color = "#888"; playBtn.style.boxShadow = "none"; }
             }
             if (conf.endTime) window.UI.startArenaCountdown(conf.endTime);
 
-            // Disparar Pop-up de Bienvenida SOLO a los clasificados
             const hasSeenWelcome = localStorage.getItem(`ct_awel_${conf.version}`);
             if (!hasSeenWelcome && window.UI.hasArenaPass) {
                 const modal = document.getElementById('announcement-modal');
-                document.getElementById('motd-icon').innerText = '🟣';
-                document.getElementById('motd-title').innerText = conf.title;
+                document.getElementById('motd-icon').innerText = '🏆';
+                document.getElementById('motd-title').innerText = "CLASIFICACIÓN APROBADA";
                 document.getElementById('motd-title').style.color = tColor; 
-                document.getElementById('motd-msg').innerText = "¡Has clasificado a la Arena!\n\n" + conf.msg;
+                document.getElementById('motd-msg').innerText = "Tienes acceso al Torneo: " + conf.title + "\n\n" + conf.msg;
                 modal.classList.remove('hidden');
                 localStorage.setItem(`ct_awel_${conf.version}`, 'true');
             }
         }
 
-        // --- 3. CONEXIÓN A LA TABLA EN VIVO ---
+        // CONEXIÓN A LA TABLA EN VIVO (Precisa y Dinámica)
         if (window.UI.arenaUnsubScores) window.UI.arenaUnsubScores(); 
         window.UI.arenaUnsubScores = window.db.collection('arena_scores')
             .where('version', '==', conf.version || 'v1')
@@ -226,25 +208,19 @@ Object.assign(window.UI, {
             .limit(50)
             .onSnapshot(snap => {
                 const scores = snap.docs.map(doc => doc.data());
-                window.UI.renderArenaLeaderboard(scores, tColor);
-
-                // Si no tenía pase, pero resulta que está en la tabla (porque jugó antes de que el admin subiera los requisitos), le damos el pase para que pueda ver al ganador
-                const u = window.CT.ses();
-                if (u && !window.UI.hasArenaPass && scores.some(s => s.h === u.h)) {
-                    window.UI.hasArenaPass = true;
-                }
+                window.UI.renderArenaLeaderboard(scores, tColor, conf);
             });
     },
 
-    startArenaCountdown: (endTimeStr) => {
+    startArenaCountdown: (endTimeTimestamp) => {
         if (window.UI.arenaTimerInterval) clearInterval(window.UI.arenaTimerInterval);
-        const endDate = new Date(endTimeStr).getTime();
+        const endDate = new Date(endTimeTimestamp).getTime();
 
         const updateClock = () => {
             const distance = endDate - Date.now();
             if (distance < 0) {
                 clearInterval(window.UI.arenaTimerInterval);
-                window.UI.processArenaEvent(); // Si el tiempo llega a 0, fuerza el recálculo
+                window.UI.processArenaEvent(); 
                 return;
             }
 
@@ -259,12 +235,28 @@ Object.assign(window.UI, {
             const sEl = document.getElementById('ar-cd-s'); if(sEl) sEl.innerText = s.toString().padStart(2, '0');
         };
         updateClock(); 
-        window.UI.arenaTimerInterval = setInterval(updateClock, 1000); // 1000ms = Reloj dinámico por segundo
+        window.UI.arenaTimerInterval = setInterval(updateClock, 1000);
     },
 
-    renderArenaLeaderboard: (scores, tColor) => {
+    // 2. TABLA INTELIGENTE (Cambia las columnas según el modo)
+    renderArenaLeaderboard: (scores, tColor, conf) => {
+        const thead = document.querySelector('#arena-screen .data-table thead');
         const tbody = document.getElementById('arena-live-rank');
-        if (!tbody) return;
+        if (!tbody || !thead) return;
+
+        // Títulos Dinámicos de Columnas
+        let col3Name = "PRECISIÓN";
+        let col4Name = "PUNTAJE FINAL";
+        
+        if (conf.mode === 'league') col3Name = "CARRERAS";
+        if (conf.scoring === 'cpm') col4Name = conf.mode === 'league' ? "PROM. CPM" : "MÁX. CPM";
+
+        thead.innerHTML = `<tr>
+            <th width="15%" style="color:${tColor};">RANGO</th>
+            <th width="45%">PILOTO</th>
+            <th width="20%">${col3Name}</th>
+            <th width="20%" style="color:${tColor};">${col4Name}</th>
+        </tr>`;
 
         if (scores.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#777;">Aún no hay tiempos registrados en este evento.</td></tr>';
@@ -277,48 +269,60 @@ Object.assign(window.UI, {
             else if (index === 1) rankVisual = `<b style="color:#c0c0c0;">#2</b>`;
             else if (index === 2) rankVisual = `<b style="color:#cd7f32;">#3</b>`;
 
+            // Valores Dinámicos
+            let col3Value = `${s.acc || 0}%`;
+            if (conf.mode === 'league') col3Value = `${s.races || 1} 🏁`;
+
             return `
-            <tr style="border-bottom: 1px solid rgba(179,136,255,0.1);">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <td style="padding:15px 10px;">${rankVisual}</td>
                 <td style="padding:15px 10px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <img src="${s.a || window.CT.defAvatar}" style="width:25px; height:25px; border-radius:50%; border:1px solid ${tColor};">
-                        <span style="color:#fff;">${s.n}</span>
+                        <span style="color:#fff; font-weight:bold;">${s.n}</span>
                     </div>
                 </td>
-                <td style="padding:15px 10px; color:#aaa; font-family:monospace;">${s.acc || 0}%</td>
+                <td style="padding:15px 10px; color:#aaa; font-family:monospace;">${col3Value}</td>
                 <td style="padding:15px 10px; color:${tColor}; font-weight:bold; font-family:monospace; font-size:1.2rem;">${s.score}</td>
             </tr>`;
         }).join('');
     },
 
-    resolveArenaWinner: async (conf) => {
+    resolveAndShowWinner: async (conf, tColor) => {
         try {
-            // Buscamos al Top 1 de la base de datos automáticamente
             const snap = await window.db.collection('arena_scores').where('version', '==', conf.version).orderBy('score', 'desc').limit(1).get();
             if(!snap.empty) {
                 const winner = snap.docs[0].data();
                 
                 document.getElementById('aw-avatar').src = winner.a || window.CT.defAvatar;
+                document.getElementById('aw-avatar').style.borderColor = tColor;
+                document.getElementById('aw-avatar').style.boxShadow = `0 0 40px ${tColor}80`;
+
                 document.getElementById('aw-name').innerText = winner.n;
                 document.getElementById('aw-score').innerText = winner.score;
+                document.getElementById('aw-score').style.color = tColor;
+                document.getElementById('aw-score').style.textShadow = `0 0 10px ${tColor}`;
+
                 document.getElementById('aw-cpm').innerText = winner.cpm;
                 document.getElementById('aw-acc').innerText = `${winner.acc}%`;
                 
                 const medalEl = document.getElementById('aw-medal');
-                if (conf.medal && conf.medal !== '') {
-                    // Si el admin puso un emoji en CananStudio, lo muestra
-                    medalEl.innerText = conf.medal; 
+                if (conf.medal && conf.medal.trim() !== '') {
+                    medalEl.innerText = "🏆"; // Icono de victoria
                     medalEl.style.display = 'block';
                 } else {
-                    // Por defecto un trofeo para que no quede vacío si el admin no puso nada
-                    medalEl.innerText = "🏆";
-                    medalEl.style.display = 'block';
+                    medalEl.style.display = 'none';
                 }
 
+                // Ajustamos el modal al tema actual
+                const modalCard = document.querySelector('#arena-winner-modal .auth-card');
+                modalCard.style.borderColor = tColor;
+                modalCard.style.boxShadow = `0 0 80px ${tColor}40`;
+                document.querySelector('#arena-winner-modal h3').style.color = tColor;
+
                 document.getElementById('arena-winner-modal').classList.remove('hidden');
-                localStorage.setItem(`ct_aw_${conf.version}`, 'true'); // Marcar como visto para no spamear
+                localStorage.setItem(`ct_aw_${conf.version}`, 'true'); 
             }
-        } catch (e) { console.error("No se pudo calcular el ganador:", e); }
+        } catch (e) { console.error("Error resolviendo ganador de la Arena:", e); }
     }
 });
