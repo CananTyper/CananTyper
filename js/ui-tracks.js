@@ -15,15 +15,32 @@ Object.assign(window.UI, {
         document.getElementById('track-list-view').classList.add('hidden'); 
         document.getElementById('track-category-view').classList.remove('hidden');
         
+        // Obtenemos la lista ya filtrada por el State Manager (Ahorro de cuota)
         const tracks = window.CT.dbLocal('p'); 
         let cats = window.CT.dbLocal('c'); 
         let catCounts = {}; 
+        
         tracks.forEach(t => { const c = (t.c || 'General').trim(); catCounts[c] = (catCounts[c] || 0) + 1; });
         cats = cats.filter(c => c.name !== 'General' && !c.name.startsWith('[TRN]')).sort((a,b) => (a.order || 0) - (b.order || 0));
 
         let t_fav = window.CT.data.ui && window.CT.data.ui['t_trk_fav_filter'] ? window.CT.data.ui['t_trk_fav_filter'].v : '⭐ Ver Favoritos';
         let html = `<div class="cat-card cat-fav-card" onclick="window.UI.toggleFavFilter()"><h3><span>${t_fav}</span></h3><span style="color:var(--text-main)">Textos favoritos</span></div>`;
-        html += cats.map(cat => `<div class="cat-card" onclick="window.UI.selectTrackCategory('${cat.name}')"><h3>${cat.name}</h3><span>${catCounts[cat.name] || 0} TEXTOS</span></div>`).join('');
+        
+        html += cats.map(cat => {
+            const count = catCounts[cat.name] || 0;
+            // Indicador visual para que el jugador sepa que esta categoría está optimizada
+            const badgeHtml = cat.filterLong ? `<span style="font-size:0.6rem; background:rgba(166,255,0,0.1); color:var(--accent); padding:2px 6px; border-radius:4px; border:1px solid rgba(166,255,0,0.3); margin-top:5px; display:inline-block;">⚡ MODO RÁPIDO</span>` : '';
+            
+            return `
+            <div class="cat-card" onclick="window.UI.selectTrackCategory('${cat.name}')">
+                <h3>${cat.name}</h3>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <span>${count} TEXTOS</span>
+                    ${badgeHtml}
+                </div>
+            </div>`;
+        }).join('');
+        
         document.getElementById('track-category-view').innerHTML = html;
     },
 
@@ -45,7 +62,7 @@ Object.assign(window.UI, {
     
     renderTrackList: () => {
         const query = (document.getElementById('track-search').value || "").toLowerCase(); 
-        let tracks = window.CT.dbLocal('p');
+        let tracks = window.CT.dbLocal('p'); // Lista limpia y filtrada
         const u = window.CT.ses(); 
         let userDoc = window.CT.dbLocal('u').find(x => x.h === u.h) || u;
         let favs = userDoc.favs || [];
@@ -59,7 +76,7 @@ Object.assign(window.UI, {
             document.getElementById('track-category-view').classList.add('hidden'); 
             document.getElementById('track-list-view').classList.remove('hidden'); 
             document.getElementById('btn-back-cat-track').classList.add('hidden');
-            filtered = tracks.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+            filtered = tracks.filter(t => (t.title && t.title.toString().toLowerCase().includes(query)) || (t.text && t.text.toLowerCase().includes(query))); 
         } else if (window.UI.filterFavs) {
             filtered = tracks.filter(t => favs.includes(t.id.toString())).sort((a,b) => favs.indexOf(a.id.toString()) - favs.indexOf(b.id.toString()));
         } else if (!window.UI.activeTrackCat) {
@@ -79,7 +96,10 @@ Object.assign(window.UI, {
             let cardStyle = isFav ? `border-color: color-mix(in srgb, #ffd700 50%, transparent); box-shadow: 0 5px 15px color-mix(in srgb, #ffd700 10%, transparent);` : ``;
             let idColorStyle = isFav ? `color: #ffd700; text-shadow: 0 0 10px color-mix(in srgb, #ffd700 30%, transparent);` : `color: var(--p);`;
 
-            return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}"><div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">${window.UI.formatTrackName(t.title)}<button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>${reorderFavHtml}</div><div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${t.text.split(' ').length} PALABRAS | [${(t.c || 'General').trim()}]</span></div></div>`;
+            // Mostramos cuántas palabras tiene el texto en la UI del jugador
+            const wc = t.wc || (t.text ? t.text.trim().split(/\s+/).length : 0);
+
+            return `<div class="track-card" onclick="window.App.startRaceWithTrack('${t.id}')" style="${cardStyle}"><div class="track-card-id" style="display:flex; flex-direction:column; gap:10px; ${idColorStyle}">${window.UI.formatTrackName(t.title)}<button onclick="event.stopPropagation(); window.App.toggleFav('${t.id}')" class="fav-star-btn ${starClass}">${isFav ? textPinOn : textPinOff}</button>${reorderFavHtml}</div><div class="track-card-content"><p class="track-card-text">${t.text}</p><span class="track-card-meta">${wc} PALABRAS | [${(t.c || 'General').trim()}]</span></div></div>`;
         }).join('');
         
         document.getElementById('track-prev').disabled = window.UI.trackPage === 0; 
@@ -98,7 +118,7 @@ Object.assign(window.UI, {
         const u = window.CT.ses(); let favs = (window.CT.dbLocal('u').find(x => x.h === u.h) || u).favs || []; 
         
         if (query) { 
-            filtered = filtered.filter(t => t.title.toString().toLowerCase().includes(query) || t.text.toLowerCase().includes(query)); 
+            filtered = filtered.filter(t => (t.title && t.title.toString().toLowerCase().includes(query)) || (t.text && t.text.toLowerCase().includes(query))); 
         } else if (window.UI.filterFavs) { 
             filtered = filtered.filter(t => favs.includes(t.id.toString())); 
         } else { 
@@ -122,9 +142,12 @@ Object.assign(window.UI, {
         if(!trackId) return;
         const track = window.CT.dbLocal('p').find(t => (t.id && t.id.toString() === trackId.toString()) || (t.title && t.title.toString() === trackId.toString()));
         if(!track) return;
+        
+        const wc = track.wc || (track.text ? track.text.trim().split(/\s+/).length : 0);
+        
         document.getElementById('tp-title').innerText = window.UI.formatTrackNameFull(track.title);
         document.getElementById('tp-cat').innerText = (track.c || 'General').trim();
-        document.getElementById('tp-words').innerText = track.text.split(' ').length + " PALABRAS";
+        document.getElementById('tp-words').innerText = wc + " PALABRAS";
         document.getElementById('tp-content').innerText = track.text;
         document.getElementById('tp-btn-play').onclick = () => { window.App.startRaceWithTrack(track.id); window.UI.closeTrackPreview(); };
         document.getElementById('track-preview-modal').classList.remove('hidden');
