@@ -5,7 +5,7 @@
 window.App = {
     currentTrack: null, activeEngine: null, currentRaceContext: null,
     
-    // NUEVO: Catálogo de medallas en memoria
+    // Catálogo de medallas en memoria
     medalsCatalog: [],
 
     // Carga inicial del catálogo de medallas
@@ -135,15 +135,32 @@ window.App = {
     },
 
     // =========================================================
-    // ARENA (E-SPORTS) - CONEXIÓN CON CANANSTUDIO
+    // ARENA (E-SPORTS) - MATEMÁTICA Y REGLAS DE TORNEO
     // =========================================================
-    startArenaRace: () => {
+    startArenaRace: async () => {
         const conf = window.UI.arenaCurrentConfig;
+        const u = window.CT.ses();
         if (!conf || !conf.active) return alert("No hay un torneo activo en este momento.");
+        if (!u) return;
 
+        // 1. REGLA: MUERTE SÚBITA (SUDDEN DEATH)
+        if (conf.mode === 'sudden_death') {
+            const btnPlay = document.getElementById('btn-play-arena');
+            const oldText = btnPlay.innerText; btnPlay.innerText = "VERIFICANDO PASAPORTE..."; btnPlay.disabled = true;
+            try {
+                const docId = `${u.h}_${conf.version}`;
+                const docSnap = await window.db.collection('arena_scores').doc(docId).get();
+                if (docSnap.exists) {
+                    btnPlay.innerText = oldText; btnPlay.disabled = false;
+                    return alert("💀 REGLA DE MUERTE SÚBITA: Ya has participado en esta Arena. Solo tienes permitido 1 intento.");
+                }
+            } catch(e) { console.error(e); }
+            finally { btnPlay.innerText = oldText; btnPlay.disabled = false; }
+        }
+
+        // 2. SELECCIÓN DE TEXTO (Cerrado al Arsenal de CananStudio)
         const allTracks = window.CT.dbLocal('p');
         const arsenalIds = conf.tracks || []; 
-        
         let validTracks = allTracks.filter(t => arsenalIds.includes(t.id.toString()));
         
         if(validTracks.length === 0) {
@@ -152,11 +169,13 @@ window.App = {
         }
 
         window.App.currentRaceContext = { type: 'arena', version: conf.version };
-        
         window.App.currentTrack = validTracks[Math.floor(Math.random() * validTracks.length)]; 
         
         if(window.App.activeEngine) window.App.activeEngine.stop(); 
-        window.App.activeEngine = new window.Engine(window.App.currentTrack, 'arena'); 
+
+        // 3. INYECCIÓN DEL MOTOR (Hardcore si es muerte súbita)
+        const engineMode = conf.mode === 'sudden_death' ? 'hardcore' : 'arena';
+        window.App.activeEngine = new window.Engine(window.App.currentTrack, engineMode); 
     },
 
     saveArenaScore: async (cpm, acc) => {
@@ -164,9 +183,10 @@ window.App = {
         const u = window.CT.ses();
         if (!conf || !conf.active || !u) return;
 
-        let finalScore = cpm;
+        // CÁLCULO BASE (CPM Brutos vs Puntaje Ponderado)
+        let runScore = cpm;
         if (conf.scoring === 'points') {
-            finalScore = Math.round(cpm * (acc / 100)); 
+            runScore = Math.round(cpm * (acc / 100)); 
         }
 
         const docId = `${u.h}_${conf.version}`;
@@ -174,22 +194,44 @@ window.App = {
         
         try {
             const docSnap = await docRef.get();
+            let finalScore = runScore;
+            let finalAcc = acc;
+            let races = 1;
+
             if (docSnap.exists) {
                 const existing = docSnap.data();
-                if (finalScore <= existing.score) return;
+                
+                // REGLA: SPRINT (Se guarda el mejor puntaje absoluto)
+                if (conf.mode === 'sprint') {
+                    if (runScore <= existing.score) return; // Si la nueva carrera es peor, abortamos el guardado
+                } 
+                // REGLA: LIGA (Se promedia todo el historial del jugador en este torneo)
+                else if (conf.mode === 'league') {
+                    races = (existing.races || 1) + 1;
+                    let oldScoreSum = existing.score * (existing.races || 1);
+                    let oldAccSum = existing.acc * (existing.races || 1);
+                    
+                    finalScore = Math.round((oldScoreSum + runScore) / races);
+                    finalAcc = Math.round((oldAccSum + acc) / races);
+                }
+                // REGLA: MUERTE SÚBITA (Ya evaluado, pero por seguridad evitamos reescritura)
+                else if (conf.mode === 'sudden_death') {
+                    return; 
+                }
             }
 
             await docRef.set({
                 h: u.h,
                 n: u.n,
                 a: u.a || window.CT.defAvatar,
-                cpm: cpm,
-                acc: acc,
-                score: finalScore,
+                cpm: cpm, // Guardamos el último CPM puro como referencia
+                acc: finalAcc, // Promediado o directo según modo
+                score: finalScore, // Promediado o directo según modo
+                races: races,
                 version: conf.version,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            console.log("Puntaje de Arena guardado con éxito:", finalScore);
+            console.log(`[ARENA] Telemetría registrada. Score Final: ${finalScore} | Modo: ${conf.mode}`);
         } catch(e) { console.error("Error guardando puntaje de arena:", e); }
     },
     // =========================================================
@@ -204,6 +246,12 @@ window.App = {
 
     quitArenaRace: () => {
         if(confirm("¿Seguro que deseas rendirte? Obtendrás 0 puntos en el Torneo.")) {
+            // Penalización por rendirse (Solo en Liga)
+            const conf = window.UI.arenaCurrentConfig;
+            if (conf && conf.mode === 'league') {
+                window.App.saveArenaScore(0, 0); // Le manda un 0 para hundir su promedio
+            }
+
             if(window.App.activeEngine) { window.App.activeEngine.stop(); window.App.activeEngine = null; } 
             window.App.currentRaceContext = null;
             window.UI.show('arena-screen');
@@ -375,7 +423,6 @@ window.App = {
             if(docRef.exists) return alert("Ese usuario ya está en uso"); 
             const role = (handle === '@angel') ? 'admin' : 'usuario'; 
             
-            // CANANTYPER 2.0: Cuentas nuevas nacen con streak y stats
             const newUser = { 
                 h: handle, n, p, r: role, a: '', hi: [], hi_hc: [], bad_keys: {}, bad_words: {}, favs: [],
                 createdAt: window.CT.getARDate(), bio: '', country: '', layout: '', switches: '', discord: '',
