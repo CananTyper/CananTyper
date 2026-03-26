@@ -17,7 +17,7 @@ window.Engine = class Engine {
         this.errKeys = {}; this.errWords = {}; this.lastV = '';
         window.App.activeEngine = this;
         
-        // Bloqueo de Reintentos en Arena
+        // Bloqueo de Reintentos en Arena (Si es Muerte Súbita, el bloqueo es aún más estricto visualmente, pero aquí aseguramos que no recargue)
         if (this.mode === 'arena') {
             window.addEventListener('beforeunload', this.preventRageQuit);
         }
@@ -49,7 +49,6 @@ window.Engine = class Engine {
 
             document.getElementById('arena-result-modal').classList.add('hidden');
             
-            // NUEVO: Restauramos la visibilidad del HUD y el texto para nuevas carreras
             const hudEl = document.querySelector('.arena-hud');
             if(hudEl) hudEl.classList.remove('hidden');
             const textEl = document.getElementById('arena-target-text');
@@ -64,7 +63,7 @@ window.Engine = class Engine {
             document.getElementById('arena-speed-display').innerText = '0';
             document.getElementById('arena-acc-display').innerText = '100%';
             document.getElementById('arena-mult-display').innerText = 'x1.00';
-            document.getElementById('arena-penalty-box').className = 'arena-hud-box'; // Reset de color
+            document.getElementById('arena-penalty-box').className = 'arena-hud-box'; 
             document.getElementById('arena-race-progress').style.width = '0%';
 
             const inp = document.getElementById('arena-game-input'); 
@@ -73,7 +72,6 @@ window.Engine = class Engine {
             inp.oncopy = (e) => { e.preventDefault(); return false; };
             inp.oncontextmenu = (e) => { e.preventDefault(); return false; };
             inp.onkeydown = (e) => {
-                // Bloqueo estricto del botón Enter/Tabulador en la Arena para evitar reinicios rápidos
                 if (e.key === 'Tab' || e.key === 'Enter') { e.preventDefault(); return false; }
             };
             inp.oninput = (e) => this.check(e.target.value, e.target); 
@@ -171,6 +169,8 @@ window.Engine = class Engine {
             }
 
             if (window.CT.fastMode && this.mode !== 'hardcore' && this.mode !== 'arena') { window.App.nextRace(); return; }
+            
+            // En la nueva Arena, si el modo desde CananStudio es sudden_death, el app.js inyectó el motor como hardcore.
             if (this.mode === 'hardcore') { this.die(); return; }
 
             let matchLen = 0; 
@@ -210,18 +210,13 @@ window.Engine = class Engine {
     }
 
     updateArenaPenalty() {
-        // Fórmula de precisión y castigo
         let rawAcc = ((this.totalKeystrokes - this.errorKeystrokes) / this.totalKeystrokes) * 100;
-        let accuracy = Math.max(0, Math.min(100, rawAcc)); // Entre 0 y 100
-        
-        // Multiplicador de penalización. (Ej: 100% acc = x1.0, 95% = x0.95)
+        let accuracy = Math.max(0, Math.min(100, rawAcc)); 
         this.currentMultiplier = (accuracy / 100).toFixed(2);
 
-        // Actualizar UI
         document.getElementById('arena-acc-display').innerText = accuracy.toFixed(1) + '%';
         document.getElementById('arena-mult-display').innerText = 'x' + this.currentMultiplier;
 
-        // Efectos de color
         const penaltyBox = document.getElementById('arena-penalty-box');
         if (accuracy < 98 && accuracy >= 95) penaltyBox.className = 'arena-hud-box warning';
         else if (accuracy < 95) penaltyBox.className = 'arena-hud-box danger';
@@ -241,12 +236,25 @@ window.Engine = class Engine {
             let track_deaths = userDoc.hc_track_deaths || {};
             track_deaths[this.track.title] = (track_deaths[this.track.title] || 0) + 1;
             window.db.collection('users').doc(u.h).update({ hc_deaths: hc_deaths, hc_track_deaths: track_deaths });
+
+            // NUEVA LÓGICA: Si es Muerte Súbita de Arena, guardamos un 0 espantoso en el tablero
+            if (window.App.currentRaceContext && window.App.currentRaceContext.type === 'arena') {
+                const conf = window.UI.arenaCurrentConfig;
+                if (conf && conf.mode === 'sudden_death') {
+                    window.db.collection('arena_scores').doc(`${u.h}_${conf.version}`).set({
+                        h: u.h, n: u.n, a: u.a || window.CT.defAvatar,
+                        cpm: 0, acc: 0, score: 0, races: 1, version: conf.version,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            }
         }
+
         document.getElementById('game-result-modal').classList.remove('hidden');
         setTimeout(() => { document.body.style.backgroundColor = ''; }, 1500); 
     }
 
-    end() { 
+    async end() { 
         this.stop(); 
         const sec = (new Date()-this.s)/1000; 
         const finalCPM = Math.round(this.c/(sec/60)) || 0; 
@@ -255,34 +263,35 @@ window.Engine = class Engine {
         let userDoc = u ? (window.CT.dbLocal('u').find(x => x.h === u.h) || u) : null;
 
         // ==============================================
-        // FINALIZACIÓN MODO ARENA
+        // FINALIZACIÓN MODO ARENA (LÓGICA E-SPORTS)
         // ==============================================
         if (this.mode === 'arena') {
             document.getElementById('arena-game-input').disabled = true; 
             document.getElementById('arena-game-input').classList.add('hidden'); 
             document.getElementById('arena-in-game-controls').style.opacity = '0';
 
-            // NUEVO: Ocultamos el texto y el HUD para que el cartel de resultados no se rompa
-            const hudEl = document.querySelector('.arena-hud');
-            if(hudEl) hudEl.classList.add('hidden');
-            const textEl = document.getElementById('arena-target-text');
-            if(textEl) textEl.classList.add('hidden');
-            const progEl = document.querySelector('#arena-game-screen .progress-container');
-            if(progEl) progEl.classList.add('hidden');
+            const hudEl = document.querySelector('.arena-hud'); if(hudEl) hudEl.classList.add('hidden');
+            const textEl = document.getElementById('arena-target-text'); if(textEl) textEl.classList.add('hidden');
+            const progEl = document.querySelector('#arena-game-screen .progress-container'); if(progEl) progEl.classList.add('hidden');
 
-            // Matemáticas de la Arena
             let rawAcc = this.totalKeystrokes > 0 ? ((this.totalKeystrokes - this.errorKeystrokes) / this.totalKeystrokes) * 100 : 100;
             let finalAcc = Math.max(0, Math.min(100, rawAcc));
-            let multiplier = finalAcc / 100;
-            let finalScore = Math.round(finalCPM * multiplier);
+            
+            const conf = window.UI.arenaCurrentConfig;
+            let runScore = finalCPM;
+            
+            if (conf && conf.scoring === 'points') {
+                let multiplier = finalAcc / 100;
+                runScore = Math.round(finalCPM * multiplier);
+            }
 
-            window.updateDiscordStatus("Carrera de Torneo terminada", `Puntaje: ${finalScore} Pts`, false);
+            window.updateDiscordStatus("Carrera de Torneo terminada", `Puntaje: ${runScore} Pts`, false);
 
             document.getElementById('arena-final-cpm').innerText = finalCPM;
             document.getElementById('arena-final-acc').innerText = finalAcc.toFixed(1) + '%';
-            document.getElementById('arena-final-score').innerText = finalScore;
+            document.getElementById('arena-final-score').innerText = runScore;
 
-            if(userDoc) {
+            if(userDoc && conf) {
                 // Guardar Errores para Entrenamiento
                 let bk = userDoc.bad_keys || {}; let bw = userDoc.bad_words || {};
                 for(let k in this.errKeys) bk[k] = (bk[k] || 0) + this.errKeys[k];
@@ -290,17 +299,46 @@ window.Engine = class Engine {
                 let sortedWords = Object.keys(bw).sort((a,b) => bw[b] - bw[a]); let prunedBw = {};
                 sortedWords.slice(0, 30).forEach(w => prunedBw[w] = bw[w]);
                 
-                // NUEVO: Guardado Silencioso de Estadísticas de Arena
-                let arena_pts = (userDoc.arena_pts || 0) + finalScore;
-                let arena_races = (userDoc.arena_races || 0) + 1;
+                window.db.collection('users').doc(userDoc.h).update({ bad_keys: bk, bad_words: prunedBw });
 
-                window.db.collection('users').doc(userDoc.h).update({ 
-                    bad_keys: bk, 
-                    bad_words: prunedBw,
-                    arena_pts: arena_pts,
-                    arena_races: arena_races
-                });
-                console.log(`[ARENA SILENT SAVE] -> Puntos Totales: ${arena_pts} | Carreras Jugadas: ${arena_races}`);
+                // LÓGICA DE REGISTRO OFICIAL (LEADERBOARD)
+                const docId = `${u.h}_${conf.version}`;
+                const docRef = window.db.collection('arena_scores').doc(docId);
+                
+                try {
+                    const docSnap = await docRef.get();
+                    let recordScore = runScore;
+                    let recordAcc = finalAcc;
+                    let recordRaces = 1;
+
+                    if (docSnap.exists) {
+                        const existing = docSnap.data();
+                        
+                        if (conf.mode === 'sprint') {
+                            // En sprint solo guardamos si es mejor
+                            if (runScore <= existing.score) {
+                                document.getElementById('arena-result-modal').classList.remove('hidden');
+                                return; 
+                            }
+                        } else if (conf.mode === 'league') {
+                            // En liga sumamos y promediamos
+                            recordRaces = (existing.races || 1) + 1;
+                            let sumScore = (existing.score * (existing.races || 1)) + runScore;
+                            let sumAcc = (existing.acc * (existing.races || 1)) + finalAcc;
+                            
+                            recordScore = Math.round(sumScore / recordRaces);
+                            recordAcc = Math.round(sumAcc / recordRaces);
+                        }
+                    }
+
+                    await docRef.set({
+                        h: u.h, n: u.n, a: u.a || window.CT.defAvatar,
+                        cpm: finalCPM, acc: recordAcc, score: recordScore, races: recordRaces,
+                        version: conf.version, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`[E-SPORTS] Score Guardado. Torneo: ${conf.version} | Pts: ${recordScore}`);
+
+                } catch(e) { console.error("Error guardando score Arena", e); }
             }
 
             document.getElementById('arena-result-modal').classList.remove('hidden');
